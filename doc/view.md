@@ -11,7 +11,7 @@ addons/Telepath/Godot/Binding/BindingSet.cs BindLabel / BindCommand / Add
 
 脚本类必须是**非泛型**（`CounterView : View<CounterViewModel>`）。`View` / `View<T>` 在 `Telepath.Godot`；具体 View 脚本由宿主编译。
 
-Godot 的 C# 源生成器只登记**当前脚本类自己声明的** `_Ready` 等方法。`Telepath.Godot` 不引用 `Godot.SourceGenerators`（会因缺少 `GodotProjectDir` 报 CS8785）。非泛型 `View` 的方法表写在 `View.GodotMethods.cs`。
+Godot 的 C# 源生成器只登记**当前脚本类自己声明的** `_Ready` 等方法。`Telepath.Godot` 不引用 `Godot.SourceGenerators`。`View` 的方法表写在同一文件里；`View/` 目录有 `.gdignore`，避免编辑器把库基类当成脚本重复注册（`ScriptTypeBiMap` 重复键）。
 
 ## 寿命
 
