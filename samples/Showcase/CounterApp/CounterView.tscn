@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://82v1sb24scbx"]
 
-[ext_resource type="Script" uid="uid://d3c10f4gf0eyb" path="res://Showcase/CounterApp/CounterView.cs" id="1_counter"]
+[ext_resource type="Script" uid="uid://d3c10f4gf0eyb" path="res://CounterApp/CounterView.cs" id="1_counter"]
 
 [node name="CounterView" type="Control" unique_id=1645033423]
 layout_mode = 3

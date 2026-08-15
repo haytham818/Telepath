@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Telepath.Godot</RootNamespace>
+    <AssemblyName>Telepath.Godot</AssemblyName>
+    <Description>Godot integration layer for Telepath.</Description>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <DefineConstants>$(DefineConstants);GODOT</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="GodotSharp" Version="4.7.1" />
+    <ProjectReference Include="..\Telepath.Core\Telepath.Core.csproj" />
+  </ItemGroup>
+</Project>

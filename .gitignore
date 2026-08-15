@@ -16,9 +16,9 @@ export_credentials.cfg
 data_*/
 mono_crash.*.json
 
-# Build output redirected outside res://
-../.telepath-build/
-.telepath-build/
+# .NET
+bin/
+obj/
 
 # Editor
 .idea/

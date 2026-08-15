@@ -8,7 +8,7 @@ public partial class TelepathEditorPlugin : EditorPlugin
 {
     private const string FrameProviderDispatcherName = "FrameProviderDispatcher";
     private const string FrameProviderDispatcherPath =
-        "res://addons/Telepath/Godot/R3/FrameProviderDispatcher.cs";
+        "res://addons/Telepath/FrameProviderDispatcher.cs";
 
     public override void _EnterTree()
     {

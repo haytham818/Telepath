@@ -14,7 +14,7 @@ compatibility/default_parent_skeleton_in_mesh_instance_3d=true
 
 [application]
 
-config/name="Telepath"
+config/name="Telepath Showcase"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -24,7 +24,7 @@ FrameProviderDispatcher="*uid://b7u7nc2sq60j2"
 
 [dotnet]
 
-project/assembly_name="Telepath"
+project/assembly_name="Telepath.Showcase"
 
 [editor_plugins]
 

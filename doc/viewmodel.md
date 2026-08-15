@@ -3,13 +3,12 @@
 UI 状态与命令容器，拥有属性与命令，不知道 Godot 节点
 
 ```
-addons/Telepath/Core/ViewModel/
+src/Telepath.Core/ViewModel/
   IViewModel.cs
   ViewModel.cs
 ```
 
-
-示例：[Showcase/CounterApp](../Showcase/CounterApp/CounterViewModel.cs)。
+示例：[samples/Showcase/CounterApp](../samples/Showcase/CounterApp/CounterViewModel.cs)。
 
 ## API
 

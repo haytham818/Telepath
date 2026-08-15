@@ -6,7 +6,7 @@ namespace Telepath.Godot;
 
 /// <summary>
 /// Non-generic Godot Control surface with a hand-written method table.
-/// This file is not a Godot script (the View/ directory is <c>.gdignore</c>d);
+/// Lives in <c>Telepath.Godot</c> (outside the Godot project tree);
 /// only concrete views like CounterView are attached to scenes.
 /// </summary>
 public abstract partial class View : Control
