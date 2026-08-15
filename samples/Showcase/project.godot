@@ -29,3 +29,7 @@ project/assembly_name="Telepath.Showcase"
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/Telepath/plugin.cfg")
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
