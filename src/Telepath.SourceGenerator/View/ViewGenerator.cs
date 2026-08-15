@@ -326,6 +326,18 @@ internal static class ViewGenerator
                     continue;
                 }
 
+                if (!TryResolveConverter(
+                        context,
+                        attribute,
+                        viewName,
+                        member,
+                        kind,
+                        out var converterTypeDisplay))
+                {
+                    valid = false;
+                    continue;
+                }
+
                 linkTos.Add(new LinkToBinding(
                     member.Name,
                     nodePath!,
@@ -333,7 +345,8 @@ internal static class ViewGenerator
                     namedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                     kind,
                     parameterMemberName,
-                    parameterAccess));
+                    parameterAccess,
+                    converterTypeDisplay));
             }
         }
 
@@ -544,6 +557,63 @@ internal static class ViewGenerator
         }
 
         parameterMemberName = matches[0].Name;
+        return true;
+    }
+
+    private static bool TryResolveConverter(
+        SourceProductionContext context,
+        AttributeData attribute,
+        string viewName,
+        ISymbol member,
+        LinkToKind kind,
+        out string? converterTypeDisplay)
+    {
+        converterTypeDisplay = null;
+        var location = member.Locations.FirstOrDefault() ?? Location.None;
+        if (!SymbolHelpers.TryGetNamedType(attribute, "Converter", out var converterType, out var specified))
+        {
+            if (!specified)
+            {
+                return true;
+            }
+
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidLinkToConverter,
+                location,
+                viewName,
+                member.Name,
+                "Converter must be a concrete type"));
+            return false;
+        }
+
+        if (kind == LinkToKind.Command)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidLinkToConverter,
+                location,
+                viewName,
+                member.Name,
+                "Converter is not valid for command bindings"));
+            return false;
+        }
+
+        if (converterType is not INamedTypeSymbol namedConverter
+            || namedConverter.IsAbstract
+            || namedConverter.IsUnboundGenericType
+            || namedConverter.TypeKind is TypeKind.Interface or TypeKind.Delegate or TypeKind.Enum
+            || !SymbolHelpers.ImplementsGenericInterface(namedConverter, ViewMetadata.ValueConverterName)
+            || !SymbolHelpers.HasPublicParameterlessConstructor(namedConverter))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidLinkToConverter,
+                location,
+                viewName,
+                member.Name,
+                "Converter must be a non-abstract, non-open-generic type that implements Telepath.Core.IValueConverter<,> and has a public parameterless constructor"));
+            return false;
+        }
+
+        converterTypeDisplay = namedConverter.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         return true;
     }
 

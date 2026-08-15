@@ -19,6 +19,7 @@ internal static class ViewMetadata
     public const string RangeName = "Godot.Range";
     public const string ViewModelName = "Telepath.Core.IViewModel";
     public const string BindingSetName = "Telepath.Core.BindingSet";
+    public const string ValueConverterName = "Telepath.Core.IValueConverter`2";
     public const string LinkKindName = "Telepath.Godot.LinkKind";
     public const string DiagnosticCategory = "Telepath.View";
 
@@ -90,6 +91,14 @@ internal static class ViewMetadata
         id: "TPV009",
         title: "Invalid LinkTo declaration",
         messageFormat: "[LinkTo] on '{0}.{1}' is invalid: {2}",
+        category: DiagnosticCategory,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InvalidLinkToConverter = new(
+        id: "TPV010",
+        title: "Invalid LinkTo converter",
+        messageFormat: "[LinkTo] on '{0}.{1}' has an invalid Converter: {2}",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);

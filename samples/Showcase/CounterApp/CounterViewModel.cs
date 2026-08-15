@@ -26,9 +26,6 @@ public sealed partial class CounterViewModel : ViewModel
         _count = Math.Clamp(initial, min, max);
     }
 
-    [Bindable(nameof(Count))]
-    private string GetCountText(int count) => $"Count: {count}";
-
     [Command(CanExecute = nameof(CanIncrement))]
     private void OnIncrement() => Count.Value++;
 

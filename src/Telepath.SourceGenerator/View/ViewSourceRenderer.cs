@@ -135,6 +135,13 @@ internal static class ViewSourceRenderer
                     .Append(linkTo.ParameterAccess);
             }
 
+            if (linkTo.ConverterTypeDisplay is not null)
+            {
+                source.Append(", new ")
+                    .Append(linkTo.ConverterTypeDisplay)
+                    .Append("()");
+            }
+
             source.AppendLine(");");
         }
 

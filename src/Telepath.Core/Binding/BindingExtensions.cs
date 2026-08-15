@@ -71,6 +71,100 @@ public static class BindingExtensions
         }));
     }
 
+    public static void OneWay<TSource, TTarget>(
+        this BindingSet bindings,
+        Observable<TSource> source,
+        Action<TTarget> set,
+        Func<TSource, TTarget> convert)
+    {
+        ArgumentNullException.ThrowIfNull(set);
+        ArgumentNullException.ThrowIfNull(convert);
+        bindings.OneWay(source, value => set(convert(value)));
+    }
+
+    public static void OneWay<TSource, TTarget>(
+        this BindingSet bindings,
+        Observable<TSource> source,
+        Action<TTarget> set,
+        IValueConverter<TSource, TTarget> converter)
+    {
+        ArgumentNullException.ThrowIfNull(converter);
+        bindings.OneWay(source, set, converter.Convert);
+    }
+
+    public static void TwoWay<TSource, TTarget>(
+        this BindingSet bindings,
+        BindableReactiveProperty<TSource> source,
+        Func<TTarget> get,
+        Action<TTarget> set,
+        Observable<TTarget> changed,
+        Func<TSource, TTarget> convert,
+        Func<TTarget, TSource> convertBack)
+    {
+        ArgumentNullException.ThrowIfNull(bindings);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(get);
+        ArgumentNullException.ThrowIfNull(set);
+        ArgumentNullException.ThrowIfNull(changed);
+        ArgumentNullException.ThrowIfNull(convert);
+        ArgumentNullException.ThrowIfNull(convertBack);
+
+        var gate = 0;
+        bindings.Add(source.Subscribe(value =>
+        {
+            if (Interlocked.Exchange(ref gate, 1) != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                var converted = convert(value);
+                if (!EqualityComparer<TTarget>.Default.Equals(get(), converted))
+                {
+                    set(converted);
+                }
+            }
+            finally
+            {
+                Volatile.Write(ref gate, 0);
+            }
+        }));
+
+        bindings.Add(changed.Subscribe(value =>
+        {
+            if (Interlocked.Exchange(ref gate, 1) != 0)
+            {
+                return;
+            }
+
+            try
+            {
+                var converted = convertBack(value);
+                if (!EqualityComparer<TSource>.Default.Equals(source.Value, converted))
+                {
+                    source.Value = converted;
+                }
+            }
+            finally
+            {
+                Volatile.Write(ref gate, 0);
+            }
+        }));
+    }
+
+    public static void TwoWay<TSource, TTarget>(
+        this BindingSet bindings,
+        BindableReactiveProperty<TSource> source,
+        Func<TTarget> get,
+        Action<TTarget> set,
+        Observable<TTarget> changed,
+        ITwoWayValueConverter<TSource, TTarget> converter)
+    {
+        ArgumentNullException.ThrowIfNull(converter);
+        bindings.TwoWay(source, get, set, changed, converter.Convert, converter.ConvertBack);
+    }
+
     public static void BindCommand(
         this BindingSet bindings,
         ReactiveCommand command,

@@ -580,6 +580,156 @@ public sealed class TelepathViewGeneratorTests
         Assert.Empty(result.GeneratedSources);
     }
 
+    [Fact]
+    public void GeneratesLinkToConverter()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class CountTextConverter : Telepath.Core.IValueConverter<int, string>
+            {
+                public string Convert(int value) => $"Count: {value}";
+            }
+
+            public sealed class CounterViewModel : Telepath.Core.IViewModel
+            {
+                public object Count { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<CounterViewModel>]
+            public partial class CounterView : Godot.Control
+            {
+                [LinkTo("%CountLabel", nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
+                private Godot.Label _countLabel = null!;
+
+                public override partial void _Notification(int what);
+
+                private CounterViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains(
+            "bindings.BindText(vm.@Count, @_countLabel, new global::Demo.CountTextConverter())",
+            generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void ReportsConverterOnCommand()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            public sealed class CountTextConverter : Telepath.Core.IValueConverter<int, string>
+            {
+                public string Convert(int value) => value.ToString();
+            }
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [LinkTo("%Increment", "Increment", Converter = typeof(CountTextConverter))]
+                private Godot.Button _increment = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Increment { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV010", diagnostic.Id);
+        Assert.Contains("command", diagnostic.GetMessage());
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsConverterThatDoesNotImplementInterface()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [LinkTo("%Title", "Title", Converter = typeof(string))]
+                private Godot.Label _title = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Title { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV010", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsConverterWithoutPublicParameterlessConstructor()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            public sealed class CountTextConverter : Telepath.Core.IValueConverter<int, string>
+            {
+                public CountTextConverter(int unused) { }
+                public string Convert(int value) => value.ToString();
+            }
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [LinkTo("%Title", "Title", Converter = typeof(CountTextConverter))]
+                private Godot.Label _title = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Title { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV010", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
     private static GeneratorRunResult RunGenerator(string viewSource)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
@@ -663,9 +813,20 @@ public sealed class TelepathViewGeneratorTests
                 bool IsDisposed { get; }
             }
 
+            public interface IValueConverter<in TSource, out TTarget>
+            {
+                TTarget Convert(TSource value);
+            }
+
+            public interface ITwoWayValueConverter<TSource, TTarget> : IValueConverter<TSource, TTarget>
+            {
+                TSource ConvertBack(TTarget value);
+            }
+
             public sealed class BindingSet
             {
                 public void BindText(object source, object target) { }
+                public void BindText(object source, object target, object converter) { }
                 public void BindCommand(object command, object button) { }
                 public void BindCommand<T>(object command, object button, System.Func<T> getParameter) { }
                 public void BindToggle(object source, object button) { }
@@ -778,6 +939,7 @@ public sealed class TelepathViewGeneratorTests
                 public string Member { get; }
                 public LinkKind Kind { get; set; }
                 public string Parameter { get; set; }
+                public System.Type Converter { get; set; }
             }
 
             public sealed class ViewLifecycle<TViewModel>

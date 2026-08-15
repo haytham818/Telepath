@@ -1,4 +1,5 @@
 using R3;
+using Telepath.Core;
 
 namespace Telepath.Core.Tests;
 
@@ -126,5 +127,89 @@ public sealed class BindingSetTests
 
         Assert.True(bindings.IsDisposed);
         Assert.Throws<ObjectDisposedException>(() => bindings.Add(Disposable.Empty));
+    }
+
+    [Fact]
+    public void OneWayConvertsWithFunc()
+    {
+        using var source = new BindableReactiveProperty<int>(2);
+        var target = "unset";
+        using var bindings = new BindingSet();
+
+        bindings.OneWay(source, value => target = value, static value => $"n:{value}");
+
+        Assert.Equal("n:2", target);
+        source.Value = 3;
+        Assert.Equal("n:3", target);
+    }
+
+    [Fact]
+    public void OneWayConvertsWithConverter()
+    {
+        using var source = new BindableReactiveProperty<int>(2);
+        var target = "unset";
+        using var bindings = new BindingSet();
+
+        bindings.OneWay(source, value => target = value, new PrefixConverter());
+
+        Assert.Equal("n:2", target);
+        source.Value = 4;
+        Assert.Equal("n:4", target);
+    }
+
+    [Fact]
+    public void TwoWayConvertsWithFunc()
+    {
+        using var source = new BindableReactiveProperty<int>(1);
+        var target = "unset";
+        var changed = new Subject<string>();
+        using var bindings = new BindingSet();
+
+        bindings.TwoWay(
+            source,
+            () => target,
+            value => target = value,
+            changed,
+            static value => $"n:{value}",
+            static value => int.Parse(value.AsSpan(2)));
+
+        Assert.Equal("n:1", target);
+        source.Value = 5;
+        Assert.Equal("n:5", target);
+
+        target = "n:8";
+        changed.OnNext("n:8");
+        Assert.Equal(8, source.Value);
+    }
+
+    [Fact]
+    public void TwoWayConvertsWithConverter()
+    {
+        using var source = new BindableReactiveProperty<int>(1);
+        var target = "unset";
+        var changed = new Subject<string>();
+        using var bindings = new BindingSet();
+
+        bindings.TwoWay(
+            source,
+            () => target,
+            value => target = value,
+            changed,
+            new PrefixConverter());
+
+        Assert.Equal("n:1", target);
+        source.Value = 6;
+        Assert.Equal("n:6", target);
+
+        target = "n:9";
+        changed.OnNext("n:9");
+        Assert.Equal(9, source.Value);
+    }
+
+    private sealed class PrefixConverter : ITwoWayValueConverter<int, string>
+    {
+        public string Convert(int value) => $"n:{value}";
+
+        public int ConvertBack(string value) => int.Parse(value.AsSpan(2));
     }
 }

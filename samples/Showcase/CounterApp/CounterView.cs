@@ -6,7 +6,7 @@ namespace Telepath.Showcase.CounterApp;
 [TelepathView<CounterViewModel>]
 public partial class CounterView : Control
 {
-    [LinkTo("%CountLabel", nameof(CounterViewModel.CountText))]
+    [LinkTo("%CountLabel", nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
     private Label _countLabel = null!;
 
     [LinkTo("%DecrementButton", nameof(CounterViewModel.DecrementCommand))]

@@ -122,6 +122,50 @@ internal static class SymbolHelpers
         return null;
     }
 
+    public static bool TryGetNamedType(
+        AttributeData attribute,
+        string name,
+        out ITypeSymbol? type,
+        out bool specified)
+    {
+        foreach (var argument in attribute.NamedArguments)
+        {
+            if (argument.Key != name)
+            {
+                continue;
+            }
+
+            specified = true;
+            type = argument.Value.Kind == TypedConstantKind.Type
+                ? argument.Value.Value as ITypeSymbol
+                : null;
+            return type is not null;
+        }
+
+        specified = false;
+        type = null;
+        return false;
+    }
+
+    public static bool ImplementsGenericInterface(ITypeSymbol type, string metadataName)
+    {
+        return type.AllInterfaces.Any(interfaceType =>
+            HasMetadataName(interfaceType.OriginalDefinition, metadataName));
+    }
+
+    public static bool HasPublicParameterlessConstructor(INamedTypeSymbol type)
+    {
+        if (type.TypeKind == TypeKind.Struct)
+        {
+            return true;
+        }
+
+        return type.InstanceConstructors.Any(static constructor =>
+            constructor.DeclaredAccessibility == Accessibility.Public
+            && constructor.Parameters.Length == 0
+            && !constructor.IsStatic);
+    }
+
     public static ImmutableArray<string> GetConstructorStringArray(AttributeData attribute)
     {
         if (attribute.ConstructorArguments.Length == 0)

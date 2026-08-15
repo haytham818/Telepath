@@ -26,7 +26,7 @@ src/Telepath.SourceGenerator/ViewModel/
 | 声明 | 生成 |
 |------|------|
 | `[Bindable] private int _count` | `BindableReactiveProperty<int> Count` |
-| `[Bindable(nameof(Count))] GetCountText(int count)` | `BindableReactiveProperty<string> CountText`（去掉 `Get` / `Compute` / `Format`） |
+| `[Bindable(nameof(Count), nameof(Max))] GetIsAtMax(int count, int max)` | `BindableReactiveProperty<bool> IsAtMax`（去掉 `Get` / `Compute` / `Format`） |
 | `[Command] OnIncrement()` | `ReactiveCommand IncrementCommand`（去掉 `On`，再加 `Command` 后缀） |
 | `[Command] OnSearch(string query)` | `ReactiveCommand<string> SearchCommand` |
 | `[Command(CanExecute = nameof(CanIncrement))]` | `CanExecute` 必须是 `Observable<bool>` 属性或无参方法 |
@@ -39,13 +39,16 @@ public sealed partial class CounterViewModel : ViewModel
     [Bindable]
     private int _count;
 
+    [Bindable]
+    private int _max = 10;
+
     public CounterViewModel(int initial = 0)
     {
         _count = initial;
     }
 
-    [Bindable(nameof(Count))]
-    private string GetCountText(int count) => $"Count: {count}";
+    [Bindable(nameof(Count), nameof(Max))]
+    private bool GetIsAtMax(int count, int max) => count >= max;
 
     [Command(CanExecute = nameof(CanIncrement))]
     private void OnIncrement() => Count.Value++;
@@ -53,6 +56,8 @@ public sealed partial class CounterViewModel : ViewModel
     private Observable<bool> CanIncrement() => Count.Select(c => c < 10);
 }
 ```
+
+UI 格式化（例如把 `Count` 显示成 `"Count: 3"`）不要做成派生 bindable，用 View 侧 `[LinkTo(..., Converter = typeof(...))]`，见 [view.md](view.md)。
 
 方法零个参数生成 `ReactiveCommand`，一个参数生成 `ReactiveCommand<T>`。两个及以上参数会报错。View 侧用 `[LinkTo(..., Parameter = nameof(_query))]` 在按钮按下时取值，见 [view.md](view.md)。
 

@@ -11,6 +11,7 @@ TPV006 | Telepath.View | Error | Generated member conflict validation
 TPV007 | Telepath.View | Error | ViewModel contract validation
 TPV008 | Telepath.View | Error | LinkTo control type validation
 TPV009 | Telepath.View | Error | LinkTo declaration validation
+TPV010 | Telepath.View | Error | LinkTo converter validation
 TPM001 | Telepath.ViewModel | Error | ViewModel target validation
 TPM002 | Telepath.ViewModel | Error | Bindable target validation
 TPM003 | Telepath.ViewModel | Error | Bindable From member validation

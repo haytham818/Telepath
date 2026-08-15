@@ -34,4 +34,11 @@ public sealed class LinkToAttribute : Attribute
     /// when the linked button is pressed.
     /// </summary>
     public string? Parameter { get; set; }
+
+    /// <summary>
+    /// A <c>Telepath.Core.IValueConverter&lt;TSource, TTarget&gt;</c> (or two-way subtype)
+    /// used to convert the ViewModel value. Must be a concrete type with a public
+    /// parameterless constructor. Invalid on command bindings.
+    /// </summary>
+    public Type? Converter { get; set; }
 }

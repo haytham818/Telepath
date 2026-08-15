@@ -21,7 +21,8 @@ internal sealed class LinkToBinding
         string nodeTypeDisplay,
         LinkToKind kind,
         string? parameterMemberName = null,
-        string? parameterAccess = null)
+        string? parameterAccess = null,
+        string? converterTypeDisplay = null)
     {
         TargetMemberName = targetMemberName;
         NodePath = nodePath;
@@ -30,6 +31,7 @@ internal sealed class LinkToBinding
         Kind = kind;
         ParameterMemberName = parameterMemberName;
         ParameterAccess = parameterAccess;
+        ConverterTypeDisplay = converterTypeDisplay;
     }
 
     public string TargetMemberName { get; }
@@ -45,6 +47,8 @@ internal sealed class LinkToBinding
     public string? ParameterMemberName { get; }
 
     public string? ParameterAccess { get; }
+
+    public string? ConverterTypeDisplay { get; }
 
     public string BindMethodName => Kind switch
     {
