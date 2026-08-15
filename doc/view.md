@@ -7,7 +7,7 @@ ViewModel 寿命，不在库程序集中声明 Godot View 基类。
 src/Telepath.Godot/View/ViewLifecycle.cs              ViewModel / 绑定寿命
 src/Telepath.Godot/View/TelepathViewAttribute.cs      View 标记
 src/Telepath.Godot/Binding/BindingSet.cs              BindLabel / BindCommand / Add
-src/Telepath.SourceGenerator/TelepathIncrementalGenerator.cs
+src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 
 示例：[samples/Showcase/CounterApp/CounterView.cs](../samples/Showcase/CounterApp/CounterView.cs)。
