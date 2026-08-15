@@ -1,0 +1,50 @@
+[gd_scene format=3 uid="uid://82v1sb24scbx"]
+
+[ext_resource type="Script" uid="uid://d3c10f4gf0eyb" path="res://Showcase/CounterApp/CounterView.cs" id="1_counter"]
+
+[node name="CounterView" type="Control" unique_id=1645033423]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_counter")
+
+[node name="Center" type="CenterContainer" parent="." unique_id=869398894]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="Center" unique_id=849611446]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="CountLabel" type="Label" parent="Center/VBox" unique_id=1558282844]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Count: 0"
+horizontal_alignment = 1
+
+[node name="Buttons" type="HBoxContainer" parent="Center/VBox" unique_id=2125558048]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 1
+
+[node name="DecrementButton" type="Button" parent="Center/VBox/Buttons" unique_id=1287279292]
+unique_name_in_owner = true
+layout_mode = 2
+text = "-"
+
+[node name="ResetButton" type="Button" parent="Center/VBox/Buttons" unique_id=307723310]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Reset"
+
+[node name="IncrementButton" type="Button" parent="Center/VBox/Buttons" unique_id=1987986259]
+unique_name_in_owner = true
+layout_mode = 2
+text = "+"
