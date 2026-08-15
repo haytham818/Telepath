@@ -44,4 +44,4 @@ button.OnPressedAsObservable().Subscribe(_ => { }).AddTo(this);
 // viewModel.AddTo(this);
 ```
 
-详见 [viewmodel.md](viewmodel.md)。
+详见 [viewmodel.md](viewmodel.md)、[view.md](view.md)。
