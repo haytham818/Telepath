@@ -30,7 +30,7 @@ Godot 只在**宿主主程序集**里解析 C# 脚本。`FrameProviderDispatcher
 | `GodotSignalMapper` | `SignalAsObservable`、`CancelOnSignal`（Node 重载在 `TreeExited` 时完成） |
 | `GodotObservableExtensions` | `Delta`（依赖 `GodotFrameProvider`） |
 
-这些是 R3 胶水，供 View 层使用；本仓库尚未包成 Telepath 声明式绑定。
+这些是 R3 胶水。声明式绑定（`BindText` / `BindCommand` / `BindToggle` / `BindValue` / `BindSelected`）复用它们，见 [view.md](view.md)。
 
 ## `AddTo(Node)` 与 ViewModel 寿命
 

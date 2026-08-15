@@ -4,10 +4,12 @@ View 是宿主程序集中的具体 Godot `Control`。Telepath 用组合对象�
 ViewModel 寿命，不在库程序集中声明 Godot View 基类。
 
 ```
-src/Telepath.Godot/View/ViewLifecycle.cs              ViewModel / 绑定寿命
-src/Telepath.Godot/View/TelepathViewAttribute.cs      View 标记
-src/Telepath.Godot/View/LinkToAttribute.cs            声明式绑定
-src/Telepath.Godot/Binding/BindingSet.cs              BindLabel / BindCommand / Add
+src/Telepath.Core/Binding/                       BindingSet 袋 + OneWay / TwoWay / BindCommand
+src/Telepath.Godot/Binding/GodotBindings.cs      控件适配
+src/Telepath.Godot/View/ViewLifecycle.cs         ViewModel / 绑定寿命
+src/Telepath.Godot/View/TelepathViewAttribute.cs View 标记
+src/Telepath.Godot/View/LinkToAttribute.cs       声明式绑定
+src/Telepath.Godot/View/LinkKind.cs              覆盖推断
 src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 
@@ -42,12 +44,37 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 ## API
 
 - `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`
-- `[LinkTo(nodePath, member)]`：生成 `GetNode` 与 `BindLabel` / `BindCommand`
+- `[LinkTo(nodePath, member)]`：生成 `GetNode` 与对应 `BindXxx`；可用 `Kind` 覆盖推断
 - `OnReady()`：可选；在生成的节点解析之后调用
-- `OnBind(vm, bindings)`：可选；在声明式绑定之后调用，用于额外接线
+- `OnBind(vm, bindings)`：可选；在声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
 - `_Notification`：只声明 partial 方法，不要自行实现或覆盖其他生命周期方法
 
-绑定种类按控件类型推断：`Label` → `BindLabel`，`BaseButton` → `BindCommand`。
+`BindingSet` 只收集一次进树周期的订阅。接线走三条原语：`OneWay`、`TwoWay`、`BindCommand`。Godot 控件方法是薄适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 双向。
+
+## `[LinkTo]` 推断
+
+按最具体控件类型选择方法。`CheckBox` / `OptionButton` 优先于 `BaseButton`。
+
+| 控件 | 生成 | 默认方向 |
+|------|------|----------|
+| `Label` / `RichTextLabel` | `BindText` | 一向 |
+| `LineEdit` / `TextEdit` | `BindText` | `BindableReactiveProperty<string>` 双向，否则一向 |
+| `CheckBox` / `CheckButton` | `BindToggle` | 双向 `bool` |
+| `OptionButton` | `BindSelected` | 双向 `long` |
+| 其他 `BaseButton` | `BindCommand` | 按下 `Execute`，`CanExecute` → `Disabled` |
+| `Range`（Slider / SpinBox / ProgressBar / ScrollBar） | `BindValue` | `BindableReactiveProperty<double>` 双向，否则一向 |
+| 普通 `Control` | 报 TPV008 | 必须设 `Kind` |
+
+`Visible` / `Disabled` 不靠类型猜：
+
+```csharp
+[LinkTo("%Panel", nameof(Vm.ShowAdvanced), Kind = LinkKind.Visible)]
+private Control _panel = null!;
+```
+
+- `BindVisible` → `CanvasItem.Visible`
+- `BindDisabled` → `BaseButton.Disabled`（Godot 的 `Control` 没有 Disabled）
+- `Kind` 也可覆盖推断，例如 CheckBox 当命令：`Kind = LinkKind.Command`
 
 ```csharp
 [TelepathView<CounterViewModel>]
@@ -65,6 +92,4 @@ public partial class CounterView : Control
 }
 ```
 
-`BindLabel` → `SubscribeToLabel`。`BindCommand`：按下 `Execute(Unit)`，`CanExecute` 同步 `Disabled`。
-
-尚未纳入：双向 Text、`ReactiveCommand<T>`、转换器、列表。ViewModel 契约见 [viewmodel.md](viewmodel.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。
+尚未纳入：`ReactiveCommand<T>`、转换器、列表。ViewModel 契约见 [viewmodel.md](viewmodel.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。

@@ -73,6 +73,34 @@ internal static class SymbolHelpers
         return false;
     }
 
+    public static bool TryGetNamedEnum(
+        AttributeData attribute,
+        string name,
+        string metadataName,
+        out int value)
+    {
+        foreach (var argument in attribute.NamedArguments)
+        {
+            if (argument.Key != name)
+            {
+                continue;
+            }
+
+            if (argument.Value.Type is INamedTypeSymbol enumType
+                && HasMetadataName(enumType, metadataName)
+                && argument.Value.Value is not null)
+            {
+                value = Convert.ToInt32(argument.Value.Value);
+                return true;
+            }
+
+            break;
+        }
+
+        value = 0;
+        return false;
+    }
+
     public static string? GetNamedString(AttributeData attribute, string name)
     {
         foreach (var argument in attribute.NamedArguments)

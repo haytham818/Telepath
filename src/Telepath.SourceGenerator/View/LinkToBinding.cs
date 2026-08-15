@@ -2,8 +2,14 @@ namespace Telepath.SourceGenerator;
 
 internal enum LinkToKind
 {
-    Label,
+    Auto = 0,
+    Text,
     Command,
+    Toggle,
+    Value,
+    Selected,
+    Visible,
+    Disabled,
 }
 
 internal sealed class LinkToBinding
@@ -31,4 +37,16 @@ internal sealed class LinkToBinding
     public string NodeTypeDisplay { get; }
 
     public LinkToKind Kind { get; }
+
+    public string BindMethodName => Kind switch
+    {
+        LinkToKind.Text => "BindText",
+        LinkToKind.Command => "BindCommand",
+        LinkToKind.Toggle => "BindToggle",
+        LinkToKind.Value => "BindValue",
+        LinkToKind.Selected => "BindSelected",
+        LinkToKind.Visible => "BindVisible",
+        LinkToKind.Disabled => "BindDisabled",
+        _ => throw new InvalidOperationException($"Unsupported LinkTo kind '{Kind}'."),
+    };
 }

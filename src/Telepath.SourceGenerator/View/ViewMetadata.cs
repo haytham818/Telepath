@@ -7,10 +7,19 @@ internal static class ViewMetadata
     public const string ViewAttributeName = "Telepath.Godot.TelepathViewAttribute`1";
     public const string LinkToAttributeName = "Telepath.Godot.LinkToAttribute";
     public const string ControlName = "Godot.Control";
+    public const string CanvasItemName = "Godot.CanvasItem";
     public const string LabelName = "Godot.Label";
+    public const string RichTextLabelName = "Godot.RichTextLabel";
+    public const string LineEditName = "Godot.LineEdit";
+    public const string TextEditName = "Godot.TextEdit";
     public const string BaseButtonName = "Godot.BaseButton";
+    public const string CheckBoxName = "Godot.CheckBox";
+    public const string CheckButtonName = "Godot.CheckButton";
+    public const string OptionButtonName = "Godot.OptionButton";
+    public const string RangeName = "Godot.Range";
     public const string ViewModelName = "Telepath.Core.IViewModel";
-    public const string BindingSetName = "Telepath.Godot.BindingSet";
+    public const string BindingSetName = "Telepath.Core.BindingSet";
+    public const string LinkKindName = "Telepath.Godot.LinkKind";
     public const string DiagnosticCategory = "Telepath.View";
 
     public static readonly DiagnosticDescriptor InvalidTarget = new(
@@ -40,7 +49,7 @@ internal static class ViewMetadata
     public static readonly DiagnosticDescriptor InvalidOnBind = new(
         id: "TPV004",
         title: "Invalid OnBind callback",
-        messageFormat: "Telepath view '{0}' must declare 'void OnBind({1} vm, Telepath.Godot.BindingSet bindings)' or at least one [LinkTo] member",
+        messageFormat: "Telepath view '{0}' must declare 'void OnBind({1} vm, Telepath.Core.BindingSet bindings)' or at least one [LinkTo] member",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -72,7 +81,7 @@ internal static class ViewMetadata
     public static readonly DiagnosticDescriptor UnsupportedLinkToControl = new(
         id: "TPV008",
         title: "Unsupported LinkTo control type",
-        messageFormat: "[LinkTo] on '{0}.{1}' requires Godot.Label or Godot.BaseButton, but the member type is '{2}'",
+        messageFormat: "[LinkTo] on '{0}.{1}' cannot infer a binding for '{2}'; use a supported control or set Kind",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);

@@ -21,4 +21,9 @@ public sealed class LinkToAttribute : Attribute
     /// ViewModel property or command name to bind.
     /// </summary>
     public string Member { get; }
+
+    /// <summary>
+    /// Overrides control-type inference. Leave <see cref="LinkKind.Auto"/> to infer.
+    /// </summary>
+    public LinkKind Kind { get; set; } = LinkKind.Auto;
 }

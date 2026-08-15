@@ -277,23 +277,14 @@ internal static class ViewGenerator
                 continue;
             }
 
-            LinkToKind kind;
-            if (SymbolHelpers.IsOrInheritsFrom(namedType, ViewMetadata.LabelName))
-            {
-                kind = LinkToKind.Label;
-            }
-            else if (SymbolHelpers.IsOrInheritsFrom(namedType, ViewMetadata.BaseButtonName))
-            {
-                kind = LinkToKind.Command;
-            }
-            else
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    ViewMetadata.UnsupportedLinkToControl,
-                    member.Locations.FirstOrDefault() ?? Location.None,
+            if (!TryResolveLinkToKind(
+                    context,
+                    attribute,
+                    namedType,
                     viewName,
-                    member.Name,
-                    namedType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
+                    member,
+                    out var kind))
+            {
                 valid = false;
                 continue;
             }
@@ -307,5 +298,132 @@ internal static class ViewGenerator
         }
 
         return valid;
+    }
+
+    private static bool TryResolveLinkToKind(
+        SourceProductionContext context,
+        AttributeData attribute,
+        INamedTypeSymbol controlType,
+        string viewName,
+        ISymbol member,
+        out LinkToKind kind)
+    {
+        kind = default;
+        var location = member.Locations.FirstOrDefault() ?? Location.None;
+        var hasExplicitKind = SymbolHelpers.TryGetNamedEnum(
+            attribute,
+            "Kind",
+            ViewMetadata.LinkKindName,
+            out var rawKind);
+
+        if (hasExplicitKind)
+        {
+            if (!Enum.IsDefined(typeof(LinkToKind), rawKind))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ViewMetadata.InvalidLinkTo,
+                    location,
+                    viewName,
+                    member.Name,
+                    "Kind must be a Telepath.Godot.LinkKind value"));
+                return false;
+            }
+
+            kind = (LinkToKind)rawKind;
+            if (kind == LinkToKind.Auto)
+            {
+                hasExplicitKind = false;
+            }
+        }
+
+        if (!hasExplicitKind)
+        {
+            if (TryInferKind(controlType, out kind))
+            {
+                return true;
+            }
+
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.UnsupportedLinkToControl,
+                location,
+                viewName,
+                member.Name,
+                controlType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
+            return false;
+        }
+
+        if (IsKindCompatible(kind, controlType))
+        {
+            return true;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            ViewMetadata.InvalidLinkTo,
+            location,
+            viewName,
+            member.Name,
+            $"Kind.{kind} is not valid for '{controlType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)}'"));
+        return false;
+    }
+
+    private static bool TryInferKind(INamedTypeSymbol controlType, out LinkToKind kind)
+    {
+        if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CheckBoxName)
+            || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CheckButtonName))
+        {
+            kind = LinkToKind.Toggle;
+            return true;
+        }
+
+        if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName))
+        {
+            kind = LinkToKind.Selected;
+            return true;
+        }
+
+        if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.BaseButtonName))
+        {
+            kind = LinkToKind.Command;
+            return true;
+        }
+
+        if (IsTextControl(controlType))
+        {
+            kind = LinkToKind.Text;
+            return true;
+        }
+
+        if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RangeName))
+        {
+            kind = LinkToKind.Value;
+            return true;
+        }
+
+        kind = default;
+        return false;
+    }
+
+    private static bool IsKindCompatible(LinkToKind kind, INamedTypeSymbol controlType)
+    {
+        return kind switch
+        {
+            LinkToKind.Text => IsTextControl(controlType),
+            LinkToKind.Command or LinkToKind.Toggle or LinkToKind.Disabled =>
+                SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.BaseButtonName),
+            LinkToKind.Value => SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RangeName),
+            LinkToKind.Selected => SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName),
+            LinkToKind.Visible =>
+                SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CanvasItemName)
+                || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ControlName),
+            _ => false,
+        };
+    }
+
+    private static bool IsTextControl(INamedTypeSymbol controlType)
+    {
+        return SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.LabelName)
+            || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RichTextLabelName)
+            || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.LineEditName)
+            || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.TextEditName);
     }
 }
