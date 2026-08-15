@@ -18,6 +18,10 @@ config/name="Telepath"
 config/features=PackedStringArray("4.7", "C#", "Forward Plus")
 config/icon="res://icon.svg"
 
+[autoload]
+
+FrameProviderDispatcher="*uid://b7u7nc2sq60j2"
+
 [dotnet]
 
 project/assembly_name="Telepath"

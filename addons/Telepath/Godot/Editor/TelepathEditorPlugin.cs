@@ -6,14 +6,18 @@ namespace Telepath.Godot;
 [Tool]
 public partial class TelepathEditorPlugin : EditorPlugin
 {
+    private const string FrameProviderDispatcherName = "FrameProviderDispatcher";
+    private const string FrameProviderDispatcherPath =
+        "res://addons/Telepath/Godot/R3/FrameProviderDispatcher.cs";
+
     public override void _EnterTree()
     {
-        // Initialization of the plugin goes here.
+        AddAutoloadSingleton(FrameProviderDispatcherName, FrameProviderDispatcherPath);
     }
 
     public override void _ExitTree()
     {
-        // Clean-up of the plugin goes here.
+        RemoveAutoloadSingleton(FrameProviderDispatcherName);
     }
 }
 #endif

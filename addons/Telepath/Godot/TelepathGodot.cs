@@ -2,7 +2,8 @@ namespace Telepath.Godot;
 
 /// <summary>
 /// Marker for the Godot integration assembly.
-/// R3 Godot FrameProvider comes from the R3.Godot addon (not NuGet).
+/// R3 Godot runtime glue (Frame/Time providers, Node/UI/Signal extensions) lives under
+/// <c>addons/Telepath/Godot/R3/</c> in <c>namespace R3</c>; see doc/r3-godot.md.
 /// </summary>
 public static class TelepathGodot
 {

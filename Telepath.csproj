@@ -11,6 +11,9 @@
     <Compile Remove="addons/Telepath/Core/**" />
     <Compile Remove="addons/Telepath/Godot/**" />
     <Compile Remove="addons/Telepath/SourceGenerator/**" />
+    <!-- Godot looks up C# scripts only in the main assembly (not referenced DLLs). -->
+    <Compile Include="addons/Telepath/Godot/R3/FrameProviderDispatcher.cs" />
+    <Compile Include="addons/Telepath/Godot/Editor/TelepathEditorPlugin.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="addons/Telepath/Godot/Telepath.Godot.csproj" />

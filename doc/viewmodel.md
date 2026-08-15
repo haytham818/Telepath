@@ -25,3 +25,5 @@ addons/Telepath/Core/ViewModel/
 | `_Ready` / `_EnterTree` | 仅首次创建时 new；不要每次进树都 new | 接绑定 |
 | `_ExitTree` | **不** `Dispose`（节点可能再进树） | 断绑定 |
 | 真正释放（`NotificationPredelete` / `Free`） | `viewModel.Dispose()` | 在 `_ExitTree` 时已断 |
+
+R3 的 `AddTo(Node)` 在出树时 Dispose，只适合绑定订阅，不要用来挂 ViewModel。时钟与胶水见 [r3-godot.md](r3-godot.md)。

@@ -19,7 +19,7 @@ Telepath (宿主) → Telepath.Godot → Telepath.Core → R3
 | 项目 | 命名空间 | 路径 | 职责
 |------|------|------|---------
 | `Telepath.Core` | `Telepath.Core` | `addons/Telepath/Core/` | 平台无关：ViewModel、命令、绑定抽象、转换器接口 
-| `Telepath.Godot` | `Telepath.Godot` | `addons/Telepath/Godot/` | Godot 交互：节点适配、生命周期、编辑器扩展
+| `Telepath.Godot` | `Telepath.Godot` | `addons/Telepath/Godot/` | Godot 交互：节点适配、生命周期、编辑器扩展、R3 胶水 |
 | `Telepath.SourceGenerator` | `Telepath.SourceGenerator` | `addons/Telepath/SourceGenerator/` | Roslyn 代码生成
 | `Telepath` | `Telepath` | `Telepath` |  演示
 

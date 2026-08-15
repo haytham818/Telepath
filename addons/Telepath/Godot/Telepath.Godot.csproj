@@ -9,6 +9,11 @@
     <DefineConstants>$(DefineConstants);GODOT;TOOLS</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
+    <!-- Godot only resolves C# scripts from the host assembly; keep Node scripts there. -->
+    <Compile Remove="R3/FrameProviderDispatcher.cs" />
+    <Compile Remove="Editor/TelepathEditorPlugin.cs" />
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="GodotSharp" Version="4.7.1" />
     <PackageReference Include="GodotSharpEditor" Version="4.7.1" />
     <ProjectReference Include="..\Core\Telepath.Core.csproj" />
