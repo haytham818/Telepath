@@ -7,10 +7,6 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <!-- Match Godot.NET.Sdk defines needed by EditorPlugin and Godot APIs. -->
     <DefineConstants>$(DefineConstants);GODOT;TOOLS</DefineConstants>
-    <GodotProjectDir>$(TelepathRepoRoot)</GodotProjectDir>
-    <IsGodotToolsProject>true</IsGodotToolsProject>
-    <!-- Library types are not host scripts; skip ScriptPath and game Main. Keep ScriptMethods so View._Ready is registered. -->
-    <GodotDisabledSourceGenerators>ScriptPathAttribute;GodotPluginsInitializer</GodotDisabledSourceGenerators>
   </PropertyGroup>
   <ItemGroup>
     <!-- Godot only resolves C# scripts from the host assembly; keep Node scripts there. -->
@@ -20,7 +16,6 @@
   <ItemGroup>
     <PackageReference Include="GodotSharp" Version="4.7.1" />
     <PackageReference Include="GodotSharpEditor" Version="4.7.1" />
-    <PackageReference Include="Godot.SourceGenerators" Version="4.7.1" PrivateAssets="all" />
     <ProjectReference Include="..\Core\Telepath.Core.csproj" />
   </ItemGroup>
 </Project>

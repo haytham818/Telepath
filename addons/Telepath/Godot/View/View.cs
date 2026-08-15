@@ -4,8 +4,8 @@ using Telepath.Core;
 namespace Telepath.Godot;
 
 /// <summary>
-/// Non-generic Godot Control surface so source generators register
-/// <c>_Ready</c> / <c>_EnterTree</c> / <c>_ExitTree</c> / <c>_Notification</c>.
+/// Non-generic Godot Control surface. Method table is in <c>View.GodotMethods.cs</c>
+/// (library projects cannot use Godot.SourceGenerators: ScriptPath needs GodotProjectDir).
 /// A generic script base is invisible to Godot's method list.
 /// </summary>
 public abstract partial class View : Control
