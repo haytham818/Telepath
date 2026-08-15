@@ -99,6 +99,110 @@ public sealed class TelepathViewGeneratorTests
         Assert.Empty(result.GeneratedSources);
     }
 
+    [Fact]
+    public void ReportsMissingOnBindWhenNoLinkTo()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV004", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void GeneratesLinkToReadyAndBindWithoutOnBind()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class CounterViewModel : Telepath.Core.IViewModel
+            {
+                public object CountText { get; } = new();
+                public object Increment { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<CounterViewModel>]
+            public partial class CounterView : Godot.Control
+            {
+                [LinkTo("%CountLabel", nameof(CounterViewModel.CountText))]
+                private Godot.Label _countLabel = null!;
+
+                [LinkTo("%IncrementButton", nameof(CounterViewModel.Increment))]
+                private Godot.Button _incrementButton = null!;
+
+                public override partial void _Notification(int what);
+
+                private CounterViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("__TelepathOnReady", generated);
+        Assert.Contains("__TelepathOnBind", generated);
+        Assert.Contains("GetNode<global::Godot.Label>(\"%CountLabel\")", generated);
+        Assert.Contains("GetNode<global::Godot.Button>(\"%IncrementButton\")", generated);
+        Assert.Contains("bindings.BindLabel(vm.@CountText, @_countLabel)", generated);
+        Assert.Contains("bindings.BindCommand(vm.@Increment, @_incrementButton)", generated);
+        Assert.DoesNotContain("OnBind(vm, bindings)", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void ReportsUnsupportedLinkToControl()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [LinkTo("%Root", "Value")]
+                private Godot.Control _root = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV008", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
     private static GeneratorRunResult RunGenerator(string viewSource)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
@@ -177,6 +281,19 @@ public sealed class TelepathViewGeneratorTests
             public class Control
             {
                 public virtual void _Notification(int what) { }
+                public T GetNode<T>(string path) => default!;
+            }
+
+            public class Label : Control
+            {
+            }
+
+            public class BaseButton : Control
+            {
+            }
+
+            public class Button : BaseButton
+            {
             }
         }
 
@@ -188,8 +305,23 @@ public sealed class TelepathViewGeneratorTests
             {
             }
 
+            [System.AttributeUsage(System.AttributeTargets.Field | System.AttributeTargets.Property)]
+            public sealed class LinkToAttribute : System.Attribute
+            {
+                public LinkToAttribute(string nodePath, string member)
+                {
+                    NodePath = nodePath;
+                    Member = member;
+                }
+
+                public string NodePath { get; }
+                public string Member { get; }
+            }
+
             public sealed class BindingSet
             {
+                public void BindLabel(object source, global::Godot.Label label) { }
+                public void BindCommand(object command, global::Godot.BaseButton button) { }
             }
 
             public sealed class ViewLifecycle<TViewModel>

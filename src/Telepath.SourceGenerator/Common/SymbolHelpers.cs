@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.CodeAnalysis;
 
 namespace Telepath.SourceGenerator;
@@ -51,5 +52,66 @@ internal static class SymbolHelpers
         }
 
         return builder.ToString();
+    }
+
+    public static bool TryGetAttribute(
+        ISymbol symbol,
+        string metadataName,
+        out AttributeData attribute)
+    {
+        foreach (var candidate in symbol.GetAttributes())
+        {
+            if (candidate.AttributeClass is not null
+                && HasMetadataName(candidate.AttributeClass, metadataName))
+            {
+                attribute = candidate;
+                return true;
+            }
+        }
+
+        attribute = null!;
+        return false;
+    }
+
+    public static string? GetNamedString(AttributeData attribute, string name)
+    {
+        foreach (var argument in attribute.NamedArguments)
+        {
+            if (argument.Key == name && argument.Value.Value is string value)
+            {
+                return value;
+            }
+        }
+
+        return null;
+    }
+
+    public static ImmutableArray<string> GetConstructorStringArray(AttributeData attribute)
+    {
+        if (attribute.ConstructorArguments.Length == 0)
+        {
+            return ImmutableArray<string>.Empty;
+        }
+
+        var argument = attribute.ConstructorArguments[0];
+        if (argument.Kind == TypedConstantKind.Array)
+        {
+            return argument.Values
+                .Select(static value => value.Value as string)
+                .Where(static value => value is not null)
+                .ToImmutableArray()!;
+        }
+
+        return argument.Value is string single
+            ? ImmutableArray.Create(single)
+            : ImmutableArray<string>.Empty;
+    }
+
+    public static bool IsObservableOfBool(ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol named
+            && named.TypeArguments.Length == 1
+            && named.TypeArguments[0].SpecialType == SpecialType.System_Boolean
+            && HasMetadataName(named.OriginalDefinition, "R3.Observable`1");
     }
 }

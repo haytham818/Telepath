@@ -89,8 +89,24 @@ internal static class ViewGenerator
             return;
         }
 
+        if (!TryCollectLinkTos(context, viewType, viewName, out var linkTos))
+        {
+            return;
+        }
+
         var onBindMethods = SymbolHelpers.GetDeclaredInstanceMethods(viewType, "OnBind").ToArray();
-        if (onBindMethods.Length != 1 || !IsValidOnBind(onBindMethods[0], viewModelType))
+        var hasOnBind = onBindMethods.Length == 1 && IsValidOnBind(onBindMethods[0], viewModelType);
+        if (onBindMethods.Length > 0 && !hasOnBind)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidOnBind,
+                candidate.Location,
+                viewName,
+                viewModelType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
+            return;
+        }
+
+        if (!hasOnBind && linkTos.Count == 0)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ViewMetadata.InvalidOnBind,
@@ -113,7 +129,15 @@ internal static class ViewGenerator
             return;
         }
 
-        foreach (var conflictingName in new[] { "ViewModel", "_Ready", "_EnterTree", "_ExitTree" })
+        foreach (var conflictingName in new[]
+                 {
+                     "ViewModel",
+                     "_Ready",
+                     "_EnterTree",
+                     "_ExitTree",
+                     "__TelepathOnReady",
+                     "__TelepathOnBind",
+                 })
         {
             if (viewType.GetMembers(conflictingName).Any())
             {
@@ -129,7 +153,9 @@ internal static class ViewGenerator
         var source = ViewSourceRenderer.Render(
             viewType,
             viewModelDisplay,
-            hasOnReady: onReadyMethods.Length == 1);
+            hasOnReady: onReadyMethods.Length == 1,
+            hasOnBind: hasOnBind,
+            linkTos);
 
         context.AddSource(
             $"{SymbolHelpers.SanitizeHintName(viewType.ToDisplayString())}.TelepathView.g.cs",
@@ -170,5 +196,116 @@ internal static class ViewGenerator
             && method.Parameters.Length == 2
             && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, viewModelType)
             && SymbolHelpers.HasMetadataName(method.Parameters[1].Type, ViewMetadata.BindingSetName);
+    }
+
+    private static bool TryCollectLinkTos(
+        SourceProductionContext context,
+        INamedTypeSymbol viewType,
+        string viewName,
+        out List<LinkToBinding> linkTos)
+    {
+        linkTos = [];
+        var valid = true;
+
+        foreach (var member in viewType.GetMembers())
+        {
+            if (!SymbolHelpers.TryGetAttribute(member, ViewMetadata.LinkToAttributeName, out var attribute))
+            {
+                continue;
+            }
+
+            ITypeSymbol? memberType = member switch
+            {
+                IFieldSymbol field => field.Type,
+                IPropertySymbol typedProperty => typedProperty.Type,
+                _ => null,
+            };
+
+            if (memberType is null || member.IsStatic)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ViewMetadata.InvalidLinkTo,
+                    member.Locations.FirstOrDefault() ?? Location.None,
+                    viewName,
+                    member.Name,
+                    "must be an instance field or property"));
+                valid = false;
+                continue;
+            }
+
+            if (member is IPropertySymbol property && property.SetMethod is null)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ViewMetadata.InvalidLinkTo,
+                    member.Locations.FirstOrDefault() ?? Location.None,
+                    viewName,
+                    member.Name,
+                    "properties must have a setter"));
+                valid = false;
+                continue;
+            }
+
+            var nodePath = attribute.ConstructorArguments.Length > 0
+                ? attribute.ConstructorArguments[0].Value as string
+                : null;
+            var viewModelMember = attribute.ConstructorArguments.Length > 1
+                ? attribute.ConstructorArguments[1].Value as string
+                : null;
+
+            if (string.IsNullOrWhiteSpace(nodePath) || string.IsNullOrWhiteSpace(viewModelMember))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ViewMetadata.InvalidLinkTo,
+                    member.Locations.FirstOrDefault() ?? Location.None,
+                    viewName,
+                    member.Name,
+                    "node path and member name must be non-empty"));
+                valid = false;
+                continue;
+            }
+
+            var underlyingType = memberType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+            if (underlyingType is not INamedTypeSymbol namedType)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ViewMetadata.UnsupportedLinkToControl,
+                    member.Locations.FirstOrDefault() ?? Location.None,
+                    viewName,
+                    member.Name,
+                    memberType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
+                valid = false;
+                continue;
+            }
+
+            LinkToKind kind;
+            if (SymbolHelpers.IsOrInheritsFrom(namedType, ViewMetadata.LabelName))
+            {
+                kind = LinkToKind.Label;
+            }
+            else if (SymbolHelpers.IsOrInheritsFrom(namedType, ViewMetadata.BaseButtonName))
+            {
+                kind = LinkToKind.Command;
+            }
+            else
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ViewMetadata.UnsupportedLinkToControl,
+                    member.Locations.FirstOrDefault() ?? Location.None,
+                    viewName,
+                    member.Name,
+                    namedType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
+                valid = false;
+                continue;
+            }
+
+            linkTos.Add(new LinkToBinding(
+                member.Name,
+                nodePath!,
+                viewModelMember!,
+                namedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                kind));
+        }
+
+        return valid;
     }
 }

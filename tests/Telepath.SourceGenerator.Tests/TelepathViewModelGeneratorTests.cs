@@ -1,0 +1,262 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+
+namespace Telepath.SourceGenerator.Tests;
+
+public sealed class TelepathViewModelGeneratorTests
+{
+    [Fact]
+    public void GeneratesBindableCommandAndDerivedMembers()
+    {
+        const string source = """
+            using R3;
+            using Telepath.Core;
+
+            namespace Demo;
+
+            public sealed partial class CounterViewModel : ViewModel
+            {
+                [Bindable]
+                private int _count = 1;
+
+                [Bindable(nameof(Count))]
+                private string GetCountText(int count) => $"Count: {count}";
+
+                [Command(CanExecute = nameof(CanIncrement))]
+                private void OnIncrement() => Count.Value++;
+
+                private Observable<bool> CanIncrement() => Count.Select(static c => c < 10);
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("public global::R3.BindableReactiveProperty<int> @Count", generated);
+        Assert.Contains("new global::R3.BindableReactiveProperty<int>(@_count)", generated);
+        Assert.Contains("public global::R3.BindableReactiveProperty<string> @CountText", generated);
+        Assert.Contains("@Count.Select(@GetCountText)", generated);
+        Assert.Contains("public global::R3.ReactiveCommand @Increment", generated);
+        Assert.Contains("@CanIncrement().ToReactiveCommand(_ => @OnIncrement())", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void ReportsInvalidFromMember()
+    {
+        const string source = """
+            using Telepath.Core;
+
+            public sealed partial class SampleViewModel : ViewModel
+            {
+                [Bindable(nameof(Missing))]
+                private string GetLabel(int value) => value.ToString();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPM003", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsNonPartialViewModel()
+    {
+        const string source = """
+            using Telepath.Core;
+
+            public sealed class SampleViewModel : ViewModel
+            {
+                [Bindable]
+                private int _count;
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPM001", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsInvalidCanExecute()
+    {
+        const string source = """
+            using Telepath.Core;
+
+            public sealed partial class SampleViewModel : ViewModel
+            {
+                [Command(CanExecute = nameof(CanGo))]
+                private void OnGo() { }
+
+                private bool CanGo() => true;
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPM005", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    private static GeneratorRunResult RunGenerator(string viewModelSource)
+    {
+        var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
+        var syntaxTrees = new[]
+        {
+            CSharpSyntaxTree.ParseText(RuntimeStubs, parseOptions),
+            CSharpSyntaxTree.ParseText(viewModelSource, parseOptions),
+        };
+
+        var compilation = CSharpCompilation.Create(
+            assemblyName: "GeneratorTests",
+            syntaxTrees,
+            GetPlatformReferences(),
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+        GeneratorDriver driver = CSharpGeneratorDriver.Create(
+            generators: [new TelepathIncrementalGenerator().AsSourceGenerator()],
+            parseOptions: parseOptions);
+
+        driver = driver.RunGeneratorsAndUpdateCompilation(
+            compilation,
+            out var outputCompilation,
+            out _);
+
+        var runResult = driver.GetRunResult();
+        var generatorResult = Assert.Single(runResult.Results);
+        return new GeneratorRunResult(
+            generatorResult.Diagnostics,
+            generatorResult.GeneratedSources,
+            outputCompilation);
+    }
+
+    private static IEnumerable<MetadataReference> GetPlatformReferences()
+    {
+        var trustedAssemblies =
+            (string?)AppContext.GetData("TRUSTED_PLATFORM_ASSEMBLIES")
+            ?? throw new InvalidOperationException("Trusted platform assemblies are unavailable.");
+
+        return trustedAssemblies
+            .Split(Path.PathSeparator)
+            .Select(static path => MetadataReference.CreateFromFile(path));
+    }
+
+    private static void AssertNoCompilationErrors(Compilation compilation)
+    {
+        var errors = compilation.GetDiagnostics()
+            .Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error);
+
+        Assert.Empty(errors);
+    }
+
+    private sealed class GeneratorRunResult(
+        IEnumerable<Diagnostic> diagnostics,
+        IEnumerable<GeneratedSourceResult> generatedSources,
+        Compilation outputCompilation)
+    {
+        public IReadOnlyList<Diagnostic> Diagnostics { get; } = diagnostics.ToArray();
+
+        public IReadOnlyList<GeneratedSourceResult> GeneratedSources { get; } =
+            generatedSources.ToArray();
+
+        public Compilation OutputCompilation { get; } = outputCompilation;
+    }
+
+    private const string RuntimeStubs = """
+        namespace Telepath.Core
+        {
+            public interface IViewModel : System.IDisposable
+            {
+                bool IsDisposed { get; }
+            }
+
+            public abstract class ViewModel : IViewModel
+            {
+                public bool IsDisposed => false;
+
+                public void Dispose() { }
+
+                protected T Track<T>(T disposable)
+                    where T : System.IDisposable
+                    => disposable;
+            }
+
+            [System.AttributeUsage(System.AttributeTargets.Field | System.AttributeTargets.Method)]
+            public sealed class BindableAttribute : System.Attribute
+            {
+                public BindableAttribute() : this(System.Array.Empty<string>()) { }
+
+                public BindableAttribute(params string[] from)
+                {
+                    From = from;
+                }
+
+                public string[] From { get; }
+                public string? Name { get; set; }
+            }
+
+            [System.AttributeUsage(System.AttributeTargets.Method)]
+            public sealed class CommandAttribute : System.Attribute
+            {
+                public string? CanExecute { get; set; }
+                public string? Name { get; set; }
+            }
+        }
+
+        namespace R3
+        {
+            public class Observable<T>
+            {
+                public Observable<TResult> Select<TResult>(System.Func<T, TResult> selector) => new();
+            }
+
+            public class BindableReactiveProperty<T> : Observable<T>, System.IDisposable
+            {
+                public BindableReactiveProperty(T value) => Value = value;
+                public T Value { get; set; }
+                public void Dispose() { }
+            }
+
+            public static class BindableReactivePropertyExtensions
+            {
+                public static BindableReactiveProperty<T> ToBindableReactiveProperty<T>(
+                    this Observable<T> source,
+                    T initialValue)
+                    => new(initialValue);
+            }
+
+            public readonly struct Unit
+            {
+            }
+
+            public class ReactiveCommand : System.IDisposable
+            {
+                public ReactiveCommand(System.Action<Unit> execute) { }
+                public void Dispose() { }
+            }
+
+            public static class ReactiveCommandExtensions
+            {
+                public static ReactiveCommand ToReactiveCommand(
+                    this Observable<bool> source,
+                    System.Action<Unit> execute)
+                    => new(execute);
+            }
+
+            public static class Observable
+            {
+                public static Observable<TResult> CombineLatest<T1, T2, TResult>(
+                    Observable<T1> source1,
+                    Observable<T2> source2,
+                    System.Func<T1, T2, TResult> selector)
+                    => new();
+            }
+        }
+        """;
+}

@@ -9,3 +9,11 @@ TPV004 | Telepath.View | Error | Binding callback validation
 TPV005 | Telepath.View | Error | Ready callback validation
 TPV006 | Telepath.View | Error | Generated member conflict validation
 TPV007 | Telepath.View | Error | ViewModel contract validation
+TPV008 | Telepath.View | Error | LinkTo control type validation
+TPV009 | Telepath.View | Error | LinkTo declaration validation
+TPM001 | Telepath.ViewModel | Error | ViewModel target validation
+TPM002 | Telepath.ViewModel | Error | Bindable target validation
+TPM003 | Telepath.ViewModel | Error | Bindable From member validation
+TPM004 | Telepath.ViewModel | Error | Command target validation
+TPM005 | Telepath.ViewModel | Error | Command CanExecute validation
+TPM006 | Telepath.ViewModel | Error | Generated ViewModel member conflict validation

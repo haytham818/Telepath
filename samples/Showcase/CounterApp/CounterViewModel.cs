@@ -4,21 +4,14 @@ using Telepath.Core;
 
 namespace Telepath.Showcase.CounterApp;
 
-/// <summary>
-/// Real-world ViewModel shape: expose R3 properties/commands, register them with
-/// <see cref="ViewModel.Track{T}"/>, derive UI text and CanExecute from the model.
-/// No Godot types here — platform-agnostic Core usage only.
-/// </summary>
-public sealed class CounterViewModel : ViewModel
+public sealed partial class CounterViewModel : ViewModel
 {
-    public BindableReactiveProperty<int> Count { get; }
+    private readonly int _min;
+    private readonly int _max;
+    private readonly int _initial;
 
-    /// <summary>Derived display text; updates whenever <see cref="Count"/> changes.</summary>
-    public BindableReactiveProperty<string> CountText { get; }
-
-    public ReactiveCommand Increment { get; }
-    public ReactiveCommand Decrement { get; }
-    public ReactiveCommand Reset { get; }
+    [Bindable]
+    private int _count;
 
     public CounterViewModel(int initial = 0, int min = 0, int max = 10)
     {
@@ -27,24 +20,27 @@ public sealed class CounterViewModel : ViewModel
             throw new ArgumentOutOfRangeException(nameof(min), "min must be <= max.");
         }
 
-        initial = Math.Clamp(initial, min, max);
-
-        Count = Track(new BindableReactiveProperty<int>(initial));
-
-        CountText = Track(
-            Count.Select(c => $"Count: {c}")
-                .ToBindableReactiveProperty($"Count: {initial}"));
-
-        Increment = Track(
-            Count.Select(c => c < max)
-                .ToReactiveCommand(_ => Count.Value++));
-
-        Decrement = Track(
-            Count.Select(c => c > min)
-                .ToReactiveCommand(_ => Count.Value--));
-
-        Reset = Track(
-            Count.Select(c => c != initial)
-                .ToReactiveCommand(_ => Count.Value = initial));
+        _min = min;
+        _max = max;
+        _initial = initial;
+        _count = Math.Clamp(initial, min, max);
     }
+
+    [Bindable(nameof(Count))]
+    private string GetCountText(int count) => $"Count: {count}";
+
+    [Command(CanExecute = nameof(CanIncrement))]
+    private void OnIncrement() => Count.Value++;
+
+    private Observable<bool> CanIncrement() => Count.Select(c => c < _max);
+
+    [Command(CanExecute = nameof(CanDecrement))]
+    private void OnDecrement() => Count.Value--;
+
+    private Observable<bool> CanDecrement() => Count.Select(c => c > _min);
+
+    [Command(CanExecute = nameof(CanReset))]
+    private void OnReset() => Count.Value = _initial;
+
+    private Observable<bool> CanReset() => Count.Select(c => c != _initial);
 }

@@ -5,7 +5,10 @@ namespace Telepath.SourceGenerator;
 internal static class ViewMetadata
 {
     public const string ViewAttributeName = "Telepath.Godot.TelepathViewAttribute`1";
+    public const string LinkToAttributeName = "Telepath.Godot.LinkToAttribute";
     public const string ControlName = "Godot.Control";
+    public const string LabelName = "Godot.Label";
+    public const string BaseButtonName = "Godot.BaseButton";
     public const string ViewModelName = "Telepath.Core.IViewModel";
     public const string BindingSetName = "Telepath.Godot.BindingSet";
     public const string DiagnosticCategory = "Telepath.View";
@@ -37,7 +40,7 @@ internal static class ViewMetadata
     public static readonly DiagnosticDescriptor InvalidOnBind = new(
         id: "TPV004",
         title: "Invalid OnBind callback",
-        messageFormat: "Telepath view '{0}' must declare one instance method 'void OnBind({1} vm, Telepath.Godot.BindingSet bindings)'",
+        messageFormat: "Telepath view '{0}' must declare 'void OnBind({1} vm, Telepath.Godot.BindingSet bindings)' or at least one [LinkTo] member",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -62,6 +65,22 @@ internal static class ViewMetadata
         id: "TPV007",
         title: "Invalid Telepath ViewModel",
         messageFormat: "ViewModel type '{1}' on Telepath view '{0}' must implement Telepath.Core.IViewModel",
+        category: DiagnosticCategory,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor UnsupportedLinkToControl = new(
+        id: "TPV008",
+        title: "Unsupported LinkTo control type",
+        messageFormat: "[LinkTo] on '{0}.{1}' requires Godot.Label or Godot.BaseButton, but the member type is '{2}'",
+        category: DiagnosticCategory,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InvalidLinkTo = new(
+        id: "TPV009",
+        title: "Invalid LinkTo declaration",
+        messageFormat: "[LinkTo] on '{0}.{1}' is invalid: {2}",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);

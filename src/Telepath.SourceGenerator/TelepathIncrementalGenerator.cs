@@ -17,5 +17,22 @@ public sealed class TelepathIncrementalGenerator : IIncrementalGenerator
         {
             ViewGenerator.Generate(productionContext, candidate);
         });
+
+        var bindableMembers = context.SyntaxProvider.ForAttributeWithMetadataName(
+            ViewModelMetadata.BindableAttributeName,
+            static (node, _) => node is VariableDeclaratorSyntax or FieldDeclarationSyntax or MethodDeclarationSyntax,
+            static (attributeContext, _) => ViewModelGenerator.CreateBindableMember(attributeContext));
+
+        var commandMembers = context.SyntaxProvider.ForAttributeWithMetadataName(
+            ViewModelMetadata.CommandAttributeName,
+            static (node, _) => node is MethodDeclarationSyntax,
+            static (attributeContext, _) => ViewModelGenerator.CreateCommandMember(attributeContext));
+
+        var viewModelMembers = bindableMembers.Collect().Combine(commandMembers.Collect());
+
+        context.RegisterSourceOutput(viewModelMembers, static (productionContext, pair) =>
+        {
+            ViewModelGenerator.Generate(productionContext, pair.Left, pair.Right);
+        });
     }
 }
