@@ -76,10 +76,7 @@ public static class GodotBindings
 
     public static void BindCommand(this BindingSet bindings, ReactiveCommand<string> command, LineEdit edit)
     {
-        bindings.BindCommand(
-            command,
-            edit.OnTextSubmittedAsObservable(),
-            canExecute => edit.Editable = canExecute);
+        bindings.BindCommand(command, edit.OnTextSubmittedAsObservable());
     }
 
     public static void BindCommand(this BindingSet bindings, ReactiveCommand<long> command, OptionButton button)

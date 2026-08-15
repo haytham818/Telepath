@@ -13,7 +13,7 @@ src/Telepath.Godot/View/LinkKind.cs              覆盖推断
 src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 
-示例：[samples/Showcase/CounterApp/CounterView.cs](../samples/Showcase/CounterApp/CounterView.cs)。
+示例：[CounterApp](../samples/Showcase/CounterApp/CounterView.cs)（无参命令），[SearchApp](../samples/Showcase/SearchApp/SearchView.cs)（`ReactiveCommand<T>` + `Parameter`）。
 
 具体 View 必须：
 
