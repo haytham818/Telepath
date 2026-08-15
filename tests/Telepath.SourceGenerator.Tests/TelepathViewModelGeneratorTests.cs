@@ -43,6 +43,53 @@ public sealed class TelepathViewModelGeneratorTests
     }
 
     [Fact]
+    public void GeneratesParameterizedCommand()
+    {
+        const string source = """
+            using R3;
+            using Telepath.Core;
+
+            namespace Demo;
+
+            public sealed partial class SearchViewModel : ViewModel
+            {
+                [Command(CanExecute = nameof(CanSearch))]
+                private void OnSearch(string query) { }
+
+                private Observable<bool> CanSearch() => Observable.Return(true);
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("public global::R3.ReactiveCommand<string> @Search", generated);
+        Assert.Contains("@CanSearch().ToReactiveCommand<string>(arg => @OnSearch(arg))", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void ReportsCommandWithTooManyParameters()
+    {
+        const string source = """
+            using Telepath.Core;
+
+            public sealed partial class SampleViewModel : ViewModel
+            {
+                [Command]
+                private void OnGo(string a, int b) { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPM004", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
     public void ReportsInvalidFromMember()
     {
         const string source = """
@@ -241,16 +288,29 @@ public sealed class TelepathViewModelGeneratorTests
                 public void Dispose() { }
             }
 
+            public class ReactiveCommand<T> : System.IDisposable
+            {
+                public ReactiveCommand(System.Action<T> execute) { }
+                public void Dispose() { }
+            }
+
             public static class ReactiveCommandExtensions
             {
                 public static ReactiveCommand ToReactiveCommand(
                     this Observable<bool> source,
                     System.Action<Unit> execute)
                     => new(execute);
+
+                public static ReactiveCommand<T> ToReactiveCommand<T>(
+                    this Observable<bool> source,
+                    System.Action<T> execute)
+                    => new(execute);
             }
 
             public static class Observable
             {
+                public static Observable<T> Return<T>(T value) => new();
+
                 public static Observable<TResult> CombineLatest<T1, T2, TResult>(
                     Observable<T1> source1,
                     Observable<T2> source2,

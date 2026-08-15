@@ -91,10 +91,14 @@ internal static class ViewModelSourceRenderer
                 break;
 
             case ViewModelMemberKind.Command:
-                source.Append("    private global::R3.ReactiveCommand? ")
+                source.Append("    private ")
+                    .Append(member.ValueTypeDisplay)
+                    .Append("? ")
                     .Append(backing)
                     .AppendLine(";");
-                source.Append("    public global::R3.ReactiveCommand @")
+                source.Append("    public ")
+                    .Append(member.ValueTypeDisplay)
+                    .Append(" @")
                     .Append(member.PropertyName)
                     .AppendLine();
                 source.Append("        => ")
@@ -102,9 +106,11 @@ internal static class ViewModelSourceRenderer
                     .Append(" ??= Track(");
                 if (string.IsNullOrEmpty(member.CanExecute))
                 {
-                    source.Append("new global::R3.ReactiveCommand(_ => @")
-                        .Append(member.SourceMemberName)
-                        .AppendLine("()));");
+                    source.Append("new ")
+                        .Append(member.ValueTypeDisplay)
+                        .Append('(');
+                    AppendCommandExecute(source, member);
+                    source.AppendLine("));");
                 }
                 else
                 {
@@ -115,13 +121,36 @@ internal static class ViewModelSourceRenderer
                         source.Append("()");
                     }
 
-                    source.Append(".ToReactiveCommand(_ => @")
-                        .Append(member.SourceMemberName)
-                        .AppendLine("()));");
+                    source.Append(".ToReactiveCommand");
+                    if (member.CommandParameterTypeDisplay is not null)
+                    {
+                        source.Append('<')
+                            .Append(member.CommandParameterTypeDisplay)
+                            .Append('>');
+                    }
+
+                    source.Append('(');
+                    AppendCommandExecute(source, member);
+                    source.AppendLine("));");
                 }
 
                 break;
         }
+    }
+
+    private static void AppendCommandExecute(StringBuilder source, ViewModelGeneratedMember member)
+    {
+        if (member.CommandParameterTypeDisplay is null)
+        {
+            source.Append("_ => @")
+                .Append(member.SourceMemberName)
+                .Append("()");
+            return;
+        }
+
+        source.Append("arg => @")
+            .Append(member.SourceMemberName)
+            .Append("(arg)");
     }
 
     private static void AppendDerivedSource(StringBuilder source, ViewModelGeneratedMember member)

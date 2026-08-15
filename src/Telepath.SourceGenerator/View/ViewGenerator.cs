@@ -289,12 +289,29 @@ internal static class ViewGenerator
                 continue;
             }
 
+            if (!TryResolveParameter(
+                    context,
+                    attribute,
+                    viewType,
+                    namedType,
+                    viewName,
+                    member,
+                    kind,
+                    out var parameterMemberName,
+                    out var parameterAccess))
+            {
+                valid = false;
+                continue;
+            }
+
             linkTos.Add(new LinkToBinding(
                 member.Name,
                 nodePath!,
                 viewModelMember!,
                 namedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                kind));
+                kind,
+                parameterMemberName,
+                parameterAccess));
         }
 
         return valid;
@@ -408,7 +425,10 @@ internal static class ViewGenerator
         return kind switch
         {
             LinkToKind.Text => IsTextControl(controlType),
-            LinkToKind.Command or LinkToKind.Toggle or LinkToKind.Disabled =>
+            LinkToKind.Command =>
+                SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.BaseButtonName)
+                || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.LineEditName),
+            LinkToKind.Toggle or LinkToKind.Disabled =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.BaseButtonName),
             LinkToKind.Value => SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RangeName),
             LinkToKind.Selected => SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName),
@@ -425,5 +445,113 @@ internal static class ViewGenerator
             || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RichTextLabelName)
             || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.LineEditName)
             || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.TextEditName);
+    }
+
+    private static bool TryResolveParameter(
+        SourceProductionContext context,
+        AttributeData attribute,
+        INamedTypeSymbol viewType,
+        INamedTypeSymbol targetType,
+        string viewName,
+        ISymbol member,
+        LinkToKind kind,
+        out string? parameterMemberName,
+        out string? parameterAccess)
+    {
+        parameterMemberName = null;
+        parameterAccess = null;
+        var parameterName = SymbolHelpers.GetNamedString(attribute, "Parameter");
+        if (parameterName is not { Length: > 0 } name || string.IsNullOrWhiteSpace(name))
+        {
+            return true;
+        }
+
+        var location = member.Locations.FirstOrDefault() ?? Location.None;
+        if (kind != LinkToKind.Command)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidLinkTo,
+                location,
+                viewName,
+                member.Name,
+                "Parameter is only valid for command bindings"));
+            return false;
+        }
+
+        if (!SymbolHelpers.IsOrInheritsFrom(targetType, ViewMetadata.BaseButtonName))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidLinkTo,
+                location,
+                viewName,
+                member.Name,
+                "Parameter requires the [LinkTo] target to be a Godot.BaseButton"));
+            return false;
+        }
+
+        var matches = viewType.GetMembers(name).ToArray();
+        if (matches.Length != 1 || matches[0].IsStatic)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidLinkTo,
+                location,
+                viewName,
+                member.Name,
+                $"Parameter '{name}' must name a unique instance field or property on the view"));
+            return false;
+        }
+
+        ITypeSymbol? parameterType = matches[0] switch
+        {
+            IFieldSymbol field => field.Type,
+            IPropertySymbol property => property.Type,
+            _ => null,
+        };
+
+        if (parameterType is not INamedTypeSymbol namedParameterType
+            || !TryGetParameterAccess(namedParameterType, out parameterAccess))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidLinkTo,
+                location,
+                viewName,
+                member.Name,
+                $"Parameter '{name}' must be a text, toggle, range, or option control"));
+            return false;
+        }
+
+        parameterMemberName = matches[0].Name;
+        return true;
+    }
+
+    private static bool TryGetParameterAccess(INamedTypeSymbol controlType, out string access)
+    {
+        if (IsTextControl(controlType))
+        {
+            access = ".Text";
+            return true;
+        }
+
+        if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CheckBoxName)
+            || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CheckButtonName))
+        {
+            access = ".ButtonPressed";
+            return true;
+        }
+
+        if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName))
+        {
+            access = ".Selected";
+            return true;
+        }
+
+        if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RangeName))
+        {
+            access = ".Value";
+            return true;
+        }
+
+        access = "";
+        return false;
     }
 }

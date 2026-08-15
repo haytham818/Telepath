@@ -19,13 +19,17 @@ internal sealed class LinkToBinding
         string nodePath,
         string viewModelMember,
         string nodeTypeDisplay,
-        LinkToKind kind)
+        LinkToKind kind,
+        string? parameterMemberName = null,
+        string? parameterAccess = null)
     {
         TargetMemberName = targetMemberName;
         NodePath = nodePath;
         ViewModelMember = viewModelMember;
         NodeTypeDisplay = nodeTypeDisplay;
         Kind = kind;
+        ParameterMemberName = parameterMemberName;
+        ParameterAccess = parameterAccess;
     }
 
     public string TargetMemberName { get; }
@@ -37,6 +41,10 @@ internal sealed class LinkToBinding
     public string NodeTypeDisplay { get; }
 
     public LinkToKind Kind { get; }
+
+    public string? ParameterMemberName { get; }
+
+    public string? ParameterAccess { get; }
 
     public string BindMethodName => Kind switch
     {

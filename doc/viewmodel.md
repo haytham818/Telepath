@@ -28,7 +28,8 @@ src/Telepath.SourceGenerator/ViewModel/
 | `[Bindable] private int _count` | `BindableReactiveProperty<int> Count` |
 | `[Bindable(nameof(Count))] GetCountText(int count)` | `BindableReactiveProperty<string> CountText`（去掉 `Get` / `Compute` / `Format`） |
 | `[Command] OnIncrement()` | `ReactiveCommand Increment`（去掉 `On`；否则加 `Command` 后缀） |
-| `[Command(CanExecute = nameof(CanIncrement))]` | `CanIncrement` 必须是 `Observable<bool>` 属性或无参方法 |
+| `[Command] OnSearch(string query)` | `ReactiveCommand<string> Search` |
+| `[Command(CanExecute = nameof(CanIncrement))]` | `CanExecute` 必须是 `Observable<bool>` 属性或无参方法 |
 
 可用 `Name = "..."` 覆盖生成名。多个 `From` 用 `Observable.CombineLatest`。
 
@@ -53,7 +54,9 @@ public sealed partial class CounterViewModel : ViewModel
 }
 ```
 
-仍可手写 `BindableReactiveProperty` / `ReactiveCommand` 并 `Track`。
+方法零个参数生成 `ReactiveCommand`，一个参数生成 `ReactiveCommand<T>`。两个及以上参数会报错。View 侧用 `[LinkTo(..., Parameter = nameof(_query))]` 在按钮按下时取值，见 [view.md](view.md)。
+
+仍可手写 `BindableReactiveProperty` / `ReactiveCommand` / `ReactiveCommand<T>` 并 `Track`。
 
 ## 与 Godot 节点生命周期间的关系
 

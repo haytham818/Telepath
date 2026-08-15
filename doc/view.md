@@ -44,7 +44,7 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 ## API
 
 - `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`
-- `[LinkTo(nodePath, member)]`：生成 `GetNode` 与对应 `BindXxx`；可用 `Kind` 覆盖推断
+- `[LinkTo(nodePath, member)]`：生成 `GetNode` 与对应 `BindXxx`；可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值
 - `OnReady()`：可选；在生成的节点解析之后调用
 - `OnBind(vm, bindings)`：可选；在声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
 - `_Notification`：只声明 partial 方法，不要自行实现或覆盖其他生命周期方法
@@ -75,6 +75,17 @@ private Control _panel = null!;
 - `BindVisible` → `CanvasItem.Visible`
 - `BindDisabled` → `BaseButton.Disabled`（Godot 的 `Control` 没有 Disabled）
 - `Kind` 也可覆盖推断，例如 CheckBox 当命令：`Kind = LinkKind.Command`
+- 带参命令：按钮按下时从另一个控件取值。`LineEdit` + `Kind = Command` 则走 `TextSubmitted`，不必写 `Parameter`
+
+```csharp
+[LinkTo("%Query", nameof(SearchViewModel.Query))]
+private LineEdit _query = null!;
+
+[LinkTo("%Search", nameof(SearchViewModel.Search), Parameter = nameof(_query))]
+private Button _search = null!;
+```
+
+生成 `bindings.BindCommand(vm.Search, _search, () => _query.Text)`。`Parameter` 取值：文本控件 `.Text`，开关 `.ButtonPressed`，`Range` `.Value`，`OptionButton` `.Selected`。
 
 ```csharp
 [TelepathView<CounterViewModel>]
@@ -92,4 +103,4 @@ public partial class CounterView : Control
 }
 ```
 
-尚未纳入：`ReactiveCommand<T>`、转换器、列表。ViewModel 契约见 [viewmodel.md](viewmodel.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。
+尚未纳入：转换器、列表。ViewModel 契约见 [viewmodel.md](viewmodel.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。

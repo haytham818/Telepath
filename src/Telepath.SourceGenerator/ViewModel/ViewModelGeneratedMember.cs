@@ -11,7 +11,8 @@ internal sealed class ViewModelGeneratedMember
         string valueTypeDisplay,
         ImmutableArray<string> from,
         string? canExecute,
-        bool canExecuteIsMethod)
+        bool canExecuteIsMethod,
+        string? commandParameterTypeDisplay = null)
     {
         Kind = kind;
         PropertyName = propertyName;
@@ -20,6 +21,7 @@ internal sealed class ViewModelGeneratedMember
         From = from;
         CanExecute = canExecute;
         CanExecuteIsMethod = canExecuteIsMethod;
+        CommandParameterTypeDisplay = commandParameterTypeDisplay;
     }
 
     public ViewModelMemberKind Kind { get; }
@@ -35,4 +37,6 @@ internal sealed class ViewModelGeneratedMember
     public string? CanExecute { get; }
 
     public bool CanExecuteIsMethod { get; }
+
+    public string? CommandParameterTypeDisplay { get; }
 }

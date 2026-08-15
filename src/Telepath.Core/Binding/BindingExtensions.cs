@@ -94,4 +94,28 @@ public static class BindingExtensions
         command.CanExecuteChanged += handler;
         bindings.Add(Disposable.Create(() => command.CanExecuteChanged -= handler));
     }
+
+    public static void BindCommand<T>(
+        this BindingSet bindings,
+        ReactiveCommand<T> command,
+        Observable<T> execute,
+        Action<bool>? setCanExecute = null)
+    {
+        ArgumentNullException.ThrowIfNull(bindings);
+        ArgumentNullException.ThrowIfNull(command);
+        ArgumentNullException.ThrowIfNull(execute);
+
+        bindings.Add(execute.Subscribe(value => command.Execute(value)));
+        if (setCanExecute is null)
+        {
+            return;
+        }
+
+        void Sync() => setCanExecute(command.CanExecute());
+        Sync();
+
+        EventHandler handler = (_, _) => Sync();
+        command.CanExecuteChanged += handler;
+        bindings.Add(Disposable.Create(() => command.CanExecuteChanged -= handler));
+    }
 }

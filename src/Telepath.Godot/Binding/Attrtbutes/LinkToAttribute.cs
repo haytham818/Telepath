@@ -26,4 +26,10 @@ public sealed class LinkToAttribute : Attribute
     /// Overrides control-type inference. Leave <see cref="LinkKind.Auto"/> to infer.
     /// </summary>
     public LinkKind Kind { get; set; } = LinkKind.Auto;
+
+    /// <summary>
+    /// View field or property whose value is passed to a <c>ReactiveCommand&lt;T&gt;</c>
+    /// when the linked button is pressed.
+    /// </summary>
+    public string? Parameter { get; set; }
 }

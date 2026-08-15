@@ -104,6 +104,20 @@ public sealed class BindingSetTests
     }
 
     [Fact]
+    public void BindCommandPassesParameterToExecute()
+    {
+        string? received = null;
+        using var command = new ReactiveCommand<string>(value => received = value);
+        var trigger = new Subject<string>();
+        using var bindings = new BindingSet();
+
+        bindings.BindCommand(command, trigger);
+        trigger.OnNext("query");
+
+        Assert.Equal("query", received);
+    }
+
+    [Fact]
     public void DisposeIsIdempotentAndRejectsAdd()
     {
         var bindings = new BindingSet();

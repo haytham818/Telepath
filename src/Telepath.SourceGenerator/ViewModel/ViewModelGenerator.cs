@@ -377,14 +377,15 @@ internal static class ViewModelGenerator
             || method.IsStatic
             || method.MethodKind != MethodKind.Ordinary
             || !method.ReturnsVoid
-            || method.Parameters.Length != 0
-            || method.IsGenericMethod)
+            || method.IsGenericMethod
+            || method.Parameters.Length > 1
+            || method.Parameters.Any(static parameter => parameter.RefKind != RefKind.None))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ViewModelMetadata.InvalidCommand,
                 candidate.Location,
                 candidate.Member?.Name ?? "<unknown>",
-                "must be a parameterless instance method returning void"));
+                "must be an instance method returning void with zero or one parameter"));
             return false;
         }
 
@@ -408,14 +409,22 @@ internal static class ViewModelGenerator
             return false;
         }
 
+        var parameterTypeDisplay = method.Parameters.Length == 1
+            ? method.Parameters[0].Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
+            : null;
+        var commandTypeDisplay = parameterTypeDisplay is null
+            ? "global::R3.ReactiveCommand"
+            : $"global::R3.ReactiveCommand<{parameterTypeDisplay}>";
+
         model = new ViewModelGeneratedMember(
             ViewModelMemberKind.Command,
             propertyName,
             method.Name,
-            "global::R3.ReactiveCommand",
+            commandTypeDisplay,
             ImmutableArray<string>.Empty,
             candidate.CanExecute,
-            canExecuteIsMethod);
+            canExecuteIsMethod,
+            parameterTypeDisplay);
         return true;
     }
 

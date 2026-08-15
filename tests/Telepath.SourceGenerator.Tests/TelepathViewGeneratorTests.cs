@@ -364,6 +364,143 @@ public sealed class TelepathViewGeneratorTests
         Assert.Empty(result.GeneratedSources);
     }
 
+    [Fact]
+    public void GeneratesCommandParameterGetter()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class SearchViewModel : Telepath.Core.IViewModel
+            {
+                public object Query { get; } = new();
+                public object Search { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<SearchViewModel>]
+            public partial class SearchView : Godot.Control
+            {
+                [LinkTo("%Query", nameof(SearchViewModel.Query))]
+                private Godot.LineEdit _query = null!;
+
+                [LinkTo("%Search", nameof(SearchViewModel.Search), Parameter = nameof(_query))]
+                private Godot.Button _search = null!;
+
+                public override partial void _Notification(int what);
+
+                private SearchViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("bindings.BindText(vm.@Query, @_query)", generated);
+        Assert.Contains("bindings.BindCommand(vm.@Search, @_search, () => @_query.Text)", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void GeneratesLineEditCommandWithoutParameter()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class SearchViewModel : Telepath.Core.IViewModel
+            {
+                public object Search { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<SearchViewModel>]
+            public partial class SearchView : Godot.Control
+            {
+                [LinkTo("%Query", nameof(SearchViewModel.Search), Kind = LinkKind.Command)]
+                private Godot.LineEdit _query = null!;
+
+                public override partial void _Notification(int what);
+
+                private SearchViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("bindings.BindCommand(vm.@Search, @_query)", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void ReportsUnknownCommandParameter()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [LinkTo("%Search", "Search", Parameter = "Missing")]
+                private Godot.Button _search = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV009", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsParameterOnNonCommand()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [LinkTo("%Title", "Title", Parameter = nameof(_title))]
+                private Godot.Label _title = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV009", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
     private static GeneratorRunResult RunGenerator(string viewSource)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
@@ -440,6 +577,7 @@ public sealed class TelepathViewGeneratorTests
             {
                 public void BindText(object source, object target) { }
                 public void BindCommand(object command, object button) { }
+                public void BindCommand<T>(object command, object button, System.Func<T> getParameter) { }
                 public void BindToggle(object source, object button) { }
                 public void BindValue(object source, object range) { }
                 public void BindSelected(object source, object button) { }
@@ -462,18 +600,22 @@ public sealed class TelepathViewGeneratorTests
 
             public class Label : Control
             {
+                public string Text { get; set; }
             }
 
             public class RichTextLabel : Control
             {
+                public string Text { get; set; }
             }
 
             public class LineEdit : Control
             {
+                public string Text { get; set; }
             }
 
             public class TextEdit : Control
             {
+                public string Text { get; set; }
             }
 
             public class BaseButton : Control
@@ -545,6 +687,7 @@ public sealed class TelepathViewGeneratorTests
                 public string NodePath { get; }
                 public string Member { get; }
                 public LinkKind Kind { get; set; }
+                public string Parameter { get; set; }
             }
 
             public sealed class ViewLifecycle<TViewModel>

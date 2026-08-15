@@ -121,8 +121,15 @@ internal static class ViewSourceRenderer
                 .Append("(vm.@")
                 .Append(linkTo.ViewModelMember)
                 .Append(", @")
-                .Append(linkTo.TargetMemberName)
-                .AppendLine(");");
+                .Append(linkTo.TargetMemberName);
+            if (linkTo.ParameterMemberName is not null)
+            {
+                source.Append(", () => @")
+                    .Append(linkTo.ParameterMemberName)
+                    .Append(linkTo.ParameterAccess);
+            }
+
+            source.AppendLine(");");
         }
 
         if (hasOnBind)
