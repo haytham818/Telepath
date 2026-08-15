@@ -6,5 +6,5 @@ namespace Telepath.Godot;
 /// </summary>
 public static class TelepathGodot
 {
-    public const string Version = Telepath.TelepathCore.Version;
+    public const string Version = Telepath.Core.TelepathCore.Version;
 }

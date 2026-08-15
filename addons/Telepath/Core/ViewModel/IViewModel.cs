@@ -1,4 +1,4 @@
-namespace Telepath;
+namespace Telepath.Core;
 
 /// <summary>
 /// Platform-agnostic ViewModel contract. Lifetime is dispose-only;

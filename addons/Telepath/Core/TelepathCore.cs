@@ -1,4 +1,4 @@
-namespace Telepath;
+namespace Telepath.Core;
 
 /// <summary>
 /// Marker for the platform-agnostic Telepath core assembly.

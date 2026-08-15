@@ -1,7 +1,7 @@
 using System.Threading;
 using R3;
 
-namespace Telepath;
+namespace Telepath.Core;
 
 /// <summary>
 /// Base class for Telepath ViewModels. Tracks R3 disposables via <see cref="Track{T}"/>

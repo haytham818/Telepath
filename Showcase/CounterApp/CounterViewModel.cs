@@ -1,5 +1,5 @@
 using R3;
-using Telepath;
+using Telepath.Core;
 
 namespace Telepath.Showcase.CounterApp;
 
