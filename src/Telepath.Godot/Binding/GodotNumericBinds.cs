@@ -4,7 +4,7 @@ using Telepath.Core;
 namespace Telepath.Godot;
 
 /// <summary>
-/// Implicit numeric conversion onto <see cref="GodotTargets.Value"/>.
+/// Implicit numeric conversion onto <see cref="GodotTargets.Value"/> via built-in converters.
 /// </summary>
 public static class GodotNumericBinds
 {
@@ -13,7 +13,7 @@ public static class GodotNumericBinds
         Observable<int> source,
         BindingTarget<double> target)
     {
-        bindings.Bind(source, target, static value => value);
+        bindings.Bind(source, target, IntToDoubleConverter.Instance);
     }
 
     public static void Bind(
@@ -21,7 +21,7 @@ public static class GodotNumericBinds
         BindableReactiveProperty<int> source,
         BindingTarget<double> target)
     {
-        bindings.Bind(source, target, static value => value, static value => (int)value);
+        bindings.Bind(source, target, IntToDoubleConverter.Instance);
     }
 
     public static void Bind(
@@ -29,7 +29,7 @@ public static class GodotNumericBinds
         Observable<float> source,
         BindingTarget<double> target)
     {
-        bindings.Bind(source, target, static value => value);
+        bindings.Bind(source, target, FloatToDoubleConverter.Instance);
     }
 
     public static void Bind(
@@ -37,6 +37,6 @@ public static class GodotNumericBinds
         BindableReactiveProperty<float> source,
         BindingTarget<double> target)
     {
-        bindings.Bind(source, target, static value => value, static value => (float)value);
+        bindings.Bind(source, target, FloatToDoubleConverter.Instance);
     }
 }

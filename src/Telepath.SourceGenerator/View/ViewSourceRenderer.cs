@@ -153,7 +153,7 @@ internal static class ViewSourceRenderer
             }
             else if (linkTo.ImplicitToString)
             {
-                source.Append(", static v => global::System.Convert.ToString(v) ?? string.Empty");
+                source.Append(", global::Telepath.Core.ToStringConverter.Convert");
             }
 
             source.AppendLine(");");

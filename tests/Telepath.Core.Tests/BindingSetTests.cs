@@ -272,6 +272,49 @@ public sealed class BindingSetTests
         Assert.Equal("n:3", target);
     }
 
+    [Fact]
+    public void ToStringConverterMatchesTypedInstance()
+    {
+        using var source = new BindableReactiveProperty<int>(7);
+        var viaMethod = "unset";
+        var viaInstance = "unset";
+        using var bindings = new BindingSet();
+
+        bindings.Bind(
+            source,
+            BindingTarget<string>.OneWay(value => viaMethod = value),
+            ToStringConverter.Convert);
+        bindings.Bind(
+            source,
+            BindingTarget<string>.OneWay(value => viaInstance = value),
+            ToStringConverter<int>.Instance);
+
+        Assert.Equal("7", viaMethod);
+        Assert.Equal(viaMethod, viaInstance);
+    }
+
+    [Fact]
+    public void IntToDoubleConverterIsTwoWay()
+    {
+        using var source = new BindableReactiveProperty<int>(3);
+        var target = 0d;
+        var changed = new Subject<double>();
+        using var bindings = new BindingSet();
+
+        bindings.Bind(
+            source,
+            BindingTarget<double>.TwoWay(() => target, value => target = value, changed),
+            IntToDoubleConverter.Instance);
+
+        Assert.Equal(3d, target);
+        source.Value = 8;
+        Assert.Equal(8d, target);
+
+        target = 2.9;
+        changed.OnNext(2.9);
+        Assert.Equal(2, source.Value);
+    }
+
     private sealed class PrefixConverter : ITwoWayValueConverter<int, string>
     {
         public string Convert(int value) => $"n:{value}";

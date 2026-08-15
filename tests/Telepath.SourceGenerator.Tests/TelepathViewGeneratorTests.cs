@@ -170,7 +170,7 @@ public sealed class TelepathViewGeneratorTests
         Assert.Contains("GetNode<global::Godot.Label>(\"%CountLabel\")", generated);
         Assert.Contains("GetNode<global::Godot.Button>(\"%IncrementButton\")", generated);
         Assert.Contains(
-            "bindings.Bind(vm.@CountText, @_countLabel.Text(), static v => global::System.Convert.ToString(v) ?? string.Empty)",
+            "bindings.Bind(vm.@CountText, @_countLabel.Text(), global::Telepath.Core.ToStringConverter.Convert)",
             generated);
         Assert.Contains("bindings.BindCommand(vm.@Increment, @_incrementButton)", generated);
         Assert.Contains("using Telepath.Core;", generated);
@@ -279,10 +279,10 @@ public sealed class TelepathViewGeneratorTests
         Assert.Empty(result.Diagnostics);
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
         Assert.Contains(
-            "bindings.Bind(vm.@Title, @_title.Text(), static v => global::System.Convert.ToString(v) ?? string.Empty)",
+            "bindings.Bind(vm.@Title, @_title.Text(), global::Telepath.Core.ToStringConverter.Convert)",
             generated);
         Assert.Contains(
-            "bindings.Bind(vm.@Body, @_body.Text(), static v => global::System.Convert.ToString(v) ?? string.Empty)",
+            "bindings.Bind(vm.@Body, @_body.Text(), global::Telepath.Core.ToStringConverter.Convert)",
             generated);
         Assert.Contains("bindings.Bind(vm.@Name, @_name.Text())", generated);
         Assert.Contains("bindings.Bind(vm.@Notes, @_notes.Text())", generated);
@@ -630,6 +630,43 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
+    public void GeneratesBuiltInToStringConverter()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class CounterViewModel : Telepath.Core.IViewModel
+            {
+                public object Count { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<CounterViewModel>]
+            public partial class CounterView : Godot.Control
+            {
+                [LinkTo("%CountLabel", nameof(CounterViewModel.Count), Converter = typeof(Telepath.Core.ToStringConverter<int>))]
+                private Godot.Label _countLabel = null!;
+
+                public override partial void _Notification(int what);
+
+                private CounterViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains(
+            "bindings.Bind(vm.@Count, @_countLabel.Text(), new global::Telepath.Core.ToStringConverter<int>())",
+            generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
     public void ReportsConverterOnCommand()
     {
         const string source = """
@@ -828,6 +865,16 @@ public sealed class TelepathViewGeneratorTests
             public interface ITwoWayValueConverter<TSource, TTarget> : IValueConverter<TSource, TTarget>
             {
                 TSource ConvertBack(TTarget value);
+            }
+
+            public static class ToStringConverter
+            {
+                public static string Convert<T>(T value) => value?.ToString() ?? string.Empty;
+            }
+
+            public sealed class ToStringConverter<T> : IValueConverter<T, string>
+            {
+                public string Convert(T value) => ToStringConverter.Convert(value);
             }
 
             public sealed class BindingSet

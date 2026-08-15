@@ -58,7 +58,7 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 
 | 控件 | 生成 | 默认方向 |
 |------|------|----------|
-| `Label` / `RichTextLabel` | `Bind(..., .Text())` | 一向；无 Converter 时 `Convert.ToString` |
+| `Label` / `RichTextLabel` | `Bind(..., .Text())` | 一向；无 Converter 时 `ToStringConverter.Convert` |
 | `LineEdit` / `TextEdit` | `Bind(..., .Text())` | `BindableReactiveProperty<string>` 双向，否则一向 |
 | `CheckBox` / `CheckButton` | `Bind(..., .Toggle())` | 双向 `bool` |
 | `OptionButton` | `Bind(..., .Selected())` | 双向 `long` |
@@ -92,9 +92,9 @@ private Button _search = null!;
 
 ## 转换
 
-Label / RichTextLabel 无 `Converter` 时生成 `Convert.ToString`。Range 的 `int` / `float` 隐式转 `double`。LineEdit / TextEdit 不隐式 `ToString()`，非 `string` 必须给转换器。
+Label / RichTextLabel 无 `Converter` 时生成 `ToStringConverter.Convert`（与显式 `ToStringConverter<T>` 同一实现）。Range 的 `int` / `float` 走 `IntToDoubleConverter` / `FloatToDoubleConverter`。LineEdit / TextEdit 不隐式 `ToString()`，非 `string` 必须给转换器。
 
-自定义转换实现 `Telepath.Core.IValueConverter<TSource, TTarget>`（一向）或 `ITwoWayValueConverter<TSource, TTarget>`（双向，再实现 `ConvertBack`）。类型必须具体、非开放泛型、有公共无参构造。命令绑定不能带 `Converter`。
+自定义转换实现 `Telepath.Core.IValueConverter<TSource, TTarget>`（一向）或 `ITwoWayValueConverter<TSource, TTarget>`（双向，再实现 `ConvertBack`）。类型必须具体、非开放泛型、有公共无参构造。命令绑定不能带 `Converter`。内置：`ToStringConverter<T>`、`IntToDoubleConverter`、`FloatToDoubleConverter`；隐式绑定走同一套实现。
 
 ```csharp
 public sealed class CountTextConverter : IValueConverter<int, string>
