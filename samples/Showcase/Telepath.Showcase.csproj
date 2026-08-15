@@ -8,8 +8,5 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Telepath.Godot\Telepath.Godot.csproj" />
-    <ProjectReference Include="..\..\src\Telepath.SourceGenerator\Telepath.SourceGenerator.csproj"
-                      OutputItemType="Analyzer"
-                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>
