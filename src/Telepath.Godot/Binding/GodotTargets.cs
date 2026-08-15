@@ -48,6 +48,28 @@ public static class GodotTargets
             value => button.Selected = (int)value,
             button.OnItemSelectedAsObservable());
 
+    public static BindingTarget<long> Selected(this ItemList list)
+        => BindingTarget<long>.TwoWay(
+            () =>
+            {
+                var selected = list.GetSelectedItems();
+                return selected.Length == 0 ? -1 : selected[0];
+            },
+            value =>
+            {
+                if (value < 0 || value >= list.ItemCount)
+                {
+                    list.DeselectAll();
+                    return;
+                }
+
+                list.Select((int)value);
+            },
+            Observable.FromEvent<ItemList.ItemSelectedEventHandler, long>(
+                h => new ItemList.ItemSelectedEventHandler(h),
+                h => list.ItemSelected += h,
+                h => list.ItemSelected -= h));
+
     public static BindingTarget<bool> Visible(this CanvasItem node)
         => BindingTarget<bool>.OneWay(value => node.Visible = value);
 

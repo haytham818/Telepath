@@ -341,6 +341,40 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
+    public void GeneratesSelectedBindingForItemList()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [LinkTo("%Items", "Selected", Kind = LinkKind.Selected)]
+                private Godot.ItemList _items = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Selected { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("bindings.Bind(vm.@Selected, @_items.Selected())", generated);
+        Assert.Contains("ITelepathView<", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
     public void ReportsIncompatibleLinkKind()
     {
         const string source = """
@@ -939,6 +973,10 @@ public sealed class TelepathViewGeneratorTests
             {
             }
 
+            public class ItemList : Control
+            {
+            }
+
             public class Range : Control
             {
             }
@@ -1017,8 +1055,15 @@ public sealed class TelepathViewGeneratorTests
                 public static object Toggle(this global::Godot.BaseButton button) => button;
                 public static object Value(this global::Godot.Range range) => range;
                 public static object Selected(this global::Godot.OptionButton button) => button;
+                public static object Selected(this global::Godot.ItemList list) => list;
                 public static object Visible(this global::Godot.CanvasItem node) => node;
                 public static object Disabled(this global::Godot.BaseButton button) => button;
+            }
+
+            public interface ITelepathView<TViewModel>
+                where TViewModel : class, Telepath.Core.IViewModel
+            {
+                TViewModel? ViewModel { get; set; }
             }
         }
         """;

@@ -473,7 +473,9 @@ internal static class ViewGenerator
             LinkToKind.Toggle or LinkToKind.Disabled =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.BaseButtonName),
             LinkToKind.Value => SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RangeName),
-            LinkToKind.Selected => SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName),
+            LinkToKind.Selected =>
+                SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName)
+                || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ItemListName),
             LinkToKind.Visible =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CanvasItemName)
                 || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ControlName),

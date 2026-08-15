@@ -32,7 +32,9 @@ internal static class ViewSourceRenderer
 
         source.Append("partial class @")
             .Append(viewType.Name)
-            .AppendLine();
+            .Append(" : global::Telepath.Godot.ITelepathView<")
+            .Append(viewModelDisplay)
+            .AppendLine(">");
         source.AppendLine("{");
         source.Append("    private global::Telepath.Godot.ViewLifecycle<")
             .Append(viewModelDisplay)

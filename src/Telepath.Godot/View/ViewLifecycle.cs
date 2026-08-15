@@ -16,6 +16,7 @@ public sealed class ViewLifecycle<TViewModel>
     private readonly Func<TViewModel> _createViewModel;
     private readonly Action<TViewModel, BindingSet> _onBind;
     private BindingSet? _bindings;
+    private bool _ownsViewModel;
 
     public ViewLifecycle(
         Control owner,
@@ -30,7 +31,8 @@ public sealed class ViewLifecycle<TViewModel>
     }
 
     /// <summary>
-    /// Gets or injects the ViewModel. A null value is replaced during the ready notification.
+    /// Gets or injects the ViewModel. A null value is replaced during the ready
+    /// notification. Injected instances are not disposed when the owner is freed.
     /// </summary>
     public TViewModel? ViewModel { get; set; }
 
@@ -43,7 +45,12 @@ public sealed class ViewLifecycle<TViewModel>
         {
             case (int)Node.NotificationReady:
                 _onReady();
-                ViewModel ??= _createViewModel();
+                if (ViewModel is null)
+                {
+                    ViewModel = _createViewModel();
+                    _ownsViewModel = true;
+                }
+
                 AttachBindings();
                 break;
 
@@ -61,8 +68,13 @@ public sealed class ViewLifecycle<TViewModel>
 
             case (int)GodotObject.NotificationPredelete:
                 DetachBindings();
-                ViewModel?.Dispose();
+                if (_ownsViewModel)
+                {
+                    ViewModel?.Dispose();
+                }
+
                 ViewModel = null;
+                _ownsViewModel = false;
                 break;
         }
     }

@@ -4,17 +4,19 @@ View 是宿主程序集中的具体 Godot `Control`。Telepath 用组合对象�
 ViewModel 寿命，不在库程序集中声明 Godot View 基类。
 
 ```
-src/Telepath.Core/Binding/                       BindingSet、BindingTarget、OneWay / TwoWay / Bind / BindCommand
-src/Telepath.Godot/Binding/GodotTargets.cs       控件 → BindingTarget（.Text() / .Value() 等）
+src/Telepath.Core/Binding/                       BindingSet、BindingTarget、CollectionTarget、Bind / BindCommand / BindItems
+src/Telepath.Godot/Binding/GodotTargets.cs       控件 → BindingTarget（.Text() / .Value() / .Selected() 等）
+src/Telepath.Godot/Binding/GodotCollectionTargets.cs  ItemList / OptionButton / Container → CollectionTarget
 src/Telepath.Godot/Binding/GodotCommands.cs      按钮 / LineEdit 命令
 src/Telepath.Godot/View/ViewLifecycle.cs         ViewModel / 绑定寿命
+src/Telepath.Godot/View/ITelepathView.cs         可注入 ViewModel 的 View 契约
 src/Telepath.Godot/View/TelepathViewAttribute.cs View 标记
 src/Telepath.Godot/Binding/Attrtbutes/LinkToAttribute.cs  声明式绑定
 src/Telepath.Godot/Binding/Attrtbutes/LinkKind.cs         覆盖推断
 src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 
-示例：[CounterApp](../samples/Showcase/CounterApp/CounterView.cs)（无参命令），[SearchApp](../samples/Showcase/SearchApp/SearchView.cs)（`ReactiveCommand<T>` + `Parameter`）。
+示例：[CounterApp](../samples/Showcase/CounterApp/CounterView.cs)（无参命令），[SearchApp](../samples/Showcase/SearchApp/SearchView.cs)（`ReactiveCommand<T>` + `Parameter`），[ListApp](../samples/Showcase/ListApp/ListView.cs)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.cs)（容器 + 子 View）。
 
 具体 View 必须：
 
@@ -38,19 +40,19 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 | `_Ready` | 若未注入则 `CreateViewModel()` 一次 | 解析 `[LinkTo]` 节点后 `OnBind` |
 | `_EnterTree`（已 Ready、无绑定） | 不 new | 再次接线 |
 | `_ExitTree` | **不** `Dispose` | `BindingSet.Dispose` |
-| `NotificationPredelete` | `ViewModel.Dispose()` | 已在出树时断开 |
+| `NotificationPredelete` | 自己 `CreateViewModel()` 的才 `ViewModel.Dispose()`；注入的不 Dispose | 已在出树时断开 |
 
 不要 `viewModel.AddTo(node)`。订阅进 `BindingSet`，或 `bindings.Add(...)`。
 
 ## API
 
-- `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`
+- `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`。注入的 VM 在节点释放时不 `Dispose`
 - `[LinkTo(nodePath, member)]`：生成 `GetNode` 与 `Bind(source, target)`；可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换。同一字段可叠多条（节点路径必须相同）
 - `OnReady()`：可选；在生成的节点解析之后调用
 - `OnBind(vm, bindings)`：可选；在声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
 - `_Notification`：只声明 partial 方法，不要自行实现或覆盖其他生命周期方法
 
-`BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）和 `BindCommand`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
+`BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）、`BindCommand` 和 `BindItems`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
 
 ## `[LinkTo]` 推断
 
@@ -62,6 +64,7 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 | `LineEdit` / `TextEdit` | `Bind(..., .Text())` | `BindableReactiveProperty<string>` 双向，否则一向 |
 | `CheckBox` / `CheckButton` | `Bind(..., .Toggle())` | 双向 `bool` |
 | `OptionButton` | `Bind(..., .Selected())` | 双向 `long` |
+| `ItemList` | 必须设 `Kind = Selected` | 双向 `long`（无选中为 `-1`）；项集合用手写 `BindItems` |
 | 其他 `BaseButton` | `BindCommand` | 按下 `Execute`，`CanExecute` → `Disabled` |
 | `Range`（Slider / SpinBox / ProgressBar / ScrollBar） | `Bind(..., .Value())` | `BindableReactiveProperty<double>` 双向，否则一向；`int` / `float` 隐式转 `double` |
 | 普通 `Control` | 报 TPV008 | 必须设 `Kind` |
@@ -124,4 +127,25 @@ public partial class CounterView : Control
 }
 ```
 
-尚未纳入：列表。ViewModel 契约见 [viewmodel.md](viewmodel.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。
+## 列表
+
+集合不走 `BindingTarget<T>`。`CollectionTarget<T>` 提供 `Reset` / `Insert` / `RemoveAt` / `Replace` / `Move`。`ObservableList<T>` 增量更新，`Observable<IReadOnlyList<T>>`（含 `BindableReactiveProperty`）每次整表 `Reset`。可选 `Func` / `IValueConverter` 把项转成目标类型。
+
+Godot：`ItemList.Items()`、`OptionButton.Items()` 都是 `CollectionTarget<string>`。选中仍是标量：`ItemList` 要写 `Kind = LinkKind.Selected`，`OptionButton` 继续默认 `Selected`。容器模板用 `Container.Items(create)` 或 `Items<TView, TViewModel>(PackedScene)`，在 `AddChild` 之前注入项 ViewModel；出树时 `Detach` 会拆掉生成的子节点，不释放项 VM。`[LinkTo]` 不生成 `BindItems`，在 `OnBind` 手写。
+
+```csharp
+[LinkTo("%Items", nameof(ListViewModel.Selected), Kind = LinkKind.Selected)]
+private ItemList _items = null!;
+
+private void OnBind(ListViewModel vm, BindingSet bindings)
+{
+    bindings.BindItems(vm.Items, _items.Items());
+    bindings.BindItems(vm.Items, _choices.Items());
+}
+```
+
+```csharp
+bindings.BindItems(vm.Items, _list.Items<TodoItemView, TodoItemViewModel>(ItemScene));
+```
+
+ViewModel 里 `ObservableList<T>` 手写，不要 `[Bindable]` 包成 `BindableReactiveProperty`。项若是 ViewModel，从集合移除和父 `OnDispose` 时由拥有者 `Dispose`。示例：[ListApp](../samples/Showcase/ListApp/ListView.cs)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.cs)（容器 + 子 View）。ViewModel 契约见 [viewmodel.md](viewmodel.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。

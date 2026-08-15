@@ -34,7 +34,7 @@ Telepath.Showcase (演示宿主) → Telepath.Godot → Telepath.Core → R3
 - Godot 只在宿主主程序集解析 C# 脚本：挂到场景上的脚本（含 `TelepathEditorPlugin`、`FrameProviderDispatcher`、具体 View）由 `Telepath.Showcase` 编译，放在 `samples/Showcase/addons/Telepath/` 或示例场景旁
 - 具体 View 脚本直接继承非泛型 Godot 节点，使用 `[TelepathView<TViewModel>]`，并在用户源码中声明 `public override partial void _Notification(int what);`
 - Godot 的 `MethodName` / 方法表只由 Godot SDK 生成；Telepath 生成器只实现 partial 通知桥
-- 进树接绑定、出树断绑定、`NotificationPredelete` 才 `ViewModel.Dispose()`；不要 `viewModel.AddTo(node)`
+- 进树接绑定、出树断绑定、`NotificationPredelete` 才 `ViewModel.Dispose()`（仅自己 `CreateViewModel()` 的；注入的项 VM 由集合拥有者释放）；不要 `viewModel.AddTo(node)`
 
 ### 项目详细信息
 见 doc/

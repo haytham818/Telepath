@@ -63,12 +63,14 @@ UI 格式化（例如把 `Count` 显示成 `"Count: 3"`）不要做成派生 bin
 
 仍可手写 `BindableReactiveProperty` / `ReactiveCommand` / `ReactiveCommand<T>` 并 `Track`。
 
+列表用 Cysharp `ObservableList<T>`，不要 `[Bindable]`：列表自己会通知，包进 `BindableReactiveProperty` 只会在换引用时更新。整表替换（搜索结果、过滤）用 `BindableReactiveProperty<IReadOnlyList<T>>`。View 侧 `BindItems` 见 [view.md](view.md)。
+
 ## 与 Godot 节点生命周期间的关系
 
 | 节点生命周期 | ViewModel | 绑定 |
 |----------|-----------|------|
 | `_Ready` / `_EnterTree` | 仅首次创建时 new；不要每次进树都 new | 接绑定 |
 | `_ExitTree` | **不** `Dispose`（节点可能再进树） | 断绑定 |
-| 真正释放（`NotificationPredelete` / `Free`） | `viewModel.Dispose()` | 在 `_ExitTree` 时已断 |
+| 真正释放（`NotificationPredelete` / `Free`） | 自己创建的才 `Dispose`；注入的项 VM 由集合拥有者释放 | 在 `_ExitTree` 时已断 |
 
 R3 的 `AddTo(Node)` 在出树时 Dispose，只适合绑定订阅，不要用来挂 ViewModel。View 生命周期见 [view.md](view.md)，时钟与胶水见 [r3-godot.md](r3-godot.md)。
