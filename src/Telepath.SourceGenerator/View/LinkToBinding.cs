@@ -22,7 +22,8 @@ internal sealed class LinkToBinding
         LinkToKind kind,
         string? parameterMemberName = null,
         string? parameterAccess = null,
-        string? converterTypeDisplay = null)
+        string? converterTypeDisplay = null,
+        bool implicitToString = false)
     {
         TargetMemberName = targetMemberName;
         NodePath = nodePath;
@@ -32,6 +33,7 @@ internal sealed class LinkToBinding
         ParameterMemberName = parameterMemberName;
         ParameterAccess = parameterAccess;
         ConverterTypeDisplay = converterTypeDisplay;
+        ImplicitToString = implicitToString;
     }
 
     public string TargetMemberName { get; }
@@ -50,15 +52,16 @@ internal sealed class LinkToBinding
 
     public string? ConverterTypeDisplay { get; }
 
-    public string BindMethodName => Kind switch
+    public bool ImplicitToString { get; }
+
+    public string TargetAccessor => Kind switch
     {
-        LinkToKind.Text => "BindText",
-        LinkToKind.Command => "BindCommand",
-        LinkToKind.Toggle => "BindToggle",
-        LinkToKind.Value => "BindValue",
-        LinkToKind.Selected => "BindSelected",
-        LinkToKind.Visible => "BindVisible",
-        LinkToKind.Disabled => "BindDisabled",
+        LinkToKind.Text => ".Text()",
+        LinkToKind.Toggle => ".Toggle()",
+        LinkToKind.Value => ".Value()",
+        LinkToKind.Selected => ".Selected()",
+        LinkToKind.Visible => ".Visible()",
+        LinkToKind.Disabled => ".Disabled()",
         _ => throw new InvalidOperationException($"Unsupported LinkTo kind '{Kind}'."),
     };
 }

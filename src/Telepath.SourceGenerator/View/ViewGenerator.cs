@@ -338,6 +338,11 @@ internal static class ViewGenerator
                     continue;
                 }
 
+                var implicitToString = kind == LinkToKind.Text
+                    && converterTypeDisplay is null
+                    && (SymbolHelpers.IsOrInheritsFrom(namedType, ViewMetadata.LabelName)
+                        || SymbolHelpers.IsOrInheritsFrom(namedType, ViewMetadata.RichTextLabelName));
+
                 linkTos.Add(new LinkToBinding(
                     member.Name,
                     nodePath!,
@@ -346,7 +351,8 @@ internal static class ViewGenerator
                     kind,
                     parameterMemberName,
                     parameterAccess,
-                    converterTypeDisplay));
+                    converterTypeDisplay,
+                    implicitToString));
             }
         }
 

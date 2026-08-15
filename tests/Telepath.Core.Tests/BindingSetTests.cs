@@ -206,6 +206,72 @@ public sealed class BindingSetTests
         Assert.Equal(9, source.Value);
     }
 
+    [Fact]
+    public void BindOneWayWritesToTarget()
+    {
+        using var source = new BindableReactiveProperty<string>("a");
+        var target = "unset";
+        using var bindings = new BindingSet();
+
+        bindings.Bind(source, BindingTarget<string>.OneWay(value => target = value));
+
+        Assert.Equal("a", target);
+        source.Value = "b";
+        Assert.Equal("b", target);
+    }
+
+    [Fact]
+    public void BindTwoWayWhenTargetSupportsIt()
+    {
+        using var source = new BindableReactiveProperty<string>("a");
+        var target = "unset";
+        var changed = new Subject<string>();
+        using var bindings = new BindingSet();
+
+        bindings.Bind(
+            source,
+            BindingTarget<string>.TwoWay(() => target, value => target = value, changed));
+
+        Assert.Equal("a", target);
+        source.Value = "b";
+        Assert.Equal("b", target);
+
+        target = "c";
+        changed.OnNext("c");
+        Assert.Equal("c", source.Value);
+    }
+
+    [Fact]
+    public void BindBindablePropertyToOneWayTargetStaysOneWay()
+    {
+        using var source = new BindableReactiveProperty<int>(1);
+        var target = "unset";
+        using var bindings = new BindingSet();
+
+        bindings.Bind(source, BindingTarget<int>.OneWay(value => target = value.ToString()));
+
+        Assert.Equal("1", target);
+        source.Value = 2;
+        Assert.Equal("2", target);
+    }
+
+    [Fact]
+    public void BindConvertsWithFunc()
+    {
+        using var source = new BindableReactiveProperty<int>(2);
+        var target = "unset";
+        using var bindings = new BindingSet();
+
+        bindings.Bind(
+            source,
+            BindingTarget<string>.OneWay(value => target = value),
+            static value => $"n:{value}");
+
+        Assert.Equal("n:2", target);
+        source.Value = 3;
+        Assert.Equal("n:3", target);
+    }
+
     private sealed class PrefixConverter : ITwoWayValueConverter<int, string>
     {
         public string Convert(int value) => $"n:{value}";

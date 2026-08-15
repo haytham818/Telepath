@@ -165,6 +165,71 @@ public static class BindingExtensions
         bindings.TwoWay(source, get, set, changed, converter.Convert, converter.ConvertBack);
     }
 
+    public static void Bind<T>(this BindingSet bindings, Observable<T> source, BindingTarget<T> target)
+    {
+        ArgumentNullException.ThrowIfNull(target.Set);
+        bindings.OneWay(source, target.Set);
+    }
+
+    public static void Bind<T>(this BindingSet bindings, BindableReactiveProperty<T> source, BindingTarget<T> target)
+    {
+        ArgumentNullException.ThrowIfNull(target.Set);
+        if (target.SupportsTwoWay)
+        {
+            bindings.TwoWay(source, target.Get!, target.Set, target.Changed!);
+            return;
+        }
+
+        bindings.OneWay(source, target.Set);
+    }
+
+    public static void Bind<TSource, TTarget>(
+        this BindingSet bindings,
+        Observable<TSource> source,
+        BindingTarget<TTarget> target,
+        Func<TSource, TTarget> convert)
+    {
+        ArgumentNullException.ThrowIfNull(target.Set);
+        bindings.OneWay(source, target.Set, convert);
+    }
+
+    public static void Bind<TSource, TTarget>(
+        this BindingSet bindings,
+        Observable<TSource> source,
+        BindingTarget<TTarget> target,
+        IValueConverter<TSource, TTarget> converter)
+    {
+        ArgumentNullException.ThrowIfNull(target.Set);
+        bindings.OneWay(source, target.Set, converter);
+    }
+
+    public static void Bind<TSource, TTarget>(
+        this BindingSet bindings,
+        BindableReactiveProperty<TSource> source,
+        BindingTarget<TTarget> target,
+        Func<TSource, TTarget> convert,
+        Func<TTarget, TSource> convertBack)
+    {
+        ArgumentNullException.ThrowIfNull(target.Set);
+        if (target.SupportsTwoWay)
+        {
+            bindings.TwoWay(source, target.Get!, target.Set, target.Changed!, convert, convertBack);
+            return;
+        }
+
+        bindings.OneWay(source, target.Set, convert);
+    }
+
+    public static void Bind<TSource, TTarget>(
+        this BindingSet bindings,
+        BindableReactiveProperty<TSource> source,
+        BindingTarget<TTarget> target,
+        ITwoWayValueConverter<TSource, TTarget> converter)
+    {
+        ArgumentNullException.ThrowIfNull(converter);
+        bindings.Bind(source, target, converter.Convert, converter.ConvertBack);
+    }
+
     public static void BindCommand(
         this BindingSet bindings,
         ReactiveCommand command,

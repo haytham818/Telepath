@@ -169,8 +169,11 @@ public sealed class TelepathViewGeneratorTests
         Assert.Contains("__TelepathOnBind", generated);
         Assert.Contains("GetNode<global::Godot.Label>(\"%CountLabel\")", generated);
         Assert.Contains("GetNode<global::Godot.Button>(\"%IncrementButton\")", generated);
-        Assert.Contains("bindings.BindText(vm.@CountText, @_countLabel)", generated);
+        Assert.Contains(
+            "bindings.Bind(vm.@CountText, @_countLabel.Text(), static v => global::System.Convert.ToString(v) ?? string.Empty)",
+            generated);
         Assert.Contains("bindings.BindCommand(vm.@Increment, @_incrementButton)", generated);
+        Assert.Contains("using Telepath.Core;", generated);
         Assert.Contains("using Telepath.Godot;", generated);
         Assert.Contains("global::Telepath.Core.BindingSet bindings", generated);
         Assert.DoesNotContain("OnBind(vm, bindings)", generated);
@@ -275,15 +278,19 @@ public sealed class TelepathViewGeneratorTests
 
         Assert.Empty(result.Diagnostics);
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
-        Assert.Contains("bindings.BindText(vm.@Title, @_title)", generated);
-        Assert.Contains("bindings.BindText(vm.@Body, @_body)", generated);
-        Assert.Contains("bindings.BindText(vm.@Name, @_name)", generated);
-        Assert.Contains("bindings.BindText(vm.@Notes, @_notes)", generated);
-        Assert.Contains("bindings.BindToggle(vm.@Enabled, @_enabled)", generated);
-        Assert.Contains("bindings.BindToggle(vm.@Featured, @_featured)", generated);
-        Assert.Contains("bindings.BindSelected(vm.@Choice, @_choice)", generated);
-        Assert.Contains("bindings.BindValue(vm.@Volume, @_volume)", generated);
-        Assert.Contains("bindings.BindValue(vm.@Progress, @_progress)", generated);
+        Assert.Contains(
+            "bindings.Bind(vm.@Title, @_title.Text(), static v => global::System.Convert.ToString(v) ?? string.Empty)",
+            generated);
+        Assert.Contains(
+            "bindings.Bind(vm.@Body, @_body.Text(), static v => global::System.Convert.ToString(v) ?? string.Empty)",
+            generated);
+        Assert.Contains("bindings.Bind(vm.@Name, @_name.Text())", generated);
+        Assert.Contains("bindings.Bind(vm.@Notes, @_notes.Text())", generated);
+        Assert.Contains("bindings.Bind(vm.@Enabled, @_enabled.Toggle())", generated);
+        Assert.Contains("bindings.Bind(vm.@Featured, @_featured.Toggle())", generated);
+        Assert.Contains("bindings.Bind(vm.@Choice, @_choice.Selected())", generated);
+        Assert.Contains("bindings.Bind(vm.@Volume, @_volume.Value())", generated);
+        Assert.Contains("bindings.Bind(vm.@Progress, @_progress.Value())", generated);
         Assert.Contains("bindings.BindCommand(vm.@Save, @_save)", generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
@@ -327,8 +334,8 @@ public sealed class TelepathViewGeneratorTests
 
         Assert.Empty(result.Diagnostics);
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
-        Assert.Contains("bindings.BindVisible(vm.@ShowPanel, @_panel)", generated);
-        Assert.Contains("bindings.BindDisabled(vm.@Locked, @_lock)", generated);
+        Assert.Contains("bindings.Bind(vm.@ShowPanel, @_panel.Visible())", generated);
+        Assert.Contains("bindings.Bind(vm.@Locked, @_lock.Disabled())", generated);
         Assert.Contains("bindings.BindCommand(vm.@DoThing, @_weird)", generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
@@ -399,7 +406,7 @@ public sealed class TelepathViewGeneratorTests
 
         Assert.Empty(result.Diagnostics);
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
-        Assert.Contains("bindings.BindText(vm.@Query, @_query)", generated);
+        Assert.Contains("bindings.Bind(vm.@Query, @_query.Text())", generated);
         Assert.Contains("bindings.BindCommand(vm.@Search, @_search, () => @_query.Text)", generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
@@ -476,7 +483,7 @@ public sealed class TelepathViewGeneratorTests
         Assert.Empty(result.Diagnostics);
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
         Assert.Equal(1, CountOccurrences(generated, "@_query = GetNode<global::Godot.LineEdit>(\"%Query\")"));
-        Assert.Contains("bindings.BindText(vm.@Query, @_query)", generated);
+        Assert.Contains("bindings.Bind(vm.@Query, @_query.Text())", generated);
         Assert.Contains("bindings.BindCommand(vm.@Search, @_query)", generated);
         Assert.Contains("bindings.BindCommand(vm.@Search, @_search, () => @_query.Text)", generated);
         Assert.DoesNotContain("OnBind(vm, bindings)", generated);
@@ -617,7 +624,7 @@ public sealed class TelepathViewGeneratorTests
         Assert.Empty(result.Diagnostics);
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
         Assert.Contains(
-            "bindings.BindText(vm.@Count, @_countLabel, new global::Demo.CountTextConverter())",
+            "bindings.Bind(vm.@Count, @_countLabel.Text(), new global::Demo.CountTextConverter())",
             generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
@@ -825,15 +832,11 @@ public sealed class TelepathViewGeneratorTests
 
             public sealed class BindingSet
             {
-                public void BindText(object source, object target) { }
-                public void BindText(object source, object target, object converter) { }
+                public void Bind(object source, object target) { }
+                public void Bind(object source, object target, object converter) { }
+                public void Bind(object source, object target, System.Func<object, string> convert) { }
                 public void BindCommand(object command, object button) { }
                 public void BindCommand<T>(object command, object button, System.Func<T> getParameter) { }
-                public void BindToggle(object source, object button) { }
-                public void BindValue(object source, object range) { }
-                public void BindSelected(object source, object button) { }
-                public void BindVisible(object source, object node) { }
-                public void BindDisabled(object source, object button) { }
             }
         }
 
@@ -956,6 +959,19 @@ public sealed class TelepathViewGeneratorTests
                 public TViewModel? ViewModel { get; set; }
 
                 public void HandleNotification(int what) { }
+            }
+
+            public static class GodotTargets
+            {
+                public static object Text(this global::Godot.Label label) => label;
+                public static object Text(this global::Godot.RichTextLabel label) => label;
+                public static object Text(this global::Godot.LineEdit edit) => edit;
+                public static object Text(this global::Godot.TextEdit edit) => edit;
+                public static object Toggle(this global::Godot.BaseButton button) => button;
+                public static object Value(this global::Godot.Range range) => range;
+                public static object Selected(this global::Godot.OptionButton button) => button;
+                public static object Visible(this global::Godot.CanvasItem node) => node;
+                public static object Disabled(this global::Godot.BaseButton button) => button;
             }
         }
         """;

@@ -4,12 +4,13 @@ View 是宿主程序集中的具体 Godot `Control`。Telepath 用组合对象�
 ViewModel 寿命，不在库程序集中声明 Godot View 基类。
 
 ```
-src/Telepath.Core/Binding/                       BindingSet 袋 + OneWay / TwoWay / BindCommand
-src/Telepath.Godot/Binding/GodotBindings.cs      控件适配
+src/Telepath.Core/Binding/                       BindingSet、BindingTarget、OneWay / TwoWay / Bind / BindCommand
+src/Telepath.Godot/Binding/GodotTargets.cs       控件 → BindingTarget（.Text() / .Value() 等）
+src/Telepath.Godot/Binding/GodotCommands.cs      按钮 / LineEdit 命令
 src/Telepath.Godot/View/ViewLifecycle.cs         ViewModel / 绑定寿命
 src/Telepath.Godot/View/TelepathViewAttribute.cs View 标记
-src/Telepath.Godot/View/LinkToAttribute.cs       声明式绑定
-src/Telepath.Godot/View/LinkKind.cs              覆盖推断
+src/Telepath.Godot/Binding/Attrtbutes/LinkToAttribute.cs  声明式绑定
+src/Telepath.Godot/Binding/Attrtbutes/LinkKind.cs         覆盖推断
 src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 
@@ -44,12 +45,12 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 ## API
 
 - `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`
-- `[LinkTo(nodePath, member)]`：生成 `GetNode` 与对应 `BindXxx`；可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换。同一字段可叠多条（节点路径必须相同）
+- `[LinkTo(nodePath, member)]`：生成 `GetNode` 与 `Bind(source, target)`；可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换。同一字段可叠多条（节点路径必须相同）
 - `OnReady()`：可选；在生成的节点解析之后调用
 - `OnBind(vm, bindings)`：可选；在声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
 - `_Notification`：只声明 partial 方法，不要自行实现或覆盖其他生命周期方法
 
-`BindingSet` 只收集一次进树周期的订阅。接线走三条原语：`OneWay`、`TwoWay`、`BindCommand`。Godot 控件方法是薄适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 双向。
+`BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）和 `BindCommand`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
 
 ## `[LinkTo]` 推断
 
@@ -57,12 +58,12 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 
 | 控件 | 生成 | 默认方向 |
 |------|------|----------|
-| `Label` / `RichTextLabel` | `BindText` | 一向 |
-| `LineEdit` / `TextEdit` | `BindText` | `BindableReactiveProperty<string>` 双向，否则一向 |
-| `CheckBox` / `CheckButton` | `BindToggle` | 双向 `bool` |
-| `OptionButton` | `BindSelected` | 双向 `long` |
+| `Label` / `RichTextLabel` | `Bind(..., .Text())` | 一向；无 Converter 时 `Convert.ToString` |
+| `LineEdit` / `TextEdit` | `Bind(..., .Text())` | `BindableReactiveProperty<string>` 双向，否则一向 |
+| `CheckBox` / `CheckButton` | `Bind(..., .Toggle())` | 双向 `bool` |
+| `OptionButton` | `Bind(..., .Selected())` | 双向 `long` |
 | 其他 `BaseButton` | `BindCommand` | 按下 `Execute`，`CanExecute` → `Disabled` |
-| `Range`（Slider / SpinBox / ProgressBar / ScrollBar） | `BindValue` | `BindableReactiveProperty<double>` 双向，否则一向；`int` / `float` 隐式转 `double` |
+| `Range`（Slider / SpinBox / ProgressBar / ScrollBar） | `Bind(..., .Value())` | `BindableReactiveProperty<double>` 双向，否则一向；`int` / `float` 隐式转 `double` |
 | 普通 `Control` | 报 TPV008 | 必须设 `Kind` |
 
 `Visible` / `Disabled` 不靠类型猜：
@@ -72,8 +73,8 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 private Control _panel = null!;
 ```
 
-- `BindVisible` → `CanvasItem.Visible`
-- `BindDisabled` → `BaseButton.Disabled`（Godot 的 `Control` 没有 Disabled）
+- `.Visible()` → `CanvasItem.Visible`
+- `.Disabled()` → `BaseButton.Disabled`（Godot 的 `Control` 没有 Disabled）
 - `Kind` 也可覆盖推断，例如 CheckBox 当命令：`Kind = LinkKind.Command`
 - 带参命令：按钮按下时从另一个控件取值。`LineEdit` + `Kind = Command` 则走 `TextSubmitted`，不必写 `Parameter`
 - 同一控件要绑多条（例如 `LineEdit` 既双向文本又回车提交）时，在同一字段上叠 `[LinkTo]`，不必再写 `OnBind`
@@ -87,11 +88,11 @@ private LineEdit _query = null!;
 private Button _search = null!;
 ```
 
-生成 `bindings.BindText(vm.Query, _query)`、`bindings.BindCommand(vm.SearchCommand, _query)`，以及 `bindings.BindCommand(vm.SearchCommand, _search, () => _query.Text)`。`Parameter` 取值：文本控件 `.Text`，开关 `.ButtonPressed`，`Range` `.Value`，`OptionButton` `.Selected`。
+生成 `bindings.Bind(vm.Query, _query.Text())`、`bindings.BindCommand(vm.SearchCommand, _query)`，以及 `bindings.BindCommand(vm.SearchCommand, _search, () => _query.Text)`。`Parameter` 取值：文本控件 `.Text`，开关 `.ButtonPressed`，`Range` `.Value`，`OptionButton` `.Selected`。
 
 ## 转换
 
-Label / RichTextLabel 绑非 `string` 时走 `BindText<T>`，隐式 `ToString()`。Range 的 `int` / `float` 隐式转 `double`。LineEdit / TextEdit 不隐式 `ToString()`，非 `string` 必须给转换器。
+Label / RichTextLabel 无 `Converter` 时生成 `Convert.ToString`。Range 的 `int` / `float` 隐式转 `double`。LineEdit / TextEdit 不隐式 `ToString()`，非 `string` 必须给转换器。
 
 自定义转换实现 `Telepath.Core.IValueConverter<TSource, TTarget>`（一向）或 `ITwoWayValueConverter<TSource, TTarget>`（双向，再实现 `ConvertBack`）。类型必须具体、非开放泛型、有公共无参构造。命令绑定不能带 `Converter`。
 
@@ -105,7 +106,7 @@ public sealed class CountTextConverter : IValueConverter<int, string>
 private Label _countLabel = null!;
 ```
 
-生成 `bindings.BindText(vm.Count, _countLabel, new CountTextConverter())`。手写 `OnBind` 也可传 `Func`：`bindings.BindText(vm.Count, _countLabel, c => $"Count: {c}")`。转换器与控件目标类型是否匹配由 C# 重载决议检查；双向控件只实现一向转换器会编译失败。
+生成 `bindings.Bind(vm.Count, _countLabel.Text(), new CountTextConverter())`。手写 `OnBind`：`bindings.Bind(vm.Count, _countLabel.Text(), c => $"Count: {c}")`。转换器与 `BindingTarget<T>` 是否匹配由 C# 重载决议检查；双向目标只实现一向转换器会走一向 `Bind`。
 
 ```csharp
 [TelepathView<CounterViewModel>]
