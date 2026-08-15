@@ -81,11 +81,11 @@ private Control _panel = null!;
 [LinkTo("%Query", nameof(SearchViewModel.Query))]
 private LineEdit _query = null!;
 
-[LinkTo("%Search", nameof(SearchViewModel.Search), Parameter = nameof(_query))]
+[LinkTo("%Search", nameof(SearchViewModel.SearchCommand), Parameter = nameof(_query))]
 private Button _search = null!;
 ```
 
-生成 `bindings.BindCommand(vm.Search, _search, () => _query.Text)`。`Parameter` 取值：文本控件 `.Text`，开关 `.ButtonPressed`，`Range` `.Value`，`OptionButton` `.Selected`。
+生成 `bindings.BindCommand(vm.SearchCommand, _search, () => _query.Text)`。`Parameter` 取值：文本控件 `.Text`，开关 `.ButtonPressed`，`Range` `.Value`，`OptionButton` `.Selected`。
 
 ```csharp
 [TelepathView<CounterViewModel>]
@@ -94,7 +94,7 @@ public partial class CounterView : Control
     [LinkTo("%CountLabel", nameof(CounterViewModel.CountText))]
     private Label _countLabel = null!;
 
-    [LinkTo("%IncrementButton", nameof(CounterViewModel.Increment))]
+    [LinkTo("%IncrementButton", nameof(CounterViewModel.IncrementCommand))]
     private Button _incrementButton = null!;
 
     public override partial void _Notification(int what);

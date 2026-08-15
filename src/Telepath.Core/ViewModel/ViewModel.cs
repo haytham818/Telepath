@@ -13,12 +13,12 @@ namespace Telepath.Core;
 /// public sealed class CounterViewModel : ViewModel
 /// {
 ///     public BindableReactiveProperty&lt;int&gt; Count { get; }
-///     public ReactiveCommand Increment { get; }
+///     public ReactiveCommand IncrementCommand { get; }
 ///
 ///     public CounterViewModel()
 ///     {
 ///         Count = Track(new BindableReactiveProperty&lt;int&gt;(0));
-///         Increment = Track(new ReactiveCommand(_ =&gt; Count.Value++));
+///         IncrementCommand = Track(new ReactiveCommand(_ =&gt; Count.Value++));
 ///     }
 /// }
 /// </code>

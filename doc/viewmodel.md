@@ -27,8 +27,8 @@ src/Telepath.SourceGenerator/ViewModel/
 |------|------|
 | `[Bindable] private int _count` | `BindableReactiveProperty<int> Count` |
 | `[Bindable(nameof(Count))] GetCountText(int count)` | `BindableReactiveProperty<string> CountText`（去掉 `Get` / `Compute` / `Format`） |
-| `[Command] OnIncrement()` | `ReactiveCommand Increment`（去掉 `On`；否则加 `Command` 后缀） |
-| `[Command] OnSearch(string query)` | `ReactiveCommand<string> Search` |
+| `[Command] OnIncrement()` | `ReactiveCommand IncrementCommand`（去掉 `On`，再加 `Command` 后缀） |
+| `[Command] OnSearch(string query)` | `ReactiveCommand<string> SearchCommand` |
 | `[Command(CanExecute = nameof(CanIncrement))]` | `CanExecute` 必须是 `Observable<bool>` 属性或无参方法 |
 
 可用 `Name = "..."` 覆盖生成名。多个 `From` 用 `Observable.CombineLatest`。

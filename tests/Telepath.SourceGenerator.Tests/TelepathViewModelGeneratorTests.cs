@@ -37,7 +37,7 @@ public sealed class TelepathViewModelGeneratorTests
         Assert.Contains("new global::R3.BindableReactiveProperty<int>(@_count)", generated);
         Assert.Contains("public global::R3.BindableReactiveProperty<string> @CountText", generated);
         Assert.Contains("@Count.Select(@GetCountText)", generated);
-        Assert.Contains("public global::R3.ReactiveCommand @Increment", generated);
+        Assert.Contains("public global::R3.ReactiveCommand @IncrementCommand", generated);
         Assert.Contains("@CanIncrement().ToReactiveCommand(_ => @OnIncrement())", generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
@@ -64,8 +64,30 @@ public sealed class TelepathViewModelGeneratorTests
 
         Assert.Empty(result.Diagnostics);
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
-        Assert.Contains("public global::R3.ReactiveCommand<string> @Search", generated);
+        Assert.Contains("public global::R3.ReactiveCommand<string> @SearchCommand", generated);
         Assert.Contains("@CanSearch().ToReactiveCommand<string>(arg => @OnSearch(arg))", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void CommandNameOverrideSkipsCommandSuffix()
+    {
+        const string source = """
+            using Telepath.Core;
+
+            public sealed partial class SampleViewModel : ViewModel
+            {
+                [Command(Name = "Go")]
+                private void OnSearch(string query) { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("public global::R3.ReactiveCommand<string> @Go", generated);
+        Assert.DoesNotContain("GoCommand", generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
 

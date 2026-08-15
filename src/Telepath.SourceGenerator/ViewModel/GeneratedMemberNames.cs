@@ -46,9 +46,13 @@ internal static class GeneratedMemberNames
             return explicitName!;
         }
 
-        return HasPrefix(methodName, "On")
+        var name = HasPrefix(methodName, "On")
             ? methodName.Substring(2)
-            : methodName + "Command";
+            : methodName;
+
+        return name.EndsWith("Command", StringComparison.Ordinal)
+            ? name
+            : name + "Command";
     }
 
     public static string BackingField(string propertyName)

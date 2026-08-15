@@ -10,7 +10,7 @@ public partial class SearchView : Control
     [LinkTo("%Query", nameof(SearchViewModel.Query))]
     private LineEdit _query = null!;
 
-    [LinkTo("%Search", nameof(SearchViewModel.Search), Parameter = nameof(_query))]
+    [LinkTo("%Search", nameof(SearchViewModel.SearchCommand), Parameter = nameof(_query))]
     private Button _search = null!;
 
     [LinkTo("%Result", nameof(SearchViewModel.Result))]
@@ -22,6 +22,6 @@ public partial class SearchView : Control
 
     private void OnBind(SearchViewModel vm, BindingSet bindings)
     {
-        bindings.BindCommand(vm.Search, _query);
+        bindings.BindCommand(vm.SearchCommand, _query);
     }
 }
