@@ -1,0 +1,17 @@
+<Project>
+  <PropertyGroup>
+    <TelepathRepoRoot>$([System.IO.Path]::GetFullPath('$(MSBuildThisFileDirectory)'))</TelepathRepoRoot>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <LangVersion>latest</LangVersion>
+  </PropertyGroup>
+
+  <!--
+    Godot.NET.Sdk (host only) owns its own .godot/mono/temp paths.
+    All other projects redirect bin/obj outside res://.
+  -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' != 'Telepath'">
+    <BaseIntermediateOutputPath>$(TelepathRepoRoot)..\.telepath-build\obj\$(MSBuildProjectName)\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(TelepathRepoRoot)..\.telepath-build\bin\$(MSBuildProjectName)\</BaseOutputPath>
+  </PropertyGroup>
+</Project>

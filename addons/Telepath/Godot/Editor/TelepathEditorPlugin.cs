@@ -1,11 +1,10 @@
 #if TOOLS
 using Godot;
-using System;
 
-namespace Telepath;
+namespace Telepath.Godot;
 
 [Tool]
-public partial class Telepath : EditorPlugin
+public partial class TelepathEditorPlugin : EditorPlugin
 {
     public override void _EnterTree()
     {
@@ -17,6 +16,4 @@ public partial class Telepath : EditorPlugin
         // Clean-up of the plugin goes here.
     }
 }
-
-
 #endif

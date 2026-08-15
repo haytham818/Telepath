@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>Telepath.Godot</RootNamespace>
+    <AssemblyName>Telepath.Godot</AssemblyName>
+    <Description>Godot integration layer for Telepath.</Description>
+    <EnableDynamicLoading>true</EnableDynamicLoading>
+    <!-- Match Godot.NET.Sdk defines needed by EditorPlugin and Godot APIs. -->
+    <DefineConstants>$(DefineConstants);GODOT;TOOLS</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="GodotSharp" Version="4.7.1" />
+    <PackageReference Include="GodotSharpEditor" Version="4.7.1" />
+    <ProjectReference Include="..\Core\Telepath.Core.csproj" />
+  </ItemGroup>
+</Project>

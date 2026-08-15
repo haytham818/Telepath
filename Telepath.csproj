@@ -3,8 +3,19 @@
     <TargetFramework>net8.0</TargetFramework>
     <TargetFramework Condition=" '$(GodotTargetPlatform)' == 'android' ">net9.0</TargetFramework>
     <EnableDynamicLoading>true</EnableDynamicLoading>
+    <RootNamespace>Telepath</RootNamespace>
+    <AssemblyName>Telepath</AssemblyName>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="R3" Version="1.3.1" />
+    <!-- Godot.NET.Sdk compiles every .cs under the project tree; keep layer sources in their own assemblies. -->
+    <Compile Remove="addons/Telepath/Core/**" />
+    <Compile Remove="addons/Telepath/Godot/**" />
+    <Compile Remove="addons/Telepath/SourceGenerator/**" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="addons/Telepath/Godot/Telepath.Godot.csproj" />
+    <ProjectReference Include="addons/Telepath/SourceGenerator/Telepath.SourceGenerator.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 </Project>
