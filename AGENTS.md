@@ -30,9 +30,10 @@ Telepath.Showcase (演示宿主) → Telepath.Godot → Telepath.Core → R3
 - **Core 禁止** 引用 `Godot` / `GodotSharp`，也禁止 `GODOT` 条件编译
 - Godot 可以依赖 Core；反向禁止
 - SourceGenerator **不** 引用 Core / Godot（按属性元数据名识别）
-- 库源码在 `src/`，不放进 Godot 工程树；编辑器不会扫描库基类
+- 库源码在 `src/`，不放进 Godot 工程树；`Telepath.Godot` 不声明 View 类的 `GodotObject` 子类
 - Godot 只在宿主主程序集解析 C# 脚本：挂到场景上的脚本（含 `TelepathEditorPlugin`、`FrameProviderDispatcher`、具体 View）由 `Telepath.Showcase` 编译，放在 `samples/Showcase/addons/Telepath/` 或示例场景旁
-- 具体 View 脚本必须非泛型（`FooView : View<FooViewModel>`）
+- 具体 View 脚本直接继承非泛型 Godot 节点，使用 `[TelepathView<TViewModel>]`，并在用户源码中声明 `public override partial void _Notification(int what);`
+- Godot 的 `MethodName` / 方法表只由 Godot SDK 生成；Telepath 生成器只实现 partial 通知桥
 - 进树接绑定、出树断绑定、`NotificationPredelete` 才 `ViewModel.Dispose()`；不要 `viewModel.AddTo(node)`
 
 ### 项目详细信息

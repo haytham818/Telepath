@@ -3,14 +3,17 @@ using Telepath.Godot;
 
 namespace Telepath.Showcase.CounterApp;
 
-public partial class CounterView : View<CounterViewModel>
+[TelepathView<CounterViewModel>]
+public partial class CounterView : Control
 {
     private Label _countLabel = null!;
     private Button _decrementButton = null!;
     private Button _resetButton = null!;
     private Button _incrementButton = null!;
 
-    protected override void OnReady()
+    public override partial void _Notification(int what);
+
+    private void OnReady()
     {
         _countLabel = GetNode<Label>("%CountLabel");
         _decrementButton = GetNode<Button>("%DecrementButton");
@@ -18,9 +21,9 @@ public partial class CounterView : View<CounterViewModel>
         _incrementButton = GetNode<Button>("%IncrementButton");
     }
 
-    protected override CounterViewModel CreateViewModel() => new();
+    private CounterViewModel CreateViewModel() => new();
 
-    protected override void OnBind(CounterViewModel vm, BindingSet bindings)
+    private void OnBind(CounterViewModel vm, BindingSet bindings)
     {
         bindings.BindLabel(vm.CountText, _countLabel);
         bindings.BindCommand(vm.Decrement, _decrementButton);

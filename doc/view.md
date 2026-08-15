@@ -1,17 +1,30 @@
 # View
 
-Godot `Control` 上的 View 基类：管绑定寿命，不管 ViewModel 内部状态。
+View 是宿主程序集中的具体 Godot `Control`。Telepath 用组合对象管理绑定和
+ViewModel 寿命，不在库程序集中声明 Godot View 基类。
 
 ```
-src/Telepath.Godot/View/View.cs          View / View<TViewModel>
-src/Telepath.Godot/Binding/BindingSet.cs BindLabel / BindCommand / Add
+src/Telepath.Godot/View/ViewLifecycle.cs              ViewModel / 绑定寿命
+src/Telepath.Godot/View/TelepathViewAttribute.cs      View 标记
+src/Telepath.Godot/Binding/BindingSet.cs              BindLabel / BindCommand / Add
+src/Telepath.SourceGenerator/TelepathIncrementalGenerator.cs
 ```
 
 示例：[samples/Showcase/CounterApp/CounterView.cs](../samples/Showcase/CounterApp/CounterView.cs)。
 
-脚本类必须是**非泛型**（`CounterView : View<CounterViewModel>`）。`View` / `View<T>` 在 `Telepath.Godot`（`src/`，Godot 工程树之外）；具体 View 脚本由 `Telepath.Showcase` 编译。
+具体 View 必须：
 
-Godot 的 C# 源生成器只登记**当前脚本类自己声明的** `_Ready` 等方法。`Telepath.Godot` 不引用 `Godot.SourceGenerators`；`View` 的方法表手写在同一文件里。
+- 在 Godot 宿主程序集中直接继承非泛型 `Control`
+- 标记 `[TelepathView<TViewModel>]`
+- 声明 `public override partial void _Notification(int what);`
+- 提供 `CreateViewModel()`、`OnBind(...)`，可选提供 `OnReady()`
+
+`_Notification` 的声明必须写在用户源码中，Godot 的源生成器才能登记该回调。
+Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
+`MethodName`、方法表和调用桥仍全部由当前 Godot SDK 生成。
+
+库中没有继承 `GodotObject` 的 View 类型，也没有构造泛型 Godot 脚本，因此不会
+把 `View` / `View<TViewModel>` 注册进 `ScriptTypeBiMap`。
 
 ## 寿命
 
@@ -27,24 +40,28 @@ Godot 的 C# 源生成器只登记**当前脚本类自己声明的** `_Ready` �
 ## API
 
 - `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`
-- `OnReady()`：`GetNode`；不要 override `_Ready` 而不调 `base`
+- `OnReady()`：可选；用于 `GetNode`
 - `OnBind(vm, bindings)`：只接线
+- `_Notification`：只声明 partial 方法，不要自行实现或覆盖其他生命周期方法
 
 ```csharp
-public partial class CounterView : View<CounterViewModel>
+[TelepathView<CounterViewModel>]
+public partial class CounterView : Control
 {
     private Label _countLabel = null!;
     private Button _incrementButton = null!;
 
-    protected override void OnReady()
+    public override partial void _Notification(int what);
+
+    private void OnReady()
     {
         _countLabel = GetNode<Label>("%CountLabel");
         _incrementButton = GetNode<Button>("%IncrementButton");
     }
 
-    protected override CounterViewModel CreateViewModel() => new();
+    private CounterViewModel CreateViewModel() => new();
 
-    protected override void OnBind(CounterViewModel vm, BindingSet bindings)
+    private void OnBind(CounterViewModel vm, BindingSet bindings)
     {
         bindings.BindLabel(vm.CountText, _countLabel);
         bindings.BindCommand(vm.Increment, _incrementButton);
