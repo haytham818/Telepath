@@ -85,8 +85,14 @@ internal static class ViewSourceRenderer
     {
         source.AppendLine("    private void __TelepathOnReady()");
         source.AppendLine("    {");
+        var resolvedMembers = new HashSet<string>(StringComparer.Ordinal);
         foreach (var linkTo in linkTos)
         {
+            if (!resolvedMembers.Add(linkTo.TargetMemberName))
+            {
+                continue;
+            }
+
             source.Append("        @")
                 .Append(linkTo.TargetMemberName)
                 .Append(" = GetNode<")

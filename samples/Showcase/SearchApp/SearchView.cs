@@ -1,5 +1,4 @@
 using Godot;
-using Telepath.Core;
 using Telepath.Godot;
 
 namespace Telepath.Showcase.SearchApp;
@@ -8,6 +7,7 @@ namespace Telepath.Showcase.SearchApp;
 public partial class SearchView : Control
 {
     [LinkTo("%Query", nameof(SearchViewModel.Query))]
+    [LinkTo("%Query", nameof(SearchViewModel.SearchCommand), Kind = LinkKind.Command)]
     private LineEdit _query = null!;
 
     [LinkTo("%Search", nameof(SearchViewModel.SearchCommand), Parameter = nameof(_query))]
@@ -19,9 +19,4 @@ public partial class SearchView : Control
     public override partial void _Notification(int what);
 
     private SearchViewModel CreateViewModel() => new();
-
-    private void OnBind(SearchViewModel vm, BindingSet bindings)
-    {
-        bindings.BindCommand(vm.SearchCommand, _query);
-    }
 }

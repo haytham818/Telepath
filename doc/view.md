@@ -44,7 +44,7 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 ## API
 
 - `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`
-- `[LinkTo(nodePath, member)]`：生成 `GetNode` 与对应 `BindXxx`；可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值
+- `[LinkTo(nodePath, member)]`：生成 `GetNode` 与对应 `BindXxx`；可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值。同一字段可叠多条（节点路径必须相同）
 - `OnReady()`：可选；在生成的节点解析之后调用
 - `OnBind(vm, bindings)`：可选；在声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
 - `_Notification`：只声明 partial 方法，不要自行实现或覆盖其他生命周期方法
@@ -76,16 +76,18 @@ private Control _panel = null!;
 - `BindDisabled` → `BaseButton.Disabled`（Godot 的 `Control` 没有 Disabled）
 - `Kind` 也可覆盖推断，例如 CheckBox 当命令：`Kind = LinkKind.Command`
 - 带参命令：按钮按下时从另一个控件取值。`LineEdit` + `Kind = Command` 则走 `TextSubmitted`，不必写 `Parameter`
+- 同一控件要绑多条（例如 `LineEdit` 既双向文本又回车提交）时，在同一字段上叠 `[LinkTo]`，不必再写 `OnBind`
 
 ```csharp
 [LinkTo("%Query", nameof(SearchViewModel.Query))]
+[LinkTo("%Query", nameof(SearchViewModel.SearchCommand), Kind = LinkKind.Command)]
 private LineEdit _query = null!;
 
 [LinkTo("%Search", nameof(SearchViewModel.SearchCommand), Parameter = nameof(_query))]
 private Button _search = null!;
 ```
 
-生成 `bindings.BindCommand(vm.SearchCommand, _search, () => _query.Text)`。`Parameter` 取值：文本控件 `.Text`，开关 `.ButtonPressed`，`Range` `.Value`，`OptionButton` `.Selected`。
+生成 `bindings.BindText(vm.Query, _query)`、`bindings.BindCommand(vm.SearchCommand, _query)`，以及 `bindings.BindCommand(vm.SearchCommand, _search, () => _query.Text)`。`Parameter` 取值：文本控件 `.Text`，开关 `.ButtonPressed`，`Range` `.Value`，`OptionButton` `.Selected`。
 
 ```csharp
 [TelepathView<CounterViewModel>]

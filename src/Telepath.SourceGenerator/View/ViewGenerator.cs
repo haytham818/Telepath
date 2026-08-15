@@ -209,7 +209,8 @@ internal static class ViewGenerator
 
         foreach (var member in viewType.GetMembers())
         {
-            if (!SymbolHelpers.TryGetAttribute(member, ViewMetadata.LinkToAttributeName, out var attribute))
+            var attributes = SymbolHelpers.GetAttributes(member, ViewMetadata.LinkToAttributeName).ToArray();
+            if (attributes.Length == 0)
             {
                 continue;
             }
@@ -245,25 +246,6 @@ internal static class ViewGenerator
                 continue;
             }
 
-            var nodePath = attribute.ConstructorArguments.Length > 0
-                ? attribute.ConstructorArguments[0].Value as string
-                : null;
-            var viewModelMember = attribute.ConstructorArguments.Length > 1
-                ? attribute.ConstructorArguments[1].Value as string
-                : null;
-
-            if (string.IsNullOrWhiteSpace(nodePath) || string.IsNullOrWhiteSpace(viewModelMember))
-            {
-                context.ReportDiagnostic(Diagnostic.Create(
-                    ViewMetadata.InvalidLinkTo,
-                    member.Locations.FirstOrDefault() ?? Location.None,
-                    viewName,
-                    member.Name,
-                    "node path and member name must be non-empty"));
-                valid = false;
-                continue;
-            }
-
             var underlyingType = memberType.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
             if (underlyingType is not INamedTypeSymbol namedType)
             {
@@ -277,41 +259,82 @@ internal static class ViewGenerator
                 continue;
             }
 
-            if (!TryResolveLinkToKind(
-                    context,
-                    attribute,
-                    namedType,
-                    viewName,
-                    member,
-                    out var kind))
-            {
-                valid = false;
-                continue;
-            }
+            string? sharedNodePath = null;
+            var nodePathConflict = false;
 
-            if (!TryResolveParameter(
-                    context,
-                    attribute,
-                    viewType,
-                    namedType,
-                    viewName,
-                    member,
+            foreach (var attribute in attributes)
+            {
+                var nodePath = attribute.ConstructorArguments.Length > 0
+                    ? attribute.ConstructorArguments[0].Value as string
+                    : null;
+                var viewModelMember = attribute.ConstructorArguments.Length > 1
+                    ? attribute.ConstructorArguments[1].Value as string
+                    : null;
+
+                if (string.IsNullOrWhiteSpace(nodePath) || string.IsNullOrWhiteSpace(viewModelMember))
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        ViewMetadata.InvalidLinkTo,
+                        member.Locations.FirstOrDefault() ?? Location.None,
+                        viewName,
+                        member.Name,
+                        "node path and member name must be non-empty"));
+                    valid = false;
+                    continue;
+                }
+
+                if (sharedNodePath is null)
+                {
+                    sharedNodePath = nodePath;
+                }
+                else if (sharedNodePath != nodePath && !nodePathConflict)
+                {
+                    context.ReportDiagnostic(Diagnostic.Create(
+                        ViewMetadata.InvalidLinkTo,
+                        member.Locations.FirstOrDefault() ?? Location.None,
+                        viewName,
+                        member.Name,
+                        "multiple [LinkTo] on the same member must use the same node path"));
+                    nodePathConflict = true;
+                    valid = false;
+                }
+
+                if (!TryResolveLinkToKind(
+                        context,
+                        attribute,
+                        namedType,
+                        viewName,
+                        member,
+                        out var kind))
+                {
+                    valid = false;
+                    continue;
+                }
+
+                if (!TryResolveParameter(
+                        context,
+                        attribute,
+                        viewType,
+                        namedType,
+                        viewName,
+                        member,
+                        kind,
+                        out var parameterMemberName,
+                        out var parameterAccess))
+                {
+                    valid = false;
+                    continue;
+                }
+
+                linkTos.Add(new LinkToBinding(
+                    member.Name,
+                    nodePath!,
+                    viewModelMember!,
+                    namedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                     kind,
-                    out var parameterMemberName,
-                    out var parameterAccess))
-            {
-                valid = false;
-                continue;
+                    parameterMemberName,
+                    parameterAccess));
             }
-
-            linkTos.Add(new LinkToBinding(
-                member.Name,
-                nodePath!,
-                viewModelMember!,
-                namedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                kind,
-                parameterMemberName,
-                parameterAccess));
         }
 
         return valid;

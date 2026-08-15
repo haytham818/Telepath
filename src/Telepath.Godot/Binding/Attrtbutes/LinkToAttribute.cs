@@ -2,8 +2,10 @@ namespace Telepath.Godot;
 
 /// <summary>
 /// Binds a view field or property to a ViewModel member via a Godot node path.
+/// Stack multiple attributes on the same member when one control needs more than one binding;
+/// all instances must share the same node path.
 /// </summary>
-[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = false, Inherited = false)]
+[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property, AllowMultiple = true, Inherited = false)]
 public sealed class LinkToAttribute : Attribute
 {
     public LinkToAttribute(string nodePath, string member)

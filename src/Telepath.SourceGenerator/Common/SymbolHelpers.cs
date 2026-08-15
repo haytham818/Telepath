@@ -54,19 +54,27 @@ internal static class SymbolHelpers
         return builder.ToString();
     }
 
-    public static bool TryGetAttribute(
-        ISymbol symbol,
-        string metadataName,
-        out AttributeData attribute)
+    public static IEnumerable<AttributeData> GetAttributes(ISymbol symbol, string metadataName)
     {
         foreach (var candidate in symbol.GetAttributes())
         {
             if (candidate.AttributeClass is not null
                 && HasMetadataName(candidate.AttributeClass, metadataName))
             {
-                attribute = candidate;
-                return true;
+                yield return candidate;
             }
+        }
+    }
+
+    public static bool TryGetAttribute(
+        ISymbol symbol,
+        string metadataName,
+        out AttributeData attribute)
+    {
+        foreach (var candidate in GetAttributes(symbol, metadataName))
+        {
+            attribute = candidate;
+            return true;
         }
 
         attribute = null!;
