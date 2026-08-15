@@ -38,3 +38,36 @@ Telepath (宿主) → Telepath.Godot → Telepath.Core → R3
 ### 构建产物
 
 `Directory.Build.props` 将 `bin/` / `obj/` 重定向到仓库外的 `../.telepath-build/`，避免污染 `res://`。
+
+## ViewModel（Core）
+
+公开类型：`IViewModel`、`ViewModel`（`addons/Telepath/Core/ViewModel/`）。
+
+- **属性 / 命令**：直接暴露 R3 的 `BindableReactiveProperty<T>` 与 `ReactiveCommand` / `ReactiveCommand<T>`，不另包一层。
+- **生命周期**：仅 `IDisposable`。`Track(disposable)` 登记到内部 `DisposableBag`；`Dispose` 幂等，先 `OnDispose()` 再释放 bag。已 Dispose 后再 `Track` 抛 `ObjectDisposedException`。
+- **不实现 INPC**：通知在属性对象上；ViewModel 自身不做属性变更广播。
+- **构造期**：不要用帧算子（`IntervalFrame` 等）；需要时在 Godot 层 `ObserveOn`。
+
+### 与 Godot 节点寿命的对应（约定，绑定层尚未实现）
+
+| 节点时机 | ViewModel | 绑定 |
+|----------|-----------|------|
+| `_Ready` / `_EnterTree` | 仅首次创建时 new；不要每次进树都 new | 接绑定 |
+| `_ExitTree` | **不** `Dispose`（节点可能再进树） | 断绑定 |
+| 真正释放（`NotificationPredelete` / `Free`） | `viewModel.Dispose()` | 已断 |
+
+用户侧示例：
+
+```csharp
+public sealed class CounterViewModel : ViewModel
+{
+    public BindableReactiveProperty<int> Count { get; }
+    public ReactiveCommand Increment { get; }
+
+    public CounterViewModel()
+    {
+        Count = Track(new BindableReactiveProperty<int>(0));
+        Increment = Track(new ReactiveCommand(_ => Count.Value++));
+    }
+}
+```
