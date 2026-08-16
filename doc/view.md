@@ -19,7 +19,7 @@ src/Telepath.Godot/View/ViewLifecycle.cs         ViewModel / 绑定寿命
 src/Telepath.Godot/View/ITelepathView.cs         可注入 ViewModel 的 View 契约
 src/Telepath.Godot/View/TelepathViewAttribute.cs View 标记
 src/Telepath.Godot/Addon/                        plugin.cfg、FrameProviderDispatcher（不编进库）
-src/Telepath.Godot/Editor/                       编辑器插件与 Binding Dock（不编进 Telepath.Godot.dll）
+src/Telepath.Godot/Editor/                       编辑器插件、Binding Dock 场景与 ViewModel（不编进 Telepath.Godot.dll）
 src/Telepath.Godot/Binding/Attrtbutes/NodeInjectAttribute.cs  节点注入
 src/Telepath.Godot/Binding/Attrtbutes/BindToAttribute.cs      声明式绑定
 src/Telepath.Godot/Binding/Attrtbutes/LinkKind.cs             覆盖推断
@@ -70,8 +70,14 @@ Editor 代码。
 
 选中带 `[TelepathView<T>]` 的节点（或其子节点）时，右侧 **Telepath** dock 列出
 唯一名控件和已编译的 ViewModel 成员。连线写入根节点 metadata，改绑定不必等 C#
-重建。改 `[Bindable]` / `[Command]` 后仍需重建，Dock 才能看到新成员。非 `[Tool]`
-的 View 在编辑器里是占位节点，Dock 靠脚本路径解析类型，不要给 View 加 `[Tool]`。
+重建。改 `[Bindable]` / `[Command]` 后仍需重建，Dock 才能看到新成员。
+
+游戏 View 不要加 `[Tool]`：编辑器里它们是占位节点，Dock 靠脚本路径解析类型。
+**仅** Binding Dock 自己可以 `[Tool]`。Dock 是薄 Telepath View，布局在
+[`TelepathBindingDock.tscn`](../src/Telepath.Godot/Editor/TelepathBindingDock.tscn)，
+逻辑在 `BindingDockViewModel`；不要在 C# 里 `new` 控件，也不要 F6 该场景
+（依赖编辑器 API）。打开 tscn 调布局时，场景编辑器里的 `[Tool]` 实例不会订阅
+选择；只有插件 `Attach` 过的活 Dock 才会接线。
 
 控件请设 **唯一名称**（`%CountLabel`）。路径一改，无唯一名的绑定会断。
 

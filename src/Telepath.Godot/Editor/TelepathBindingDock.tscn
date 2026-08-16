@@ -1,0 +1,215 @@
+[gd_scene format=3 uid="uid://bmagbqttvkggs"]
+
+[ext_resource type="Script" uid="uid://cq6w3qvgtw1lm" path="res://addons/Telepath/Editor/TelepathBindingDock.cs" id="1_dock"]
+
+[node name="TelepathBindingDock" type="EditorDock" unique_id=2100100001]
+title = "Telepath"
+default_slot = 4
+custom_minimum_size = Vector2(280, 240)
+script = ExtResource("1_dock")
+metadata/telepath_bindings = [{
+"kind": "Text",
+"member": "Status",
+"path": "%Status"
+}, {
+"kind": "Items",
+"member": "AttributeItems",
+"path": "%AttributeList"
+}, {
+"kind": "Items",
+"member": "SceneItems",
+"path": "%SceneList"
+}, {
+"kind": "Selected",
+"member": "SelectedSceneIndex",
+"path": "%SceneList"
+}, {
+"kind": "Items",
+"member": "ControlLabels",
+"path": "%ControlOption"
+}, {
+"kind": "Selected",
+"member": "SelectedControlIndex",
+"path": "%ControlOption"
+}, {
+"kind": "Items",
+"member": "MemberLabels",
+"path": "%MemberOption"
+}, {
+"kind": "Selected",
+"member": "SelectedMemberIndex",
+"path": "%MemberOption"
+}, {
+"kind": "Items",
+"member": "KindLabels",
+"path": "%KindOption"
+}, {
+"kind": "Selected",
+"member": "SelectedKindIndex",
+"path": "%KindOption"
+}, {
+"kind": "Items",
+"member": "ConverterLabels",
+"path": "%ConverterOption"
+}, {
+"kind": "Selected",
+"member": "SelectedConverterIndex",
+"path": "%ConverterOption"
+}, {
+"kind": "Items",
+"member": "ParameterLabels",
+"path": "%ParameterOption"
+}, {
+"kind": "Selected",
+"member": "SelectedParameterIndex",
+"path": "%ParameterOption"
+}, {
+"kind": "Text",
+"member": "ItemScene",
+"path": "%ItemScene"
+}, {
+"kind": "Items",
+"member": "ItemViewLabels",
+"path": "%ItemViewOption"
+}, {
+"kind": "Selected",
+"member": "SelectedItemViewIndex",
+"path": "%ItemViewOption"
+}, {
+"kind": "Command",
+"member": "AddCommand",
+"path": "%Add"
+}, {
+"kind": "Command",
+"member": "UpdateCommand",
+"path": "%Update"
+}, {
+"kind": "Command",
+"member": "RemoveCommand",
+"path": "%Remove"
+}]
+
+[node name="Scroll" type="ScrollContainer" parent="." unique_id=2100100002]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="Root" type="VBoxContainer" parent="Scroll" unique_id=2100100003]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 6
+
+[node name="Title" type="Label" parent="Scroll/Root" unique_id=2100100004]
+layout_mode = 2
+text = "Telepath Bindings"
+
+[node name="Status" type="Label" parent="Scroll/Root" unique_id=2100100005]
+unique_name_in_owner = true
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="AttrHeader" type="Label" parent="Scroll/Root" unique_id=2100100006]
+layout_mode = 2
+text = "[BindTo] (read-only)"
+
+[node name="AttributeList" type="ItemList" parent="Scroll/Root" unique_id=2100100007]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="SceneHeader" type="Label" parent="Scroll/Root" unique_id=2100100008]
+layout_mode = 2
+text = "Scene bindings"
+
+[node name="SceneList" type="ItemList" parent="Scroll/Root" unique_id=2100100009]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ControlLabel" type="Label" parent="Scroll/Root" unique_id=2100100010]
+layout_mode = 2
+text = "Control"
+
+[node name="ControlOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100011]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MemberLabel" type="Label" parent="Scroll/Root" unique_id=2100100012]
+layout_mode = 2
+text = "ViewModel member"
+
+[node name="MemberOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100013]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="KindLabel" type="Label" parent="Scroll/Root" unique_id=2100100014]
+layout_mode = 2
+text = "Kind"
+
+[node name="KindOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100015]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ConverterLabel" type="Label" parent="Scroll/Root" unique_id=2100100016]
+layout_mode = 2
+text = "Converter"
+
+[node name="ConverterOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100017]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ParameterLabel" type="Label" parent="Scroll/Root" unique_id=2100100018]
+layout_mode = 2
+text = "Command parameter"
+
+[node name="ParameterOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100019]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ItemSceneLabel" type="Label" parent="Scroll/Root" unique_id=2100100020]
+layout_mode = 2
+text = "Item scene"
+
+[node name="ItemScene" type="LineEdit" parent="Scroll/Root" unique_id=2100100021]
+unique_name_in_owner = true
+layout_mode = 2
+placeholder_text = "res://.../Item.tscn"
+
+[node name="ItemViewLabel" type="Label" parent="Scroll/Root" unique_id=2100100022]
+layout_mode = 2
+text = "Item view"
+
+[node name="ItemViewOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100023]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Scroll/Root" unique_id=2100100024]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Add" type="Button" parent="Scroll/Root/Buttons" unique_id=2100100025]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Add"
+
+[node name="Update" type="Button" parent="Scroll/Root/Buttons" unique_id=2100100026]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Update"
+
+[node name="Remove" type="Button" parent="Scroll/Root/Buttons" unique_id=2100100027]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Remove"
