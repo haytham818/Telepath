@@ -25,6 +25,7 @@ internal static class AlcUnloadHook
         {
             try
             {
+                BindingDockViewModel.DisconnectActiveSelection();
                 ConverterCatalog.Clear();
                 GodotProviderInitializer.ResetObservableSystem();
             }

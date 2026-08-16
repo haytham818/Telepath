@@ -37,6 +37,7 @@ public sealed partial class BindingDockViewModel : ViewModel
     private readonly List<string> _parameterPaths = [];
     private readonly List<string> _itemViewValues = [];
     private bool _suppressSelection;
+    private static BindingDockViewModel? _active;
 
     [Bindable]
     private bool _hasTarget = false;
@@ -121,24 +122,42 @@ public sealed partial class BindingDockViewModel : ViewModel
         }
 
         _plugin = plugin;
+        _active = this;
         _selection = EditorInterface.Singleton.GetSelection();
         _selection.SelectionChanged += OnSelectionChanged;
         OnSelectionChanged();
     }
 
+    internal static void DisconnectActiveSelection()
+    {
+        _active?.UnsubscribeSelection();
+    }
+
     protected override void OnDispose()
     {
-        CloseItemSceneDialog();
-        if (_selection is not null)
+        if (ReferenceEquals(_active, this))
         {
-            _selection.SelectionChanged -= OnSelectionChanged;
-            _selection = null;
+            _active = null;
         }
+
+        CloseItemSceneDialog();
+        UnsubscribeSelection();
 
         _plugin = null;
         _view = null;
         _viewType = null;
         _viewModelType = null;
+    }
+
+    private void UnsubscribeSelection()
+    {
+        if (_selection is null)
+        {
+            return;
+        }
+
+        _selection.SelectionChanged -= OnSelectionChanged;
+        _selection = null;
     }
 
     [Bindable(nameof(AttributeCount))]

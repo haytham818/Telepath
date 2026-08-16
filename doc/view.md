@@ -19,7 +19,7 @@ src/Telepath.Godot/View/ViewLifecycle.cs         ViewModel / 绑定寿命
 src/Telepath.Godot/View/ITelepathView.cs         可注入 ViewModel 的 View 契约
 src/Telepath.Godot/View/TelepathViewAttribute.cs View 标记
 src/Telepath.Godot/Addon/                        plugin.cfg、FrameProviderDispatcher.gd / .cs（不编进库）
-src/Telepath.Godot/Editor/                       编辑器插件、Binding Dock 场景与 ViewModel（不编进 Telepath.Godot.dll）
+src/Telepath.Godot/Editor/                       GDScript 插件外壳、Binding Dock 场景与 ViewModel（不编进 Telepath.Godot.dll）
 src/Telepath.Godot/Binding/Attrtbutes/NodeInjectAttribute.cs  节点注入
 src/Telepath.Godot/Binding/Attrtbutes/BindToAttribute.cs      声明式绑定
 src/Telepath.Godot/Binding/Attrtbutes/LinkKind.cs             覆盖推断
@@ -66,8 +66,9 @@ public partial class CounterView : Control
 Windows 上 git symlink 需要 `core.symlinks`，否则改为复制。
 
 `FrameProviderDispatcher.gd` 是 Autoload 外壳，`FrameProviderDispatcher.cs`
-是运行时子节点，都在 addon 根目录，不是 Editor 代码。编辑器里的帧泵由
-`TelepathEditorPlugin` 承担，这样 C# 重建时不会被 Autoload 脚本实例钉住。
+是运行时子节点，都在 addon 根目录，不是 Editor 代码。编辑器插件入口是
+GDScript；帧泵挂在 C# Binding Dock 上，并在 `ISerializationListener.OnBeforeSerialize`
+里停掉，这样 C# 重建前会先松开 `EditorSelection` 和 R3 订阅。
 
 选中带 `[TelepathView<T>]` 的节点（或其子节点）时，右侧 **UI绑定** dock
 以绑定列表为主：点 `[+]` 添加，点一行展开编辑卡后「应用」或「删除」。

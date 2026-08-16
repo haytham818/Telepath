@@ -33,7 +33,7 @@ Telepath.Showcase (演示宿主) → Telepath.Godot → Telepath.Core → R3
 - Godot 可以依赖 Core；反向禁止
 - SourceGenerator **不** 引用 Core / Godot（按属性元数据名识别）
 - 库源码在 `src/`，不放进 Godot 工程树；`Telepath.Godot` 不声明 View 类的 `GodotObject` 子类
-- Godot 只在宿主主程序集解析 C# 脚本：挂到场景上的脚本（含 `TelepathEditorPlugin`、运行时的 `FrameProviderDispatcher.cs`、具体 View）由 `Telepath.Showcase` 编译。addon 根文件来自 `src/Telepath.Godot/Addon/`，编辑器脚本在 `src/Telepath.Godot/Editor/`，都不编进库 DLL；`samples/Showcase/addons/Telepath/` 是符号链接。Autoload 必须是 GDScript 外壳，不要把 C# 脚本直接挂成编辑器常驻 Autoload
+- Godot 只在宿主主程序集解析 C# 脚本：挂到场景上的脚本（含 `TelepathBindingDock`、运行时的 `FrameProviderDispatcher.cs`、具体 View）由 `Telepath.Showcase` 编译。`plugin.cfg` 指向 GDScript 外壳 `TelepathEditorPlugin.gd`，不要用 C# `EditorPlugin` 当插件入口。addon 根文件来自 `src/Telepath.Godot/Addon/`，编辑器脚本在 `src/Telepath.Godot/Editor/`，都不编进库 DLL；`samples/Showcase/addons/Telepath/` 是符号链接。Autoload 必须是 GDScript 外壳，不要把 C# 脚本直接挂成编辑器常驻 Autoload
 - 具体 View 脚本直接继承非泛型 Godot 节点，使用 `[TelepathView<TViewModel>]`，并在用户源码中声明 `public override partial void _Notification(int what);`。绑定优先写在场景 `metadata/telepath_bindings`（编辑器 Dock）；`[BindTo]` 是逃逸口
 - 不要给游戏 View 加 `[Tool]`；Dock 靠脚本路径解析类型。仅编辑器 Dock（`TelepathBindingDock`）可以 `[Tool]`；布局改 `src/Telepath.Godot/Editor/TelepathBindingDock.tscn`，不要在 C# 里拼控件
 - Godot 的 `MethodName` / 方法表只由 Godot SDK 生成；Telepath 生成器只实现 partial 通知桥
