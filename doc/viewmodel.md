@@ -6,6 +6,7 @@ UI 状态与命令容器，拥有属性与命令，不知道 Godot 节点
 src/Telepath.Core/ViewModel/
   IViewModel.cs
   ViewModel.cs
+  ViewModel.Commands.cs
   BindableAttribute.cs
   CommandAttribute.cs
 src/Telepath.SourceGenerator/ViewModel/
