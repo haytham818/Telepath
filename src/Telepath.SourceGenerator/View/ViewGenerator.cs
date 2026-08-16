@@ -505,6 +505,12 @@ internal static class ViewGenerator
             return true;
         }
 
+        if (IsTelepathViewControl(controlType))
+        {
+            kind = BindToKind.View;
+            return true;
+        }
+
         kind = default;
         return false;
     }
@@ -530,6 +536,7 @@ internal static class ViewGenerator
             BindToKind.Visible =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CanvasItemName)
                 || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ControlName),
+            BindToKind.View => IsTelepathViewControl(controlType),
             _ => false,
         };
     }
@@ -540,6 +547,12 @@ internal static class ViewGenerator
             || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RichTextLabelName)
             || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.LineEditName)
             || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.TextEditName);
+    }
+
+    private static bool IsTelepathViewControl(INamedTypeSymbol controlType)
+    {
+        return SymbolHelpers.TryGetAttribute(controlType, ViewMetadata.ViewAttributeName, out _)
+            || SymbolHelpers.ImplementsGenericInterface(controlType, ViewMetadata.TelepathViewInterfaceName);
     }
 
     private static bool TryResolveParameter(
@@ -646,7 +659,7 @@ internal static class ViewGenerator
             return false;
         }
 
-        if (kind == BindToKind.Command || hasItemView)
+        if (kind == BindToKind.Command || kind == BindToKind.View || hasItemView)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ViewMetadata.InvalidBindToConverter,
@@ -655,7 +668,9 @@ internal static class ViewGenerator
                 member.Name,
                 hasItemView
                     ? "Converter is not valid for container item bindings"
-                    : "Converter is not valid for command bindings"));
+                    : kind == BindToKind.View
+                        ? "Converter is not valid for View bindings"
+                        : "Converter is not valid for command bindings"));
             return false;
         }
 

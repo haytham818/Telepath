@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://c8telepathshl"]
 
 [ext_resource type="Script" path="res://Shell/ShellView.cs" id="1_shell"]
+[ext_resource type="PackedScene" uid="uid://c8telepathsts" path="res://Shell/StatusView.tscn" id="2_status"]
 
 [node name="ShellView" type="Control"]
 layout_mode = 3
@@ -14,6 +15,10 @@ metadata/telepath_bindings = [{
 "kind": "Command",
 "member": "BackCommand",
 "path": "%Back"
+}, {
+"kind": "View",
+"member": "Status",
+"path": "%Status"
 }]
 
 [node name="Root" type="VBoxContainer" parent="."]
@@ -40,6 +45,10 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Telepath Showcase"
 vertical_alignment = 1
+
+[node name="Status" parent="Root/Header" instance=ExtResource("2_status")]
+unique_name_in_owner = true
+layout_mode = 2
 
 [node name="Stage" type="Control" parent="Root"]
 layout_mode = 2

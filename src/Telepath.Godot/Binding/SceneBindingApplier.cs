@@ -41,24 +41,27 @@ public static class SceneBindingApplier
         }
 
         var node = view.GetNode(entry.Path);
-        var source = GetMemberValue(viewModel, entry.Member);
         var kind = LinkKindInference.Resolve(entry.Kind, node);
+        var source = GetMemberValue(viewModel, entry.Member, allowNull: kind == LinkKind.View);
 
         switch (kind)
         {
             case LinkKind.Command:
-                ApplyCommand(bindings, source, node, view, entry.Parameter);
+                ApplyCommand(bindings, source!, node, view, entry.Parameter);
                 break;
             case LinkKind.Items:
-                ApplyItems(bindings, source, node, entry);
+                ApplyItems(bindings, source!, node, entry);
+                break;
+            case LinkKind.View:
+                ApplyView(bindings, source, node, entry.Converter);
                 break;
             default:
-                ApplyValue(bindings, source, node, kind, entry.Converter);
+                ApplyValue(bindings, source!, node, kind, entry.Converter);
                 break;
         }
     }
 
-    private static object GetMemberValue(object viewModel, string member)
+    private static object? GetMemberValue(object viewModel, string member, bool allowNull)
     {
         var type = viewModel.GetType();
         var property = type.GetProperty(member, BindingFlags.Instance | BindingFlags.Public);
@@ -68,9 +71,14 @@ public static class SceneBindingApplier
                 $"ViewModel '{type.Name}' has no public property '{member}'.");
         }
 
-        return property.GetValue(viewModel)
-            ?? throw new InvalidOperationException(
+        var value = property.GetValue(viewModel);
+        if (value is null && !allowNull)
+        {
+            throw new InvalidOperationException(
                 $"ViewModel '{type.Name}.{member}' is null.");
+        }
+
+        return value;
     }
 
     private static void ApplyValue(
@@ -215,6 +223,53 @@ public static class SceneBindingApplier
         var scene = GD.Load<PackedScene>(entry.ItemScene)
             ?? throw new InvalidOperationException($"Failed to load item scene '{entry.ItemScene}'.");
         RuntimeBind.BindContainerItems(bindings, source, classified, container, scene);
+    }
+
+    private static void ApplyView(
+        BindingSet bindings,
+        object? source,
+        Node node,
+        string? converterTypeName)
+    {
+        if (!string.IsNullOrWhiteSpace(converterTypeName))
+        {
+            throw new InvalidOperationException("Converter is not valid for View bindings.");
+        }
+
+        if (node is not Control control)
+        {
+            throw Incompatible(LinkKind.View, node);
+        }
+
+        var target = control.View();
+        if (source is null)
+        {
+            bindings.BindView((IViewModel?)null, target);
+            return;
+        }
+
+        if (source is IViewModel viewModel)
+        {
+            bindings.BindView(viewModel, target);
+            return;
+        }
+
+        var classified = SourceClassifier.Classify(source);
+        if (classified.Kind is not (SourceKind.Bindable or SourceKind.Observable)
+            || !typeof(IViewModel).IsAssignableFrom(classified.ValueType))
+        {
+            throw new InvalidOperationException(
+                $"View binding requires IViewModel or Observable<IViewModel>, got '{source.GetType().Name}'.");
+        }
+
+        typeof(ViewBindingExtensions)
+            .GetMethods(BindingFlags.Public | BindingFlags.Static)
+            .Single(static method =>
+                method.Name == nameof(ViewBindingExtensions.BindView)
+                && method.IsGenericMethodDefinition
+                && method.GetParameters().Length == 3)
+            .MakeGenericMethod(classified.ValueType)
+            .Invoke(null, [bindings, source, target]);
     }
 
     private static object? CreateConverter(string? typeName)

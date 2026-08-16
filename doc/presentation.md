@@ -6,6 +6,7 @@
 - **Overlay 栈**（`Overlay`）：一带之内多层视图同时留在树上并保持绑定。`CoverMode.Pause` 会 `Deactivate` 被盖住的页；`CoverMode.Continue` 让它继续跑。
 - **命名带**（`OverlayHost`）：多个独立 `Overlay` 栈，带间 z 序固定。Toast 永远在 Modal 之上，不和 Dialog 抢同一个 Back。
 - **Interaction**：页 VM `await Confirm` / `Run`，结果回来再继续。兑现走 `OverlayLayer.Modal`，不是消息总线。
+- **BindView**：父场景里已有的子 TelepathView 当绑定目标，注入父 VM 上的子 VM；不实例化、不 `QueueFree`。
 
 ```
 src/Telepath.Core/Presentation/
@@ -26,6 +27,7 @@ src/Telepath.Core/Presentation/
 src/Telepath.Core/Binding/
   ContentTarget.cs / ContentBindingExtensions.cs   BindContent
   OverlayTarget.cs / OverlayBindingExtensions.cs   BindOverlay
+  ViewTarget.cs / ViewBindingExtensions.cs         BindView
 src/Telepath.Godot/Presentation/
   ViewRegistry.cs             ViewModel 类型 → PackedScene
   ContentPresenter.cs         换页时 QueueFree 旧视图
@@ -33,9 +35,10 @@ src/Telepath.Godot/Presentation/
   OverlayHostPresenter.cs     按 Bands 建槽，每带一个 OverlayPresenter
   GodotContentTargets.cs      Control.Content(registry)
   GodotOverlayTargets.cs      Control.Overlays(registry) / BindOverlayHost
+  GodotViewTargets.cs         Control.View()
 ```
 
-示例：[Shell](../samples/Showcase/Shell/)（目录进四个 App + Overlay pause / Modal / Toast / 自定义 Banner；Todo 删除前确认；壳上 Back 先关可返回的 Overlay，跳过 Toast）。
+示例：[Shell](../samples/Showcase/Shell/)（目录进四个 App + Overlay pause / Modal / Toast / 自定义 Banner；Todo 删除前确认；头上 Status 走 BindView；壳上 Back 先关可返回的 Overlay，跳过 Toast）。
 
 ## 两条寿命
 
@@ -160,6 +163,19 @@ if (!await interaction.Confirm("Delete", $"Delete '{item.Title.Value}'?"))
 }
 ```
 
+## BindView
+
+父场景里已经摆好的子 TelepathView（HUD、侧栏）是绑定目标，不是空槽。不要用 Overlay 带做持久 HUD。
+
+- `BindContent`：按注册表 **实例化**，换页 `QueueFree`。
+- `BindView`：节点留在父场景里，只注入父 VM 上的子 VM。换 VM 只重绑。`null` 解绑并隐藏。
+- **不** `Activate`，**不** `Dispose` 注入的 VM。
+- 子先 `Ready`（可能先 `CreateViewModel()` 给 F6），父 `OnBind` 再注入：[`ViewLifecycle`](../src/Telepath.Godot/View/ViewLifecycle.cs) setter 丢掉 dummy 再接线。
+
+场景：`kind: View, member: Status, path: %Status`。`[BindTo(..., Kind = LinkKind.View)]` 或 `bindings.BindView(vm.Status, _status.View())`。
+
+Showcase 壳头的 [StatusView](../samples/Showcase/Shell/StatusView.tscn) 显示当前页名。
+
 ## Godot 宿主
 
 `Telepath.Godot` **不**提供挂到场景上的 `ScreenHost : Control`。宿主是组合对象：
@@ -199,7 +215,6 @@ private void OnBind(ShellViewModel vm, BindingSet bindings)
 ## 以后
 
 - 文件选择：原生 Godot `FileDialog` 或自定义 `DialogViewModel<T>` 走 `Run`
-- `BindView`：父场景里已有子 TelepathView 节点，注入父 VM 上的某个子 VM 属性
 - 装配：Autoload 组合根给壳工厂；`CreateViewModel()` 留作逃逸口
 
-不做：Prism Region、字符串路由表、Messenger、全局 DialogService、按名 `ShowDialog("Confirm")`、自研 DI、把 `IActivatable` 塞进每个 ViewModel、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 仍走 `BindView`）。
+不做：Prism Region、字符串路由表、Messenger、全局 DialogService、按名 `ShowDialog("Confirm")`、自研 DI、把 `IActivatable` 塞进每个 ViewModel、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 走 `BindView`）。

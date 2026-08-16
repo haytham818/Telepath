@@ -171,6 +171,16 @@ internal static class ViewSourceRenderer
                 continue;
             }
 
+            if (binding.Kind == BindToKind.View)
+            {
+                source.Append("        bindings.BindView(vm.@")
+                    .Append(binding.ViewModelMember)
+                    .Append(", @")
+                    .Append(binding.TargetMemberName)
+                    .AppendLine(".View());");
+                continue;
+            }
+
             source.Append("        bindings.Bind(vm.@")
                 .Append(binding.ViewModelMember)
                 .Append(", @")

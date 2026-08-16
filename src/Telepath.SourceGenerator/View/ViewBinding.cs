@@ -11,6 +11,7 @@ internal enum BindToKind
     Visible,
     Disabled,
     Items,
+    View,
 }
 
 internal sealed class NodeInjection

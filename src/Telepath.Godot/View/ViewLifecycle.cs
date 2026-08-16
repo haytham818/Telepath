@@ -16,6 +16,7 @@ public sealed class ViewLifecycle<TViewModel>
     private readonly Func<TViewModel> _createViewModel;
     private readonly Action<TViewModel, BindingSet> _onBind;
     private BindingSet? _bindings;
+    private TViewModel? _viewModel;
     private bool _ownsViewModel;
 
     public ViewLifecycle(
@@ -32,9 +33,15 @@ public sealed class ViewLifecycle<TViewModel>
 
     /// <summary>
     /// Gets or injects the ViewModel. A null value is replaced during the ready
-    /// notification. Injected instances are not disposed when the owner is freed.
+    /// notification. Setting a new instance after ready rebinds. Injected
+    /// instances are not disposed when the owner is freed; a self-created
+    /// instance is disposed when replaced or when the owner is freed.
     /// </summary>
-    public TViewModel? ViewModel { get; set; }
+    public TViewModel? ViewModel
+    {
+        get => _viewModel;
+        set => SetViewModel(value, owns: false);
+    }
 
     /// <summary>
     /// Handles the Godot notifications forwarded by the generated host-side bridge.
@@ -45,17 +52,19 @@ public sealed class ViewLifecycle<TViewModel>
         {
             case (int)Node.NotificationReady:
                 _onReady();
-                if (ViewModel is null)
+                if (_viewModel is null)
                 {
-                    ViewModel = _createViewModel();
-                    _ownsViewModel = true;
+                    SetViewModel(_createViewModel(), owns: true);
+                }
+                else
+                {
+                    AttachBindings();
                 }
 
-                AttachBindings();
                 break;
 
             case (int)Node.NotificationEnterTree:
-                if (ViewModel is not null && _bindings is null && _owner.IsNodeReady())
+                if (_viewModel is not null && _bindings is null && _owner.IsNodeReady())
                 {
                     AttachBindings();
                 }
@@ -81,16 +90,43 @@ public sealed class ViewLifecycle<TViewModel>
         DetachBindings();
         if (_ownsViewModel)
         {
-            ViewModel?.Dispose();
+            _viewModel?.Dispose();
         }
 
-        ViewModel = null;
+        _viewModel = null;
         _ownsViewModel = false;
+    }
+
+    private void SetViewModel(TViewModel? value, bool owns)
+    {
+        if (ReferenceEquals(_viewModel, value))
+        {
+            if (value is not null)
+            {
+                _ownsViewModel = owns;
+            }
+
+            return;
+        }
+
+        DetachBindings();
+        if (_ownsViewModel)
+        {
+            _viewModel?.Dispose();
+        }
+
+        _viewModel = value;
+        _ownsViewModel = owns && value is not null;
+
+        if (value is not null && _owner.IsNodeReady() && _owner.IsInsideTree())
+        {
+            AttachBindings();
+        }
     }
 
     private void AttachBindings()
     {
-        if (ViewModel is null || ViewModel.IsDisposed || _bindings is not null)
+        if (_viewModel is null || _viewModel.IsDisposed || _bindings is not null)
         {
             return;
         }
@@ -98,7 +134,7 @@ public sealed class ViewLifecycle<TViewModel>
         var bindings = new BindingSet();
         try
         {
-            _onBind(ViewModel, bindings);
+            _onBind(_viewModel, bindings);
             _bindings = bindings;
         }
         catch

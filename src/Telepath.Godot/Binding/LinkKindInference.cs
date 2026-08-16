@@ -22,7 +22,18 @@ public static class LinkKindInference
             _ => LinkKind.Auto,
         };
 
-        return kind != LinkKind.Auto;
+        if (kind != LinkKind.Auto)
+        {
+            return true;
+        }
+
+        if (IsTelepathView(node))
+        {
+            kind = LinkKind.View;
+            return true;
+        }
+
+        return false;
     }
 
     public static LinkKind Resolve(LinkKind kind, Node node)
@@ -61,10 +72,26 @@ public static class LinkKindInference
             LinkKind.Selected => node is OptionButton or ItemList,
             LinkKind.Items => node is ItemList or OptionButton or Container,
             LinkKind.Visible => node is CanvasItem,
+            LinkKind.View => IsTelepathView(node),
             _ => false,
         };
     }
 
     public static bool IsLabelText(Node node)
         => node is Label or RichTextLabel;
+
+    public static bool IsTelepathView(Node node)
+    {
+        ArgumentNullException.ThrowIfNull(node);
+        foreach (var iface in node.GetType().GetInterfaces())
+        {
+            if (iface.IsGenericType
+                && iface.GetGenericTypeDefinition() == typeof(ITelepathView<>))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

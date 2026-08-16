@@ -22,6 +22,7 @@ internal static class ViewMetadata
     public const string PackedSceneName = "Godot.PackedScene";
     public const string RangeName = "Godot.Range";
     public const string ViewModelName = "Telepath.Core.IViewModel";
+    public const string TelepathViewInterfaceName = "Telepath.Godot.ITelepathView`1";
     public const string BindingSetName = "Telepath.Core.BindingSet";
     public const string ValueConverterName = "Telepath.Core.IValueConverter`2";
     public const string LinkKindName = "Telepath.Godot.LinkKind";

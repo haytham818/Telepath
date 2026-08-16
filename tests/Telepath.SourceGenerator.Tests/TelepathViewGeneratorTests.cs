@@ -218,6 +218,55 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
+    public void GeneratesBindViewForNestedTelepathView()
+    {
+        const string source = """
+            using Telepath.Core;
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class StatusViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<StatusViewModel>]
+            public partial class StatusView : Godot.Control
+            {
+                public override partial void _Notification(int what);
+                private StatusViewModel CreateViewModel() => new();
+            }
+
+            public sealed class ShellViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+                public StatusViewModel Status { get; } = new();
+            }
+
+            [TelepathView<ShellViewModel>]
+            public partial class ShellView : Godot.Control
+            {
+                [NodeInject("%Status")]
+                [BindTo("Status")]
+                private StatusView _status = null!;
+
+                public override partial void _Notification(int what);
+                private ShellViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = string.Join("\n", result.GeneratedSources.Select(item => item.SourceText.ToString()));
+        Assert.Contains("bindings.BindView(vm.@Status, @_status.View());", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
     public void GeneratesInferredBindingsForSupportedControls()
     {
         const string source = """
@@ -1309,6 +1358,7 @@ public sealed class TelepathViewGeneratorTests
                 public void BindCommand<T>(object command, object button, System.Func<T> getParameter) { }
                 public void BindItems(object source, object target) { }
                 public void BindItems(object source, object target, object converter) { }
+                public void BindView(object source, object target) { }
             }
         }
 
@@ -1410,6 +1460,7 @@ public sealed class TelepathViewGeneratorTests
                 Visible,
                 Disabled,
                 Items,
+                View,
             }
 
             [System.AttributeUsage(System.AttributeTargets.Class)]
@@ -1473,6 +1524,7 @@ public sealed class TelepathViewGeneratorTests
                 public static object Selected(this global::Godot.ItemList list) => list;
                 public static object Visible(this global::Godot.CanvasItem node) => node;
                 public static object Disabled(this global::Godot.BaseButton button) => button;
+                public static object View(this global::Godot.Control control) => control;
             }
 
             public static class GodotCollectionTargets

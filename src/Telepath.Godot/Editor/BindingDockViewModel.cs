@@ -20,6 +20,7 @@ public sealed partial class BindingDockViewModel : ViewModel
         LinkKind.Visible,
         LinkKind.Disabled,
         LinkKind.Items,
+        LinkKind.View,
     ];
 
     private EditorPlugin? _plugin;

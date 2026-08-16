@@ -102,7 +102,7 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 |------|------|
 | `path` | 节点路径，优先 `%UniqueName` |
 | `member` | ViewModel 公开属性名（`Count`、`IncrementCommand`、`Items`） |
-| `kind` | `Auto` / `Text` / `Command` / `Toggle` / `Value` / `Selected` / `Visible` / `Disabled` / `Items` |
+| `kind` | `Auto` / `Text` / `Command` / `Toggle` / `Value` / `Selected` / `Visible` / `Disabled` / `Items` / `View` |
 | `converter` | 可选，`IValueConverter<,>` 的完整类型名 |
 | `parameter` | 可选，带参命令取值的控件路径 |
 | `item_view` | 可选，容器项 View 完整类型名 |
@@ -116,7 +116,7 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 
 | 节点生命周期 | ViewModel | 绑定 |
 |----------|-----------|------|
-| `_Ready` | 若未注入则 `CreateViewModel()` 一次 | 场景绑定 + `[NodeInject]` 之后 `OnBind` |
+| `_Ready` | 若未注入则 `CreateViewModel()` 一次。之后再写入 `ViewModel` 会断旧绑、Dispose 自建 dummy、接新 VM | 场景绑定 + `[NodeInject]` 之后 `OnBind` |
 | `_EnterTree`（已 Ready、无绑定） | 不 new | 再次接线 |
 | `_ExitTree` | **不** `Dispose` | `BindingSet.Dispose` |
 | `NotificationPredelete` | 自己 `CreateViewModel()` 的才 `ViewModel.Dispose()`；注入的不 Dispose | 已在出树时断开 |
@@ -127,11 +127,12 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 
 ## API
 
-- `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`。注入的 VM 在节点释放时不 `Dispose`
-- 场景 `telepath_bindings`：运行时 `GetNode` 并 `Bind` / `BindCommand` / `BindItems`
+- `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`。Ready 之后再赋值会重新接线。注入的 VM 在节点释放时不 `Dispose`；自建实例被注入替换时会 `Dispose`
+- 场景 `telepath_bindings`：运行时 `GetNode` 并 `Bind` / `BindCommand` / `BindItems` / `BindView`
 - `[NodeInject(nodePath)]`：生成 `GetNode`；同一字段只能一条
-- `[BindTo(member)]`：生成 `Bind(source, target)` 或 `BindItems`；必须搭配同字段的 `[NodeInject]`。可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换，`ItemView` / `ItemScene` 给容器模板。同一字段可叠多条
+- `[BindTo(member)]`：生成 `Bind(source, target)` 或 `BindItems` / `BindView`；必须搭配同字段的 `[NodeInject]`。可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换，`ItemView` / `ItemScene` 给容器模板。同一字段可叠多条
 - `BindContent` / `BindOverlay` / `BindOverlayHost`：导体内容槽与 Overlay 带，见 [presentation.md](presentation.md)
+- `BindView`：父场景里已有的子 TelepathView，见 [presentation.md](presentation.md)
 - 允许只有 `[NodeInject]`、没有 `[BindTo]`（仅注入，在 `OnBind` 手写接线）
 - `OnReady()`：可选；在生成的节点解析之后调用
 - `OnBind(vm, bindings)`：可选；在场景绑定和声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
@@ -139,7 +140,7 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 
 薄 View 可以既没有 `[BindTo]` 也没有 `OnBind`（绑定全在场景上）。写了 `OnBind` 则签名必须是 `void OnBind(TViewModel vm, BindingSet bindings)`。
 
-`BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）、`BindCommand`、`BindItems`、`BindContent` 和 `BindOverlay`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
+`BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）、`BindCommand`、`BindItems`、`BindContent`、`BindOverlay` 和 `BindView`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
 
 ## `[BindTo]` 推断
 
@@ -154,6 +155,7 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 | `ItemList` | `BindItems(..., .Items())` | 项集合；选中叠 `Kind = Selected`（双向 `long`，无选中为 `-1`） |
 | 其他 `BaseButton` | `BindCommand` | 按下 `Execute`，`CanExecute` → `Disabled` |
 | `Range`（Slider / SpinBox / ProgressBar / ScrollBar） | `Bind(..., .Value())` | `BindableReactiveProperty<double>` 双向，否则一向；`int` / `float` 隐式转 `double` |
+| 带 `[TelepathView]` 的 `Control` | `BindView(..., .View())` | 注入父 VM 上的子 VM；`null` 隐藏 |
 | 普通 `Control` | 报 TPV008 / 运行时抛错 | 必须设 `Kind` |
 
 `Visible` / `Disabled` 不靠类型猜：

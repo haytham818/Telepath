@@ -14,4 +14,5 @@ public enum LinkKind
     Visible,
     Disabled,
     Items,
+    View,
 }

@@ -55,6 +55,12 @@ internal static class ViewModelMemberScanner
             if (TryGeneric(type, typeof(ObservableList<>), out var itemType))
             {
                 members.Add(new ViewModelMember(property.Name, ViewModelMemberKind.Items, itemType));
+                continue;
+            }
+
+            if (typeof(IViewModel).IsAssignableFrom(type))
+            {
+                members.Add(new ViewModelMember(property.Name, ViewModelMemberKind.Property, type));
             }
         }
 
