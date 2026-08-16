@@ -52,6 +52,14 @@ public class GodotFrameProvider : FrameProvider
         list.Add(callback, out _);
     }
 
+    internal void Reset()
+    {
+        lock (gate)
+        {
+            list = new FreeListCore<IFrameRunnerWorkItem>(gate);
+        }
+    }
+
     internal void Run(double _)
     {
         long frameCount = GetFrameCount();

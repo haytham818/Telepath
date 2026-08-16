@@ -20,7 +20,7 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-FrameProviderDispatcher="*uid://b7u7nc2sq60j2"
+FrameProviderDispatcher="*uid://c8telepathfpd"
 
 [dotnet]
 

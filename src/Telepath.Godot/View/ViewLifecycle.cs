@@ -67,16 +67,25 @@ public sealed class ViewLifecycle<TViewModel>
                 break;
 
             case (int)GodotObject.NotificationPredelete:
-                DetachBindings();
-                if (_ownsViewModel)
-                {
-                    ViewModel?.Dispose();
-                }
-
-                ViewModel = null;
-                _ownsViewModel = false;
+                Release();
                 break;
         }
+    }
+
+    /// <summary>
+    /// Drops bindings and, when this lifecycle owns the ViewModel, disposes it.
+    /// Safe to call more than once; used by the editor dock before ALC unload.
+    /// </summary>
+    public void Release()
+    {
+        DetachBindings();
+        if (_ownsViewModel)
+        {
+            ViewModel?.Dispose();
+        }
+
+        ViewModel = null;
+        _ownsViewModel = false;
     }
 
     private void AttachBindings()

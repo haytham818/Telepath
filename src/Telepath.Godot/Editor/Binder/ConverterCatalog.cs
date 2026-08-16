@@ -14,6 +14,12 @@ internal static class ConverterCatalog
     public static IReadOnlyList<Type> ScanItemViews()
         => _itemViews ??= ScanViews();
 
+    public static void Clear()
+    {
+        _converters = null;
+        _itemViews = null;
+    }
+
     private static IReadOnlyList<Type> ScanConverters()
     {
         var converters = new List<Type>();

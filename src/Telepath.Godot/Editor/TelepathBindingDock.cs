@@ -17,6 +17,12 @@ public partial class TelepathBindingDock : EditorDock
         _plugin = plugin;
     }
 
+    public void Detach()
+    {
+        _plugin = null;
+        __telepathViewLifecycle?.Release();
+    }
+
     private BindingDockViewModel CreateViewModel()
     {
         var viewModel = new BindingDockViewModel();

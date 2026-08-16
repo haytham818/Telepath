@@ -24,6 +24,7 @@ public sealed partial class BindingDockViewModel : ViewModel
 
     private EditorPlugin? _plugin;
     private EditorSelection? _selection;
+    private EditorFileDialog? _itemSceneDialog;
     private Node? _view;
     private Type? _viewType;
     private Type? _viewModelType;
@@ -127,6 +128,7 @@ public sealed partial class BindingDockViewModel : ViewModel
 
     protected override void OnDispose()
     {
+        CloseItemSceneDialog();
         if (_selection is not null)
         {
             _selection.SelectionChanged -= OnSelectionChanged;
@@ -266,20 +268,42 @@ public sealed partial class BindingDockViewModel : ViewModel
     [Command]
     private void OnBrowseItemScene()
     {
-        var dialog = new EditorFileDialog
+        CloseItemSceneDialog();
+        _itemSceneDialog = new EditorFileDialog
         {
             FileMode = EditorFileDialog.FileModeEnum.OpenFile,
             Access = EditorFileDialog.AccessEnum.Resources,
             Title = "选择项场景",
         };
-        dialog.Filters = ["*.tscn ; Scene"];
-        dialog.FileSelected += path =>
+        _itemSceneDialog.Filters = ["*.tscn ; Scene"];
+        _itemSceneDialog.FileSelected += OnItemSceneSelected;
+        _itemSceneDialog.Canceled += OnItemSceneCanceled;
+        EditorInterface.Singleton.PopupDialogCentered(_itemSceneDialog, new Vector2I(720, 480));
+    }
+
+    private void OnItemSceneSelected(string path)
+    {
+        ItemScene.Value = path;
+        CloseItemSceneDialog();
+    }
+
+    private void OnItemSceneCanceled() => CloseItemSceneDialog();
+
+    private void CloseItemSceneDialog()
+    {
+        if (_itemSceneDialog is null)
         {
-            ItemScene.Value = path;
-            dialog.QueueFree();
-        };
-        dialog.Canceled += () => dialog.QueueFree();
-        EditorInterface.Singleton.PopupDialogCentered(dialog, new Vector2I(720, 480));
+            return;
+        }
+
+        var dialog = _itemSceneDialog;
+        _itemSceneDialog = null;
+        dialog.FileSelected -= OnItemSceneSelected;
+        dialog.Canceled -= OnItemSceneCanceled;
+        if (GodotObject.IsInstanceValid(dialog))
+        {
+            dialog.Free();
+        }
     }
 
     private void OnSelectionChanged()

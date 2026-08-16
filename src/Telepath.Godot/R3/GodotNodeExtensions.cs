@@ -30,7 +30,17 @@ public static class GodotNodeExtensions
             return disposable;
         }
         
-        node.TreeExited += () => disposable.Dispose();
+        var lifetime = new TreeExitLifetime(node, disposable);
+        node.TreeExited += lifetime.OnTreeExited;
         return disposable;
+    }
+
+    private sealed class TreeExitLifetime(Node node, IDisposable disposable)
+    {
+        public void OnTreeExited()
+        {
+            node.TreeExited -= OnTreeExited;
+            disposable.Dispose();
+        }
     }
 }
