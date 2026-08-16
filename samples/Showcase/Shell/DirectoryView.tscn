@@ -55,7 +55,7 @@ horizontal_alignment = 1
 
 [node name="Hint" type="Label" parent="Center/VBox"]
 layout_mode = 2
-text = "Pick a sample"
+text = "Counter fades on navigate. Overlays animate open and close."
 horizontal_alignment = 1
 
 [node name="Counter" type="Button" parent="Center/VBox"]

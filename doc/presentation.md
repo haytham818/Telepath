@@ -41,7 +41,7 @@ src/Telepath.Godot/Presentation/
   GodotViewTargets.cs         Control.View()
 ```
 
-示例：[Shell](../samples/Showcase/Shell/)（目录进四个 App + Overlay pause / Modal / Toast / 自定义 Banner；Todo 删除前确认；头上 Status 走 BindView；壳上 Back 先关可返回的 Overlay，跳过 Toast）。
+示例：[Shell](../samples/Showcase/Shell/)（目录进四个 App + Overlay pause / Modal / Toast / 自定义 Banner；Todo 删除前确认；头上 Status 走 BindView；壳上 Back 先关可返回的 Overlay，跳过 Toast）。进退场示例：Directory↔Counter 淡入淡出（Tween）；Confirm / Toast / Banner 用 Tween；About 用场景里的 `AnimationPlayer`。未实现 `IViewTransition` 的页仍瞬切。
 
 ## 两条寿命
 
