@@ -12,7 +12,8 @@ public sealed partial class ListViewModel : ViewModel
     [Bindable]
     private long _selected = -1;
 
-    public ObservableList<string> Items { get; } = new();
+    [Bindable]
+    private ObservableList<string>? _items;
 
     public ListViewModel()
     {

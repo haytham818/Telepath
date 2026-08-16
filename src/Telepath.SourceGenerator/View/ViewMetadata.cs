@@ -18,6 +18,8 @@ internal static class ViewMetadata
     public const string CheckButtonName = "Godot.CheckButton";
     public const string OptionButtonName = "Godot.OptionButton";
     public const string ItemListName = "Godot.ItemList";
+    public const string ContainerName = "Godot.Container";
+    public const string PackedSceneName = "Godot.PackedScene";
     public const string RangeName = "Godot.Range";
     public const string ViewModelName = "Telepath.Core.IViewModel";
     public const string BindingSetName = "Telepath.Core.BindingSet";

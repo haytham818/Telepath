@@ -1,5 +1,4 @@
 using Godot;
-using Telepath.Core;
 using Telepath.Godot;
 
 namespace Telepath.Showcase.ListApp;
@@ -17,6 +16,7 @@ public partial class ListView : Control
     private Button _add = null!;
 
     [NodeInject("%Items")]
+    [BindTo(nameof(ListViewModel.Items))]
     [BindTo(nameof(ListViewModel.Selected), Kind = LinkKind.Selected)]
     private ItemList _items = null!;
 
@@ -29,15 +29,10 @@ public partial class ListView : Control
     private Button _clear = null!;
 
     [NodeInject("%Choices")]
+    [BindTo(nameof(ListViewModel.Items), Kind = LinkKind.Items)]
     private OptionButton _choices = null!;
 
     public override partial void _Notification(int what);
 
     private ListViewModel CreateViewModel() => new();
-
-    private void OnBind(ListViewModel vm, BindingSet bindings)
-    {
-        bindings.BindItems(vm.Items, _items.Items());
-        bindings.BindItems(vm.Items, _choices.Items());
-    }
 }

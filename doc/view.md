@@ -49,7 +49,7 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 
 - `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`。注入的 VM 在节点释放时不 `Dispose`
 - `[NodeInject(nodePath)]`：生成 `GetNode`；同一字段只能一条
-- `[BindTo(member)]`：生成 `Bind(source, target)`；必须搭配同字段的 `[NodeInject]`。可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换。同一字段可叠多条
+- `[BindTo(member)]`：生成 `Bind(source, target)` 或 `BindItems`；必须搭配同字段的 `[NodeInject]`。可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换，`ItemView` / `ItemScene` 给容器模板。同一字段可叠多条
 - 允许只有 `[NodeInject]`、没有 `[BindTo]`（仅注入，在 `OnBind` 手写接线）
 - `OnReady()`：可选；在生成的节点解析之后调用
 - `OnBind(vm, bindings)`：可选；在声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
@@ -68,8 +68,8 @@ View 仍须提供 `OnBind` 和/或至少一条 `[BindTo]`（仅有注入、既�
 | `Label` / `RichTextLabel` | `Bind(..., .Text())` | 一向；无 Converter 时 `ToStringConverter.Convert` |
 | `LineEdit` / `TextEdit` | `Bind(..., .Text())` | `BindableReactiveProperty<string>` 双向，否则一向 |
 | `CheckBox` / `CheckButton` | `Bind(..., .Toggle())` | 双向 `bool` |
-| `OptionButton` | `Bind(..., .Selected())` | 双向 `long` |
-| `ItemList` | 必须设 `Kind = Selected` | 双向 `long`（无选中为 `-1`）；项集合用手写 `BindItems` |
+| `OptionButton` | `Bind(..., .Selected())` | 双向 `long`；集合要写 `Kind = Items` |
+| `ItemList` | `BindItems(..., .Items())` | 项集合；选中叠 `Kind = Selected`（双向 `long`，无选中为 `-1`） |
 | 其他 `BaseButton` | `BindCommand` | 按下 `Execute`，`CanExecute` → `Disabled` |
 | `Range`（Slider / SpinBox / ProgressBar / ScrollBar） | `Bind(..., .Value())` | `BindableReactiveProperty<double>` 双向，否则一向；`int` / `float` 隐式转 `double` |
 | 普通 `Control` | 报 TPV008 | 必须设 `Kind` |
@@ -142,25 +142,26 @@ public partial class CounterView : Control
 
 集合不走 `BindingTarget<T>`。`CollectionTarget<T>` 提供 `Reset` / `Insert` / `RemoveAt` / `Replace` / `Move`。`ObservableList<T>` 增量更新，`Observable<IReadOnlyList<T>>`（含 `BindableReactiveProperty`）每次整表 `Reset`。可选 `Func` / `IValueConverter` 把项转成目标类型。
 
-Godot：`ItemList.Items()`、`OptionButton.Items()` 都是 `CollectionTarget<string>`。选中仍是标量：`ItemList` 要写 `Kind = LinkKind.Selected`，`OptionButton` 继续默认 `Selected`。容器模板用 `Container.Items(create)` 或 `Items<TView, TViewModel>(PackedScene)`，在 `AddChild` 之前注入项 ViewModel；出树时 `Detach` 会拆掉生成的子节点，不释放项 VM。`[BindTo]` 不生成 `BindItems`，在 `OnBind` 手写；可只用 `[NodeInject]` 注入容器。
+Godot：`ItemList.Items()`、`OptionButton.Items()` 都是 `CollectionTarget<string>`。`ItemList` 默认绑集合；选中叠 `Kind = LinkKind.Selected`。`OptionButton` 默认仍是 `Selected`，集合要写 `Kind = Items`。容器模板必须 `Kind = Items`，并给 `ItemView`（带 `[TelepathView<T>]` 的项 View）和 `ItemScene`（本 View 上的 `PackedScene` 成员）。出树时 `Detach` 会拆掉生成的子节点，不释放项 VM。
 
 ```csharp
 [NodeInject("%Items")]
+[BindTo(nameof(ListViewModel.Items))]
 [BindTo(nameof(ListViewModel.Selected), Kind = LinkKind.Selected)]
 private ItemList _items = null!;
 
 [NodeInject("%Choices")]
+[BindTo(nameof(ListViewModel.Items), Kind = LinkKind.Items)]
 private OptionButton _choices = null!;
-
-private void OnBind(ListViewModel vm, BindingSet bindings)
-{
-    bindings.BindItems(vm.Items, _items.Items());
-    bindings.BindItems(vm.Items, _choices.Items());
-}
 ```
 
 ```csharp
-bindings.BindItems(vm.Items, _list.Items<TodoItemView, TodoItemViewModel>(ItemScene));
+[NodeInject("%Items")]
+[BindTo(nameof(TodoListViewModel.Items), Kind = LinkKind.Items,
+    ItemView = typeof(TodoItemView), ItemScene = nameof(ItemScene))]
+private VBoxContainer _items = null!;
 ```
 
-ViewModel 里 `ObservableList<T>` 手写，不要 `[Bindable]` 包成 `BindableReactiveProperty`。项若是 ViewModel，从集合移除和父 `OnDispose` 时由拥有者 `Dispose`。示例：[ListApp](../samples/Showcase/ListApp/ListView.cs)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.cs)（容器 + 子 View）。ViewModel 契约见 [viewmodel.md](viewmodel.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。
+生成 `bindings.BindItems(vm.Items, _items.Items())` 和 `bindings.BindItems(vm.Items, _list.Items<TodoItemView, TodoItemViewModel>(ItemScene))`。原生列表可用 `Converter` 把项转成 `string`；容器模板不能带 `Converter`。
+
+`[Bindable] private ObservableList<T>? _items` 生成惰性 `ObservableList<T> Items`，不要包成 `BindableReactiveProperty`。整表替换仍用 `BindableReactiveProperty<IReadOnlyList<T>>`。项若是 ViewModel，从集合移除和父 `OnDispose` 时由拥有者 `Dispose`。示例：[ListApp](../samples/Showcase/ListApp/ListView.cs)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.cs)（容器 + 子 View）。ViewModel 契约见 [viewmodel.md](viewmodel.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。

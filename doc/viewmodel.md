@@ -26,6 +26,7 @@ src/Telepath.SourceGenerator/ViewModel/
 | 声明 | 生成 |
 |------|------|
 | `[Bindable] private int _count` | `BindableReactiveProperty<int> Count` |
+| `[Bindable] private ObservableList<string>? _items` | `ObservableList<string> Items`（惰性 `??= new()`，不 Track） |
 | `[Bindable(nameof(Count), nameof(Max))] GetIsAtMax(int count, int max)` | `BindableReactiveProperty<bool> IsAtMax`（去掉 `Get` / `Compute` / `Format`） |
 | `[Command] OnIncrement()` | `ReactiveCommand IncrementCommand`（去掉 `On`，再加 `Command` 后缀） |
 | `[Command] OnSearch(string query)` | `ReactiveCommand<string> SearchCommand` |
@@ -63,7 +64,7 @@ UI 格式化（例如把 `Count` 显示成 `"Count: 3"`）不要做成派生 bin
 
 仍可手写 `BindableReactiveProperty` / `ReactiveCommand` / `ReactiveCommand<T>` 并 `Track`。
 
-列表用 Cysharp `ObservableList<T>`，不要 `[Bindable]`：列表自己会通知，包进 `BindableReactiveProperty` 只会在换引用时更新。整表替换（搜索结果、过滤）用 `BindableReactiveProperty<IReadOnlyList<T>>`。View 侧 `BindItems` 见 [view.md](view.md)。
+`[Bindable]` 遇到 `ObservableList<T>` 时生成同类型惰性属性，不包进 `BindableReactiveProperty`（列表自己会通知）。字段不能是 `readonly`，不能带 `From`。整表替换（搜索结果、过滤）仍用 `BindableReactiveProperty<IReadOnlyList<T>>`。View 侧 `BindItems` / `[BindTo] Kind = Items` 见 [view.md](view.md)。
 
 ## 与 Godot 节点生命周期间的关系
 

@@ -6,6 +6,7 @@ namespace Telepath.SourceGenerator;
 internal enum ViewModelMemberKind
 {
     BindableField,
+    BindableListField,
     BindableMethod,
     Command,
 }

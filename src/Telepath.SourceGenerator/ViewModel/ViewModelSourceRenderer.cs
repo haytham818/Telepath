@@ -68,6 +68,19 @@ internal static class ViewModelSourceRenderer
                     .AppendLine("));");
                 break;
 
+            case ViewModelMemberKind.BindableListField:
+                source.Append("    public ")
+                    .Append(member.ValueTypeDisplay)
+                    .Append(" @")
+                    .Append(member.PropertyName)
+                    .AppendLine();
+                source.Append("        => @")
+                    .Append(member.SourceMemberName)
+                    .Append(" ??= new ")
+                    .Append(member.ValueTypeDisplay)
+                    .AppendLine("();");
+                break;
+
             case ViewModelMemberKind.BindableMethod:
                 source.Append("    private global::R3.BindableReactiveProperty<")
                     .Append(member.ValueTypeDisplay)

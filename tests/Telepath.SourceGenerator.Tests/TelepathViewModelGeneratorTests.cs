@@ -152,6 +152,79 @@ public sealed class TelepathViewModelGeneratorTests
     }
 
     [Fact]
+    public void GeneratesLazyObservableListProperty()
+    {
+        const string source = """
+            using ObservableCollections;
+            using Telepath.Core;
+
+            namespace Demo;
+
+            public sealed partial class ListViewModel : ViewModel
+            {
+                [Bindable]
+                private ObservableList<string>? _items;
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains(
+            "public global::ObservableCollections.ObservableList<string> @Items",
+            generated);
+        Assert.Contains(
+            "@_items ??= new global::ObservableCollections.ObservableList<string>();",
+            generated);
+        Assert.DoesNotContain("BindableReactiveProperty", generated);
+        Assert.DoesNotContain("Track(", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void ReportsReadonlyObservableListBindable()
+    {
+        const string source = """
+            using ObservableCollections;
+            using Telepath.Core;
+
+            public sealed partial class SampleViewModel : ViewModel
+            {
+                [Bindable]
+                private readonly ObservableList<string>? _items;
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPM002", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsFromOnObservableListBindable()
+    {
+        const string source = """
+            using ObservableCollections;
+            using Telepath.Core;
+
+            public sealed partial class SampleViewModel : ViewModel
+            {
+                [Bindable("Count")]
+                private ObservableList<string>? _items;
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPM002", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
     public void ReportsInvalidCanExecute()
     {
         const string source = """
@@ -338,6 +411,13 @@ public sealed class TelepathViewModelGeneratorTests
                     Observable<T2> source2,
                     System.Func<T1, T2, TResult> selector)
                     => new();
+            }
+        }
+
+        namespace ObservableCollections
+        {
+            public class ObservableList<T>
+            {
             }
         }
         """;

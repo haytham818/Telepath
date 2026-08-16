@@ -7,6 +7,7 @@ internal static class ViewModelMetadata
     public const string BindableAttributeName = "Telepath.Core.BindableAttribute";
     public const string CommandAttributeName = "Telepath.Core.CommandAttribute";
     public const string ViewModelName = "Telepath.Core.ViewModel";
+    public const string ObservableListName = "ObservableCollections.ObservableList`1";
     public const string DiagnosticCategory = "Telepath.ViewModel";
 
     public static readonly DiagnosticDescriptor InvalidTarget = new(

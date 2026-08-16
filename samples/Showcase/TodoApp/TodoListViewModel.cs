@@ -9,7 +9,8 @@ public sealed partial class TodoListViewModel : ViewModel
     [Bindable]
     private string _draft = "";
 
-    public ObservableList<TodoItemViewModel> Items { get; } = new();
+    [Bindable]
+    private ObservableList<TodoItemViewModel>? _items;
 
     public TodoListViewModel()
     {

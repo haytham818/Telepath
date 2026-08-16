@@ -144,6 +144,38 @@ internal static class ViewSourceRenderer
                 continue;
             }
 
+            if (binding.Kind == BindToKind.Items)
+            {
+                source.Append("        bindings.BindItems(vm.@")
+                    .Append(binding.ViewModelMember)
+                    .Append(", @")
+                    .Append(binding.TargetMemberName)
+                    .Append(".Items");
+                if (binding.ItemViewTypeDisplay is not null)
+                {
+                    source.Append('<')
+                        .Append(binding.ItemViewTypeDisplay)
+                        .Append(", ")
+                        .Append(binding.ItemViewModelTypeDisplay)
+                        .Append(">(@")
+                        .Append(binding.ItemSceneMemberName)
+                        .Append(')');
+                }
+                else
+                {
+                    source.Append("()");
+                    if (binding.ConverterTypeDisplay is not null)
+                    {
+                        source.Append(", new ")
+                            .Append(binding.ConverterTypeDisplay)
+                            .Append("()");
+                    }
+                }
+
+                source.AppendLine(");");
+                continue;
+            }
+
             source.Append("        bindings.Bind(vm.@")
                 .Append(binding.ViewModelMember)
                 .Append(", @")

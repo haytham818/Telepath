@@ -10,6 +10,7 @@ internal enum BindToKind
     Selected,
     Visible,
     Disabled,
+    Items,
 }
 
 internal sealed class NodeInjection
@@ -37,7 +38,10 @@ internal sealed class ViewBinding
         string? parameterMemberName = null,
         string? parameterAccess = null,
         string? converterTypeDisplay = null,
-        bool implicitToString = false)
+        bool implicitToString = false,
+        string? itemViewTypeDisplay = null,
+        string? itemViewModelTypeDisplay = null,
+        string? itemSceneMemberName = null)
     {
         TargetMemberName = targetMemberName;
         ViewModelMember = viewModelMember;
@@ -46,6 +50,9 @@ internal sealed class ViewBinding
         ParameterAccess = parameterAccess;
         ConverterTypeDisplay = converterTypeDisplay;
         ImplicitToString = implicitToString;
+        ItemViewTypeDisplay = itemViewTypeDisplay;
+        ItemViewModelTypeDisplay = itemViewModelTypeDisplay;
+        ItemSceneMemberName = itemSceneMemberName;
     }
 
     public string TargetMemberName { get; }
@@ -61,6 +68,12 @@ internal sealed class ViewBinding
     public string? ConverterTypeDisplay { get; }
 
     public bool ImplicitToString { get; }
+
+    public string? ItemViewTypeDisplay { get; }
+
+    public string? ItemViewModelTypeDisplay { get; }
+
+    public string? ItemSceneMemberName { get; }
 
     public string TargetAccessor => Kind switch
     {

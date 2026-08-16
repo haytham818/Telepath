@@ -267,10 +267,36 @@ internal static class ViewModelGenerator
             return false;
         }
 
+        var isObservableList = IsObservableList(field.Type);
+        if (isObservableList && field.IsReadOnly)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewModelMetadata.InvalidBindable,
+                candidate.Location,
+                field.Name,
+                "ObservableList bindables cannot be readonly"));
+            return false;
+        }
+
         var propertyName = GeneratedMemberNames.FromField(field.Name, candidate.ExplicitName);
         if (!ValidateGeneratedName(context, viewModelType, field, propertyName, generatedNames, candidate.Location))
         {
             return false;
+        }
+
+        if (isObservableList)
+        {
+            var listType = ((INamedTypeSymbol)field.Type)
+                .WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+            model = new ViewModelGeneratedMember(
+                ViewModelMemberKind.BindableListField,
+                propertyName,
+                field.Name,
+                listType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
+                ImmutableArray<string>.Empty,
+                canExecute: null,
+                canExecuteIsMethod: false);
+            return true;
         }
 
         model = new ViewModelGeneratedMember(
@@ -282,6 +308,14 @@ internal static class ViewModelGenerator
             canExecute: null,
             canExecuteIsMethod: false);
         return true;
+    }
+
+    private static bool IsObservableList(ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol named
+            && named.OriginalDefinition is INamedTypeSymbol original
+            && original.Arity == 1
+            && SymbolHelpers.HasMetadataName(original, ViewModelMetadata.ObservableListName);
     }
 
     private static bool TryCreateBindableMethod(

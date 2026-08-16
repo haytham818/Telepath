@@ -32,7 +32,22 @@ public sealed class BindToAttribute : Attribute
     /// <summary>
     /// A <c>Telepath.Core.IValueConverter&lt;TSource, TTarget&gt;</c> (or two-way subtype)
     /// used to convert the ViewModel value. Must be a concrete type with a public
-    /// parameterless constructor. Invalid on command bindings.
+    /// parameterless constructor. Invalid on command bindings and container item templates.
     /// </summary>
     public Type? Converter { get; set; }
+
+    /// <summary>
+    /// Item view type for container <see cref="LinkKind.Items"/> bindings.
+    /// Must be a concrete Telepath view marked <c>[TelepathView&lt;TViewModel&gt;]</c>.
+    /// Required together with <see cref="ItemScene"/> on <c>Container</c>; invalid on
+    /// <c>ItemList</c> / <c>OptionButton</c>.
+    /// </summary>
+    public Type? ItemView { get; set; }
+
+    /// <summary>
+    /// View field or property of type <c>PackedScene</c> used to instantiate
+    /// <see cref="ItemView"/> rows. Required together with <see cref="ItemView"/>
+    /// on container item bindings.
+    /// </summary>
+    public string? ItemScene { get; set; }
 }

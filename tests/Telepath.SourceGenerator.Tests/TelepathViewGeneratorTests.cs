@@ -392,6 +392,319 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
+    public void GeneratesBindItemsForItemListAuto()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [NodeInject("%Items")]
+                [BindTo("Items")]
+                private Godot.ItemList _items = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Items { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("bindings.BindItems(vm.@Items, @_items.Items());", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void GeneratesBindItemsForOptionButton()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [NodeInject("%Choices")]
+                [BindTo("Items", Kind = LinkKind.Items)]
+                private Godot.OptionButton _choices = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Items { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("bindings.BindItems(vm.@Items, @_choices.Items());", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void GeneratesBindItemsConverterForItemList()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class TitleConverter : Telepath.Core.IValueConverter<object, string>
+            {
+                public string Convert(object value) => value?.ToString() ?? string.Empty;
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Items { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [NodeInject("%Items")]
+                [BindTo(nameof(TestViewModel.Items), Converter = typeof(TitleConverter))]
+                private Godot.ItemList _items = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains(
+            "bindings.BindItems(vm.@Items, @_items.Items(), new global::Demo.TitleConverter());",
+            generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void GeneratesContainerBindItemsWithItemTemplate()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class TodoItemViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            public sealed class TodoListViewModel : Telepath.Core.IViewModel
+            {
+                public object Items { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<TodoItemViewModel>]
+            public partial class TodoItemView : Godot.Control
+            {
+                public override partial void _Notification(int what);
+
+                private TodoItemViewModel CreateViewModel() => new();
+
+                private void OnBind(TodoItemViewModel vm, Telepath.Core.BindingSet bindings) { }
+            }
+
+            [TelepathView<TodoListViewModel>]
+            public partial class TodoListView : Godot.Control
+            {
+                public Godot.PackedScene ItemScene { get; set; } = null!;
+
+                [NodeInject("%Items")]
+                [BindTo(nameof(TodoListViewModel.Items), Kind = LinkKind.Items,
+                    ItemView = typeof(TodoItemView), ItemScene = nameof(ItemScene))]
+                private Godot.VBoxContainer _items = null!;
+
+                public override partial void _Notification(int what);
+
+                private TodoListViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        Assert.Equal(2, result.GeneratedSources.Count);
+        var generated = CombinedGenerated(result);
+        Assert.Contains(
+            "bindings.BindItems(vm.@Items, @_items.Items<global::Demo.TodoItemView, global::Demo.TodoItemViewModel>(@ItemScene));",
+            generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void ReportsMissingContainerItemTemplate()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                [NodeInject("%Items")]
+                [BindTo("Items", Kind = LinkKind.Items)]
+                private Godot.VBoxContainer _items = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Items { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV010", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsItemViewOnItemList()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class ItemViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Items { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<ItemViewModel>]
+            public partial class ItemView : Godot.Control
+            {
+                public override partial void _Notification(int what);
+
+                private ItemViewModel CreateViewModel() => new();
+
+                private void OnBind(ItemViewModel vm, Telepath.Core.BindingSet bindings) { }
+            }
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                public Godot.PackedScene ItemScene { get; set; } = null!;
+
+                [NodeInject("%Items")]
+                [BindTo(nameof(TestViewModel.Items), ItemView = typeof(ItemView), ItemScene = nameof(ItemScene))]
+                private Godot.ItemList _items = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics, static d => d.Id == "TPV010");
+        Assert.Equal("TPV010", diagnostic.Id);
+    }
+
+    [Fact]
+    public void ReportsConverterOnContainerItemBinding()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class TitleConverter : Telepath.Core.IValueConverter<object, string>
+            {
+                public string Convert(object value) => value?.ToString() ?? string.Empty;
+            }
+
+            public sealed class ItemViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public object Items { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<ItemViewModel>]
+            public partial class ItemView : Godot.Control
+            {
+                public override partial void _Notification(int what);
+
+                private ItemViewModel CreateViewModel() => new();
+
+                private void OnBind(ItemViewModel vm, Telepath.Core.BindingSet bindings) { }
+            }
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                public Godot.PackedScene ItemScene { get; set; } = null!;
+
+                [NodeInject("%Items")]
+                [BindTo(nameof(TestViewModel.Items), Kind = LinkKind.Items,
+                    ItemView = typeof(ItemView), ItemScene = nameof(ItemScene),
+                    Converter = typeof(TitleConverter))]
+                private Godot.VBoxContainer _items = null!;
+
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics, static d => d.Id == "TPV011");
+        Assert.Equal("TPV011", diagnostic.Id);
+    }
+
+    [Fact]
     public void ReportsIncompatibleLinkKind()
     {
         const string source = """
@@ -928,6 +1241,9 @@ public sealed class TelepathViewGeneratorTests
         Assert.Empty(errors);
     }
 
+    private static string CombinedGenerated(GeneratorRunResult result)
+        => string.Join("\n", result.GeneratedSources.Select(static source => source.SourceText.ToString()));
+
     private static int CountOccurrences(string text, string value)
     {
         var count = 0;
@@ -987,6 +1303,8 @@ public sealed class TelepathViewGeneratorTests
                 public void Bind(object source, object target, System.Func<object, string> convert) { }
                 public void BindCommand(object command, object button) { }
                 public void BindCommand<T>(object command, object button, System.Func<T> getParameter) { }
+                public void BindItems(object source, object target) { }
+                public void BindItems(object source, object target, object converter) { }
             }
         }
 
@@ -1046,6 +1364,18 @@ public sealed class TelepathViewGeneratorTests
             {
             }
 
+            public class Container : Control
+            {
+            }
+
+            public class VBoxContainer : Container
+            {
+            }
+
+            public class PackedScene
+            {
+            }
+
             public class Range : Control
             {
             }
@@ -1075,6 +1405,7 @@ public sealed class TelepathViewGeneratorTests
                 Selected,
                 Visible,
                 Disabled,
+                Items,
             }
 
             [System.AttributeUsage(System.AttributeTargets.Class)]
@@ -1106,6 +1437,8 @@ public sealed class TelepathViewGeneratorTests
                 public LinkKind Kind { get; set; }
                 public string Parameter { get; set; }
                 public System.Type Converter { get; set; }
+                public System.Type ItemView { get; set; }
+                public string ItemScene { get; set; }
             }
 
             public sealed class ViewLifecycle<TViewModel>
@@ -1136,6 +1469,16 @@ public sealed class TelepathViewGeneratorTests
                 public static object Selected(this global::Godot.ItemList list) => list;
                 public static object Visible(this global::Godot.CanvasItem node) => node;
                 public static object Disabled(this global::Godot.BaseButton button) => button;
+            }
+
+            public static class GodotCollectionTargets
+            {
+                public static object Items(this global::Godot.ItemList list) => list;
+                public static object Items(this global::Godot.OptionButton button) => button;
+                public static object Items<TView, TViewModel>(
+                    this global::Godot.Container container,
+                    global::Godot.PackedScene scene)
+                    => container;
             }
 
             public interface ITelepathView<TViewModel>

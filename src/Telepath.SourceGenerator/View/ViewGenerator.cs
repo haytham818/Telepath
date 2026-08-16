@@ -359,12 +359,29 @@ internal static class ViewGenerator
                     continue;
                 }
 
+                if (!TryResolveItemTemplate(
+                        context,
+                        attribute,
+                        viewType,
+                        namedType,
+                        viewName,
+                        member,
+                        kind,
+                        out var itemViewTypeDisplay,
+                        out var itemViewModelTypeDisplay,
+                        out var itemSceneMemberName))
+                {
+                    valid = false;
+                    continue;
+                }
+
                 if (!TryResolveConverter(
                         context,
                         attribute,
                         viewName,
                         member,
                         kind,
+                        itemViewTypeDisplay is not null,
                         out var converterTypeDisplay))
                 {
                     valid = false;
@@ -383,7 +400,10 @@ internal static class ViewGenerator
                     parameterMemberName,
                     parameterAccess,
                     converterTypeDisplay,
-                    implicitToString));
+                    implicitToString,
+                    itemViewTypeDisplay,
+                    itemViewModelTypeDisplay,
+                    itemSceneMemberName));
             }
         }
 
@@ -471,6 +491,12 @@ internal static class ViewGenerator
             return true;
         }
 
+        if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ItemListName))
+        {
+            kind = BindToKind.Items;
+            return true;
+        }
+
         if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.BaseButtonName))
         {
             kind = BindToKind.Command;
@@ -507,6 +533,10 @@ internal static class ViewGenerator
             BindToKind.Selected =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName)
                 || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ItemListName),
+            BindToKind.Items =>
+                SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ItemListName)
+                || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName)
+                || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ContainerName),
             BindToKind.Visible =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CanvasItemName)
                 || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ControlName),
@@ -605,6 +635,7 @@ internal static class ViewGenerator
         string viewName,
         ISymbol member,
         BindToKind kind,
+        bool hasItemView,
         out string? converterTypeDisplay)
     {
         converterTypeDisplay = null;
@@ -625,14 +656,16 @@ internal static class ViewGenerator
             return false;
         }
 
-        if (kind == BindToKind.Command)
+        if (kind == BindToKind.Command || hasItemView)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ViewMetadata.InvalidBindToConverter,
                 location,
                 viewName,
                 member.Name,
-                "Converter is not valid for command bindings"));
+                hasItemView
+                    ? "Converter is not valid for container item bindings"
+                    : "Converter is not valid for command bindings"));
             return false;
         }
 
@@ -654,6 +687,183 @@ internal static class ViewGenerator
 
         converterTypeDisplay = namedConverter.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         return true;
+    }
+
+    private static bool TryResolveItemTemplate(
+        SourceProductionContext context,
+        AttributeData attribute,
+        INamedTypeSymbol viewType,
+        INamedTypeSymbol controlType,
+        string viewName,
+        ISymbol member,
+        BindToKind kind,
+        out string? itemViewTypeDisplay,
+        out string? itemViewModelTypeDisplay,
+        out string? itemSceneMemberName)
+    {
+        itemViewTypeDisplay = null;
+        itemViewModelTypeDisplay = null;
+        itemSceneMemberName = null;
+        var location = member.Locations.FirstOrDefault() ?? Location.None;
+        var hasItemView = SymbolHelpers.TryGetNamedType(attribute, "ItemView", out var itemViewType, out var itemViewSpecified);
+        var itemSceneSpecified = TryGetNamedArgument(attribute, "ItemScene", out var itemSceneValue);
+        var itemSceneName = itemSceneValue as string;
+
+        if (!itemViewSpecified && !itemSceneSpecified)
+        {
+            if (kind == BindToKind.Items && IsContainer(controlType))
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ViewMetadata.InvalidBindTo,
+                    location,
+                    viewName,
+                    member.Name,
+                    "container item bindings require ItemView and ItemScene"));
+                return false;
+            }
+
+            return true;
+        }
+
+        if (kind != BindToKind.Items)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidBindTo,
+                location,
+                viewName,
+                member.Name,
+                "ItemView and ItemScene are only valid for Kind.Items"));
+            return false;
+        }
+
+        if (!IsContainer(controlType))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidBindTo,
+                location,
+                viewName,
+                member.Name,
+                "ItemView and ItemScene are only valid for Godot.Container"));
+            return false;
+        }
+
+        if (!itemViewSpecified || !itemSceneSpecified)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidBindTo,
+                location,
+                viewName,
+                member.Name,
+                "container item bindings require both ItemView and ItemScene"));
+            return false;
+        }
+
+        if (!hasItemView
+            || itemViewType is not INamedTypeSymbol namedView
+            || namedView.IsAbstract
+            || namedView.IsUnboundGenericType
+            || !SymbolHelpers.IsOrInheritsFrom(namedView, ViewMetadata.ControlName))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidBindTo,
+                location,
+                viewName,
+                member.Name,
+                "ItemView must be a concrete Godot.Control type"));
+            return false;
+        }
+
+        if (!TryGetTelepathViewModel(namedView, out var itemViewModel))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidBindTo,
+                location,
+                viewName,
+                member.Name,
+                "ItemView must be marked [TelepathView<TViewModel>]"));
+            return false;
+        }
+
+        if (itemSceneName is not { Length: > 0 } sceneName || string.IsNullOrWhiteSpace(sceneName))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidBindTo,
+                location,
+                viewName,
+                member.Name,
+                "ItemScene must name a PackedScene member on the view"));
+            return false;
+        }
+
+        var matches = viewType.GetMembers(sceneName).ToArray();
+        if (matches.Length != 1 || matches[0].IsStatic)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidBindTo,
+                location,
+                viewName,
+                member.Name,
+                $"ItemScene '{sceneName}' must name a unique instance field or property on the view"));
+            return false;
+        }
+
+        ITypeSymbol? sceneType = matches[0] switch
+        {
+            IFieldSymbol field => field.Type,
+            IPropertySymbol property => property.Type,
+            _ => null,
+        };
+
+        var underlyingSceneType = sceneType?.WithNullableAnnotation(NullableAnnotation.NotAnnotated);
+        if (underlyingSceneType is not INamedTypeSymbol namedScene
+            || !SymbolHelpers.HasMetadataName(namedScene, ViewMetadata.PackedSceneName))
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                ViewMetadata.InvalidBindTo,
+                location,
+                viewName,
+                member.Name,
+                $"ItemScene '{sceneName}' must be a Godot.PackedScene field or property"));
+            return false;
+        }
+
+        itemViewTypeDisplay = namedView.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        itemViewModelTypeDisplay = itemViewModel.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+        itemSceneMemberName = matches[0].Name;
+        return true;
+    }
+
+    private static bool TryGetTelepathViewModel(INamedTypeSymbol viewType, out ITypeSymbol viewModelType)
+    {
+        if (SymbolHelpers.TryGetAttribute(viewType, ViewMetadata.ViewAttributeName, out var attribute)
+            && attribute.AttributeClass?.TypeArguments.Length == 1)
+        {
+            viewModelType = attribute.AttributeClass.TypeArguments[0];
+            return true;
+        }
+
+        viewModelType = null!;
+        return false;
+    }
+
+    private static bool IsContainer(INamedTypeSymbol controlType)
+        => SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ContainerName);
+
+    private static bool TryGetNamedArgument(AttributeData attribute, string name, out object? value)
+    {
+        foreach (var argument in attribute.NamedArguments)
+        {
+            if (argument.Key != name)
+            {
+                continue;
+            }
+
+            value = argument.Value.Value;
+            return true;
+        }
+
+        value = null;
+        return false;
     }
 
     private static bool TryGetParameterAccess(INamedTypeSymbol controlType, out string access)
