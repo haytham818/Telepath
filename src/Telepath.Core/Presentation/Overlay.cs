@@ -13,12 +13,33 @@ public class Overlay : ViewModel, IOverlay
 {
     private readonly Func<IViewModel?>? _covered;
     private readonly List<CoverMode> _covers = [];
+    private readonly bool _ownsActivation;
 
     public Overlay(Func<IViewModel?>? covered = null)
+        : this(covered, ownsActivation: true)
+    {
+    }
+
+    internal Overlay(Func<IViewModel?>? covered, bool ownsActivation)
     {
         _covered = covered;
+        _ownsActivation = ownsActivation;
         Layers = new ObservableList<IViewModel>();
         HasOverlay = Track(new BindableReactiveProperty<bool>(false));
+    }
+
+    /// <summary>
+    /// Cover mode of the overlay at <paramref name="index"/> in <see cref="Layers"/>.
+    /// </summary>
+    public CoverMode CoverAt(int index)
+    {
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
+        if ((uint)index >= (uint)_covers.Count)
+        {
+            throw new ArgumentOutOfRangeException(nameof(index));
+        }
+
+        return _covers[index];
     }
 
     /// <inheritdoc />
@@ -56,7 +77,7 @@ public class Overlay : ViewModel, IOverlay
                 "Cannot push the covered screen as an overlay.", nameof(viewModel));
         }
 
-        if (cover == CoverMode.Pause)
+        if (_ownsActivation && cover == CoverMode.Pause)
         {
             if (Layers.Count > 0)
             {
@@ -71,7 +92,10 @@ public class Overlay : ViewModel, IOverlay
         _covers.Add(cover);
         Layers.Add(viewModel);
         UpdateHasOverlay();
-        Activate(viewModel);
+        if (_ownsActivation)
+        {
+            Activate(viewModel);
+        }
     }
 
     /// <inheritdoc />
@@ -85,13 +109,17 @@ public class Overlay : ViewModel, IOverlay
 
         var leaving = Layers[^1];
         var cover = _covers[^1];
-        Deactivate(leaving);
-        Layers.RemoveAt(Layers.Count - 1);
+        if (_ownsActivation)
+        {
+            Deactivate(leaving);
+        }
+
         _covers.RemoveAt(_covers.Count - 1);
+        Layers.RemoveAt(Layers.Count - 1);
         UpdateHasOverlay();
         leaving.Dispose();
 
-        if (cover != CoverMode.Pause)
+        if (!_ownsActivation || cover != CoverMode.Pause)
         {
             return true;
         }
@@ -128,8 +156,8 @@ public class Overlay : ViewModel, IOverlay
             return;
         }
 
-        Layers.RemoveAt(index);
         _covers.RemoveAt(index);
+        Layers.RemoveAt(index);
         UpdateHasOverlay();
         viewModel.Dispose();
     }
@@ -165,22 +193,26 @@ public class Overlay : ViewModel, IOverlay
         }
 
         var pausedCovered = _covers[0] == CoverMode.Pause;
-        Deactivate(Layers[^1]);
+        if (_ownsActivation)
+        {
+            Deactivate(Layers[^1]);
+        }
+
         var closing = new IViewModel[Layers.Count];
         for (var i = 0; i < Layers.Count; i++)
         {
             closing[i] = Layers[i];
         }
 
-        Layers.Clear();
         _covers.Clear();
+        Layers.Clear();
         UpdateHasOverlay();
         for (var i = closing.Length - 1; i >= 0; i--)
         {
             closing[i].Dispose();
         }
 
-        if (resumeCovered && pausedCovered)
+        if (_ownsActivation && resumeCovered && pausedCovered)
         {
             ResumeCovered();
         }

@@ -11,14 +11,16 @@ public sealed class OverlayPresenter
 {
     private readonly Control _slot;
     private readonly ViewRegistry _registry;
+    private readonly bool _blocksPassThrough;
     private readonly List<Control> _views = [];
 
-    public OverlayPresenter(Control slot, ViewRegistry registry)
+    public OverlayPresenter(Control slot, ViewRegistry registry, bool blocksPassThrough = true)
     {
         ArgumentNullException.ThrowIfNull(slot);
         ArgumentNullException.ThrowIfNull(registry);
         _slot = slot;
         _registry = registry;
+        _blocksPassThrough = blocksPassThrough;
         UpdateMouseFilter();
     }
 
@@ -86,6 +88,12 @@ public sealed class OverlayPresenter
 
     private void UpdateMouseFilter()
     {
+        if (!_blocksPassThrough)
+        {
+            _slot.MouseFilter = Control.MouseFilterEnum.Ignore;
+            return;
+        }
+
         _slot.MouseFilter = _views.Count == 0
             ? Control.MouseFilterEnum.Ignore
             : Control.MouseFilterEnum.Stop;

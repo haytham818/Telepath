@@ -1,0 +1,37 @@
+using R3;
+
+namespace Telepath.Core;
+
+/// <summary>
+/// Named overlay bands. Each band is an independent <see cref="IOverlay"/> stack.
+/// Parameterless <see cref="IOverlay"/> members target <see cref="OverlayLayer.Popup"/>.
+/// </summary>
+public interface IOverlayHost : IOverlay
+{
+    /// <summary>
+    /// Registered bands from lowest <see cref="OverlayLayer.Order"/> to highest.
+    /// </summary>
+    IReadOnlyList<OverlayLayer> Bands { get; }
+
+    /// <summary>
+    /// <see langword="true"/> when a band that handles Back has at least one overlay.
+    /// </summary>
+    BindableReactiveProperty<bool> HasBackableOverlay { get; }
+
+    /// <summary>
+    /// Registers a custom band. Throws after the first overlay is pushed,
+    /// or when <see cref="OverlayLayer.Name"/> / <see cref="OverlayLayer.Order"/> collides.
+    /// </summary>
+    void Register(OverlayLayer layer);
+
+    /// <summary>
+    /// The stack for <paramref name="layer"/>. Throws when the band is unknown.
+    /// </summary>
+    IOverlay Band(OverlayLayer layer);
+
+    /// <summary>
+    /// Pushes onto <paramref name="layer"/>. When <paramref name="cover"/> is
+    /// omitted, <see cref="OverlayLayer.DefaultCover"/> is used.
+    /// </summary>
+    void Push(IViewModel viewModel, OverlayLayer layer, CoverMode? cover = null);
+}

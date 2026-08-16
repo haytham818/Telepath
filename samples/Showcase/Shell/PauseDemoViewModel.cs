@@ -5,7 +5,7 @@ namespace Telepath.Showcase.Shell;
 
 public sealed partial class PauseDemoViewModel : ViewModel, IActivatable
 {
-    private readonly IOverlay _overlay;
+    private readonly IOverlayHost _overlay;
     private IDisposable? _tick;
 
     [Bindable]
@@ -14,7 +14,7 @@ public sealed partial class PauseDemoViewModel : ViewModel, IActivatable
     [Bindable]
     private string _status = "Paused";
 
-    public PauseDemoViewModel(IOverlay overlay)
+    public PauseDemoViewModel(IOverlayHost overlay)
     {
         ArgumentNullException.ThrowIfNull(overlay);
         _overlay = overlay;
@@ -50,6 +50,14 @@ public sealed partial class PauseDemoViewModel : ViewModel, IActivatable
     [Command]
     private void OnCoverContinue() =>
         _overlay.Push(new AboutViewModel(_overlay), CoverMode.Continue);
+
+    [Command]
+    private void OnCoverModal() =>
+        _overlay.Push(new AboutViewModel(_overlay), OverlayLayer.Modal);
+
+    [Command]
+    private void OnToast() =>
+        _overlay.Push(new ToastViewModel(_overlay), OverlayLayer.Toast);
 
     protected override void OnDispose() => Deactivate();
 }

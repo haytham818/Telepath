@@ -2,15 +2,14 @@ using Telepath.Core;
 
 namespace Telepath.Showcase.Shell;
 
-public sealed partial class AboutViewModel : ViewModel
+public sealed partial class ToastViewModel : ViewModel
 {
     private readonly IOverlay _overlay;
 
     [Bindable]
-    private string _message =
-        "This overlay covers the page. The view stays; Pause or Continue chooses whether it Deactivates.";
+    private string _message = "Toast is above Modal. Shell Back skips it.";
 
-    public AboutViewModel(IOverlay overlay)
+    public ToastViewModel(IOverlay overlay)
     {
         ArgumentNullException.ThrowIfNull(overlay);
         _overlay = overlay;

@@ -4,7 +4,7 @@ using Telepath.Core;
 namespace Telepath.Godot;
 
 /// <summary>
-/// Maps a slot <see cref="Control"/> onto <see cref="OverlayTarget"/>.
+/// Maps overlay slots onto <see cref="OverlayTarget"/> / <see cref="IOverlayHost"/>.
 /// </summary>
 public static class GodotOverlayTargets
 {
@@ -13,5 +13,18 @@ public static class GodotOverlayTargets
         ArgumentNullException.ThrowIfNull(slot);
         ArgumentNullException.ThrowIfNull(registry);
         return new OverlayPresenter(slot, registry).Target;
+    }
+
+    public static void BindOverlayHost(
+        this BindingSet bindings,
+        IOverlayHost host,
+        Control root,
+        ViewRegistry registry)
+    {
+        ArgumentNullException.ThrowIfNull(bindings);
+        ArgumentNullException.ThrowIfNull(host);
+        ArgumentNullException.ThrowIfNull(root);
+        ArgumentNullException.ThrowIfNull(registry);
+        new OverlayHostPresenter(root, registry).Bind(host, bindings);
     }
 }

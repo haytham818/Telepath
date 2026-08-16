@@ -30,6 +30,10 @@ metadata/telepath_bindings = [{
 "kind": "Command",
 "member": "OpenPauseDemoCommand",
 "path": "%PauseDemo"
+}, {
+"kind": "Command",
+"member": "OpenBannerCommand",
+"path": "%Banner"
 }]
 
 [node name="Center" type="CenterContainer" parent="."]
@@ -83,3 +87,9 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(220, 0)
 layout_mode = 2
 text = "Overlay pause"
+
+[node name="Banner" type="Button" parent="Center/VBox"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(220, 0)
+layout_mode = 2
+text = "Banner"

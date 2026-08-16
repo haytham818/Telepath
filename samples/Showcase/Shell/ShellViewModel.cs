@@ -5,12 +5,20 @@ namespace Telepath.Showcase.Shell;
 
 public sealed class ShellViewModel : Conductor
 {
-    public Overlay Overlay { get; }
+    public static OverlayLayer Banner { get; } = new(
+        "Banner",
+        order: 50,
+        handlesBack: false,
+        defaultCover: CoverMode.Continue,
+        blocksPassThrough: false);
+
+    public OverlayHost Overlay { get; }
 
     public ShellViewModel()
     {
-        Overlay = Track(new Overlay(() => ActiveItem.Value));
-        Track(Overlay.HasOverlay.Subscribe(_ => UpdateCanGoBack()));
+        Overlay = Track(new OverlayHost(() => ActiveItem.Value));
+        Overlay.Register(Banner);
+        Track(Overlay.HasBackableOverlay.Subscribe(_ => UpdateCanGoBack()));
     }
 
     public override bool Back() => Overlay.Back() || base.Back();
@@ -22,5 +30,5 @@ public sealed class ShellViewModel : Conductor
     }
 
     protected override bool ComputeCanGoBack()
-        => Overlay.HasOverlay.Value || base.ComputeCanGoBack();
+        => Overlay.HasBackableOverlay.Value || base.ComputeCanGoBack();
 }

@@ -131,7 +131,7 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 - 场景 `telepath_bindings`：运行时 `GetNode` 并 `Bind` / `BindCommand` / `BindItems`
 - `[NodeInject(nodePath)]`：生成 `GetNode`；同一字段只能一条
 - `[BindTo(member)]`：生成 `Bind(source, target)` 或 `BindItems`；必须搭配同字段的 `[NodeInject]`。可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换，`ItemView` / `ItemScene` 给容器模板。同一字段可叠多条
-- `BindContent`：把导体的 `ActiveItem` 接到内容槽；在 `OnBind` 里 `bindings.BindContent(vm.ActiveItem, slot.Content(registry))`，见 [presentation.md](presentation.md)
+- `BindContent` / `BindOverlay` / `BindOverlayHost`：导体内容槽与 Overlay 带，见 [presentation.md](presentation.md)
 - 允许只有 `[NodeInject]`、没有 `[BindTo]`（仅注入，在 `OnBind` 手写接线）
 - `OnReady()`：可选；在生成的节点解析之后调用
 - `OnBind(vm, bindings)`：可选；在场景绑定和声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
@@ -139,7 +139,7 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 
 薄 View 可以既没有 `[BindTo]` 也没有 `OnBind`（绑定全在场景上）。写了 `OnBind` 则签名必须是 `void OnBind(TViewModel vm, BindingSet bindings)`。
 
-`BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）、`BindCommand`、`BindItems` 和 `BindContent`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
+`BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）、`BindCommand`、`BindItems`、`BindContent` 和 `BindOverlay`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
 
 ## `[BindTo]` 推断
 

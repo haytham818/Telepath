@@ -30,9 +30,11 @@ public partial class ShellView : Control
             .Register<ListViewModel>("res://ListApp/ListView.tscn")
             .Register<TodoListViewModel>("res://TodoApp/TodoListView.tscn")
             .Register<PauseDemoViewModel>("res://Shell/PauseDemoView.tscn")
-            .Register<AboutViewModel>("res://Shell/AboutView.tscn");
+            .Register<AboutViewModel>("res://Shell/AboutView.tscn")
+            .Register<ToastViewModel>("res://Shell/ToastView.tscn")
+            .Register<BannerViewModel>("res://Shell/BannerView.tscn");
         bindings.BindContent(vm.ActiveItem, _content.Content(registry));
-        bindings.BindOverlay(vm.Overlay.Layers, _overlay.Overlays(registry));
+        bindings.BindOverlayHost(vm.Overlay, _overlay, registry);
         if (vm.ActiveItem.Value is null)
         {
             vm.Navigate(new DirectoryViewModel(vm, vm.Overlay));
