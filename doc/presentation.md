@@ -32,6 +32,7 @@ src/Telepath.Godot/Presentation/
   ViewRegistry.cs             ViewModel 类型 → PackedScene
   IViewTransition.cs          可选进/退场；View 自播，Presenter 等退场再 QueueFree
   AnimationPlayerTransition.cs  播 AnimationPlayer 并接入取消
+  TweenTransition.cs          等 Tween 结束并接入取消
   ContentPresenter.cs         换页：旧页退场与新页进场并行
   OverlayPresenter.cs         一带：增层进场、删层退场后再 QueueFree
   OverlayHostPresenter.cs     按 Bands 建槽，每带一个 OverlayPresenter
@@ -245,14 +246,20 @@ public interface IViewTransition
 
 `BindView` 不走这套：节点常驻，不实例化、不 `QueueFree`。
 
-以后某个 Overlay View 可以：
+`IViewTransition` 不规定怎么播。场景里预做好的 clip 用 [`AnimationPlayerTransition`](../src/Telepath.Godot/Presentation/AnimationPlayerTransition.cs)；代码里拼的位移 / 淡入淡出用 [`TweenTransition`](../src/Telepath.Godot/Presentation/TweenTransition.cs)。两者都只负责「等到结束或取消」，不提供默认曲线。
 
 ```csharp
 public Task PlayEnterAsync(CancellationToken cancellationToken)
     => AnimationPlayerTransition.PlayAsync(_player, "enter", cancellationToken);
 
 public Task PlayExitAsync(CancellationToken cancellationToken)
-    => AnimationPlayerTransition.PlayAsync(_player, "exit", cancellationToken);
+{
+    var tween = CreateTween();
+    tween.TweenProperty(this, "modulate:a", 0.0f, 0.2);
+    return TweenTransition.PlayAsync(tween, cancellationToken);
+}
 ```
+
+进场若用 Tween，仍要在 `CreateTween` **之前**同步写下第一帧（例如 `Modulate = new Color(Modulate, 0)`），再 `TweenProperty` 到目标值。
 
 不做：Prism Region、字符串路由表、Messenger、全局 DialogService、按名 `ShowDialog("Confirm")`、自研 DI、Autoload 组合根 / 壳工厂（对象图由宿主 `CreateViewModel` 和构造注入拼）、离开守卫 / `IGuardClose`（何时允许离开是壳的策略，问一句走 `IInteraction`）、文件选择（原生 `FileDialog` 或自定义 `DialogViewModel<T>` 走 `Run`，不进 Core）、把 `IActivatable` 塞进每个 ViewModel、Core 等待动画或异步 `Close`、框架默认淡入淡出、把过渡塞进 Ready / ExitTree / Predelete、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 走 `BindView`）。
