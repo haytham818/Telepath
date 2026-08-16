@@ -12,7 +12,9 @@
     <ProjectReference Include="..\Telepath.Core\Telepath.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Remove="Addon/**" />
     <Compile Remove="Editor/**" />
+    <None Include="Addon/**" />
     <None Include="Editor/**" />
   </ItemGroup>
 </Project>

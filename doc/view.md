@@ -18,6 +18,7 @@ src/Telepath.Godot/Binding/SceneBindingApplier.cs 运行时按场景条目接线
 src/Telepath.Godot/View/ViewLifecycle.cs         ViewModel / 绑定寿命
 src/Telepath.Godot/View/ITelepathView.cs         可注入 ViewModel 的 View 契约
 src/Telepath.Godot/View/TelepathViewAttribute.cs View 标记
+src/Telepath.Godot/Addon/                        plugin.cfg、FrameProviderDispatcher（不编进库）
 src/Telepath.Godot/Editor/                       编辑器插件与 Binding Dock（不编进 Telepath.Godot.dll）
 src/Telepath.Godot/Binding/Attrtbutes/NodeInjectAttribute.cs  节点注入
 src/Telepath.Godot/Binding/Attrtbutes/BindToAttribute.cs      声明式绑定
@@ -58,14 +59,14 @@ public partial class CounterView : Control
 
 ## 编辑器绑定器
 
-插件脚本在 `src/Telepath.Godot/Editor/`，**不**编进 `Telepath.Godot`。Showcase
-用符号链接 `samples/Showcase/addons/Telepath/Editor` → 该目录，由宿主主程序集
-编译。分发时请把 `Editor/` 复制或链接到自己工程的 `addons/Telepath/`，并确保
-`plugin.cfg` 的 `script` 指向 `Editor/TelepathEditorPlugin.cs`。Windows 上 git
-symlink 需要 `core.symlinks`，否则改为复制。
+宿主 addon 源码在 `src/Telepath.Godot/Addon/`（`plugin.cfg`、
+`FrameProviderDispatcher`）和 `src/Telepath.Godot/Editor/`，**不**编进
+`Telepath.Godot`。Showcase 把它们符号链接到 `samples/Showcase/addons/Telepath/`，
+由宿主主程序集编译。分发时请同样链接或复制到自己工程的 `addons/Telepath/`。
+Windows 上 git symlink 需要 `core.symlinks`，否则改为复制。
 
-`FrameProviderDispatcher.cs` 是运行时 Autoload，留在 addon 根目录，不是 Editor
-代码。
+`FrameProviderDispatcher.cs` 是运行时 Autoload，出现在 addon 根目录，不是
+Editor 代码。
 
 选中带 `[TelepathView<T>]` 的节点（或其子节点）时，右侧 **Telepath** dock 列出
 唯一名控件和已编译的 ViewModel 成员。连线写入根节点 metadata，改绑定不必等 C#

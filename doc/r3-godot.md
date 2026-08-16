@@ -1,6 +1,6 @@
 # R3.Godot 运行时胶水
 
-路径：`src/Telepath.Godot/R3/`（`namespace R3`）。Autoload 脚本在 `samples/Showcase/addons/Telepath/FrameProviderDispatcher.cs`。
+路径：`src/Telepath.Godot/R3/`（`namespace R3`）。Autoload 脚本源码在 `src/Telepath.Godot/Addon/FrameProviderDispatcher.cs`，符号链接到 `samples/Showcase/addons/Telepath/`。
 
 从 [Cysharp/R3](https://github.com/Cysharp/R3) 的 `R3.Godot` addon 搬入的运行时子集（MIT）。**不要**再启用官方 `addons/R3.Godot`——同名类型会冲突。
 
@@ -17,7 +17,7 @@
 
 `TelepathEditorPlugin` 会 `AddAutoloadSingleton`；演示宿主的 `project.godot` 也写了 `[autoload]`，运行时不必先开编辑器。
 
-Godot 只在**宿主主程序集**里解析 C# 脚本。`FrameProviderDispatcher` 在 `samples/Showcase/addons/Telepath/`；`TelepathEditorPlugin` 在 `src/Telepath.Godot/Editor/`（符号链接到 addon 的 `Editor/`），均由 `Telepath.Showcase` 编译。`Telepath.Godot` 用 `InternalsVisibleTo("Telepath.Showcase")` 暴露 Provider 的 internal 成员。编辑器源码不编进 `Telepath.Godot.dll`。
+Godot 只在**宿主主程序集**里解析 C# 脚本。`FrameProviderDispatcher` 与 `plugin.cfg` 在 `src/Telepath.Godot/Addon/`，`TelepathEditorPlugin` 在 `src/Telepath.Godot/Editor/`，均符号链接到 `samples/Showcase/addons/Telepath/`，由 `Telepath.Showcase` 编译。`Telepath.Godot` 用 `InternalsVisibleTo("Telepath.Showcase")` 暴露 Provider 的 internal 成员。Addon / Editor 源码不编进 `Telepath.Godot.dll`。
 
 `Delay` / `Throttle` / `Timeout` / `ObserveOn` / `IntervalFrame` 等依赖默认 Provider。ViewModel **构造期**不要用帧算子；Autoload `_Ready` 之后才有默认时钟。
 
