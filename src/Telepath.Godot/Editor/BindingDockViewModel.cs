@@ -41,7 +41,16 @@ public sealed partial class BindingDockViewModel : ViewModel
     private bool _hasTarget = false;
 
     [Bindable]
-    private string _status = "Select a Telepath view (or a child of one).";
+    private bool _isAdding = false;
+
+    [Bindable]
+    private int _attributeCount = 0;
+
+    [Bindable]
+    private int _sceneCount = 0;
+
+    [Bindable]
+    private string _status = "选中一个 Telepath View（或其子节点）。";
 
     [Bindable]
     private string _itemScene = "";
@@ -99,6 +108,7 @@ public sealed partial class BindingDockViewModel : ViewModel
         }
 
         Track(SelectedSceneIndex.Subscribe(OnSelectedSceneIndexChanged));
+        Track(SelectedControlIndex.Subscribe(_ => RefreshKindLabels()));
     }
 
     public void Connect(EditorPlugin plugin)
@@ -129,6 +139,66 @@ public sealed partial class BindingDockViewModel : ViewModel
         _viewModelType = null;
     }
 
+    [Bindable(nameof(AttributeCount))]
+    private bool GetShowAttributeSection(int attributeCount) => attributeCount > 0;
+
+    [Bindable(nameof(HasTarget), nameof(SceneCount))]
+    private bool GetShowSceneEmpty(bool hasTarget, int sceneCount) => hasTarget && sceneCount == 0;
+
+    [Bindable(nameof(SceneCount))]
+    private bool GetShowSceneList(int sceneCount) => sceneCount > 0;
+
+    [Bindable(nameof(HasTarget), nameof(IsAdding), nameof(SelectedSceneIndex))]
+    private bool GetEditorVisible(bool hasTarget, bool isAdding, long selectedSceneIndex)
+        => hasTarget && (isAdding || selectedSceneIndex >= 0);
+
+    [Bindable(nameof(HasTarget), nameof(IsAdding))]
+    private bool GetShowAddButton(bool hasTarget, bool isAdding) => hasTarget && isAdding;
+
+    [Bindable(nameof(HasTarget), nameof(IsAdding), nameof(SelectedSceneIndex))]
+    private bool GetShowApplyButton(bool hasTarget, bool isAdding, long selectedSceneIndex)
+        => hasTarget && !isAdding && selectedSceneIndex >= 0;
+
+    [Bindable(nameof(HasTarget), nameof(SelectedSceneIndex))]
+    private bool GetShowRemove(bool hasTarget, long selectedSceneIndex)
+        => hasTarget && selectedSceneIndex >= 0;
+
+    [Bindable(nameof(SelectedKindIndex), nameof(SelectedControlIndex))]
+    private bool GetShowConverter(long kindIndex, long controlIndex)
+    {
+        _ = kindIndex;
+        _ = controlIndex;
+        var kind = ResolveFormKind();
+        return kind is LinkKind.Text or LinkKind.Value or LinkKind.Selected or LinkKind.Toggle;
+    }
+
+    [Bindable(nameof(SelectedKindIndex), nameof(SelectedControlIndex))]
+    private bool GetShowParameter(long kindIndex, long controlIndex)
+    {
+        _ = kindIndex;
+        _ = controlIndex;
+        return ResolveFormKind() == LinkKind.Command;
+    }
+
+    [Bindable(nameof(SelectedKindIndex), nameof(SelectedControlIndex))]
+    private bool GetShowItemFields(long kindIndex, long controlIndex)
+    {
+        _ = kindIndex;
+        _ = controlIndex;
+        return ResolveFormKind() == LinkKind.Items;
+    }
+
+    [Command(CanExecute = nameof(CanBeginAdd))]
+    private void OnBeginAdd()
+    {
+        IsAdding.Value = true;
+        WithSuppressedSelection(() => SelectedSceneIndex.Value = -1);
+        PrefillControlFromEditorSelection();
+        RefreshKindLabels();
+    }
+
+    private Observable<bool> CanBeginAdd() => HasTarget;
+
     [Command(CanExecute = nameof(CanAdd))]
     private void OnAdd()
     {
@@ -139,14 +209,17 @@ public sealed partial class BindingDockViewModel : ViewModel
 
         var next = _sceneBindings.ToList();
         next.Add(entry);
-        Commit(next);
+        IsAdding.Value = false;
+        Commit(next, next.Count - 1);
     }
 
     private Observable<bool> CanAdd() => Observable.CombineLatest(
         HasTarget,
         SelectedControlIndex,
         SelectedMemberIndex,
-        static (hasTarget, control, member) => hasTarget && control >= 0 && member >= 0);
+        IsAdding,
+        static (hasTarget, control, member, isAdding) =>
+            hasTarget && isAdding && control >= 0 && member >= 0);
 
     [Command(CanExecute = nameof(CanUpdate))]
     private void OnUpdate()
@@ -158,7 +231,7 @@ public sealed partial class BindingDockViewModel : ViewModel
 
         var next = _sceneBindings.ToList();
         next[(int)SelectedSceneIndex.Value] = entry;
-        Commit(next);
+        Commit(next, SelectedSceneIndex.Value);
     }
 
     private Observable<bool> CanUpdate() => Observable.CombineLatest(
@@ -166,8 +239,9 @@ public sealed partial class BindingDockViewModel : ViewModel
         SelectedControlIndex,
         SelectedMemberIndex,
         SelectedSceneIndex,
-        static (hasTarget, control, member, scene) =>
-            hasTarget && control >= 0 && member >= 0 && scene >= 0);
+        IsAdding,
+        static (hasTarget, control, member, scene, isAdding) =>
+            hasTarget && !isAdding && control >= 0 && member >= 0 && scene >= 0);
 
     [Command(CanExecute = nameof(CanRemove))]
     private void OnRemove()
@@ -177,15 +251,36 @@ public sealed partial class BindingDockViewModel : ViewModel
             return;
         }
 
+        var index = (int)SelectedSceneIndex.Value;
         var next = _sceneBindings.ToList();
-        next.RemoveAt((int)SelectedSceneIndex.Value);
-        Commit(next);
+        next.RemoveAt(index);
+        var select = next.Count == 0 ? -1 : Math.Min(index, next.Count - 1);
+        Commit(next, select);
     }
 
     private Observable<bool> CanRemove() => Observable.CombineLatest(
         HasTarget,
         SelectedSceneIndex,
         static (hasTarget, scene) => hasTarget && scene >= 0);
+
+    [Command]
+    private void OnBrowseItemScene()
+    {
+        var dialog = new EditorFileDialog
+        {
+            FileMode = EditorFileDialog.FileModeEnum.OpenFile,
+            Access = EditorFileDialog.AccessEnum.Resources,
+            Title = "选择项场景",
+        };
+        dialog.Filters = ["*.tscn ; Scene"];
+        dialog.FileSelected += path =>
+        {
+            ItemScene.Value = path;
+            dialog.QueueFree();
+        };
+        dialog.Canceled += () => dialog.QueueFree();
+        EditorInterface.Singleton.PopupDialogCentered(dialog, new Vector2I(720, 480));
+    }
 
     private void OnSelectionChanged()
     {
@@ -205,6 +300,7 @@ public sealed partial class BindingDockViewModel : ViewModel
         Status.Value = $"{viewType.Name}  →  {viewModelType.Name}";
         if (!sameView)
         {
+            IsAdding.Value = false;
             WithSuppressedSelection(() => SelectedSceneIndex.Value = -1);
         }
 
@@ -220,11 +316,14 @@ public sealed partial class BindingDockViewModel : ViewModel
         _members = [];
         _sceneBindings = [];
         HasTarget.Value = false;
-        Status.Value = "Select a Telepath view (or a child of one).";
+        IsAdding.Value = false;
+        Status.Value = "选中一个 Telepath View（或其子节点）。";
         WithSuppressedSelection(() =>
         {
             AttributeItems.Clear();
+            AttributeCount.Value = 0;
             SceneItems.Clear();
+            SceneCount.Value = 0;
             SelectedSceneIndex.Value = -1;
             ControlLabels.Clear();
             _controlPaths.Clear();
@@ -243,6 +342,7 @@ public sealed partial class BindingDockViewModel : ViewModel
             SelectedItemViewIndex.Value = 0;
             ItemScene.Value = "";
         });
+        RefreshKindLabels();
     }
 
     private void Refresh()
@@ -259,8 +359,10 @@ public sealed partial class BindingDockViewModel : ViewModel
         WithSuppressedSelection(() =>
         {
             ReplaceItems(AttributeItems, AttributeBindingCatalog.Read(_viewType).Select(static entry => FormatEntry(entry, readOnly: true)));
+            AttributeCount.Value = AttributeItems.Count;
             var selectedScene = SelectedSceneIndex.Value;
             ReplaceItems(SceneItems, _sceneBindings.Select(static entry => FormatEntry(entry, readOnly: false)));
+            SceneCount.Value = SceneItems.Count;
             SelectedSceneIndex.Value = (uint)selectedScene < (uint)SceneItems.Count ? selectedScene : -1;
 
             ReplaceOption(
@@ -281,7 +383,7 @@ public sealed partial class BindingDockViewModel : ViewModel
             ReplaceOption(
                 ConverterLabels,
                 _converterValues,
-                converters.Select(static type => type.Name).Prepend("(none)").ToList(),
+                converters.Select(static type => type.Name).Prepend("（无）").ToList(),
                 converters.Select(static type => type.FullName ?? type.Name).Prepend("").ToList(),
                 SelectedConverterIndex);
 
@@ -296,7 +398,7 @@ public sealed partial class BindingDockViewModel : ViewModel
             ReplaceOption(
                 ItemViewLabels,
                 _itemViewValues,
-                itemViews.Select(static type => type.Name).Prepend("(none)").ToList(),
+                itemViews.Select(static type => type.Name).Prepend("（无）").ToList(),
                 itemViews.Select(static type => type.FullName ?? type.Name).Prepend("").ToList(),
                 SelectedItemViewIndex);
 
@@ -305,11 +407,29 @@ public sealed partial class BindingDockViewModel : ViewModel
                 SelectedKindIndex.Value = 0;
             }
         });
+
+        RefreshKindLabels();
     }
 
     private void OnSelectedSceneIndexChanged(long index)
     {
-        if (_suppressSelection || (uint)index >= (uint)_sceneBindings.Count)
+        if (_suppressSelection)
+        {
+            return;
+        }
+
+        if ((uint)index >= (uint)_sceneBindings.Count)
+        {
+            return;
+        }
+
+        IsAdding.Value = false;
+        ApplySceneBindingToForm(index);
+    }
+
+    private void ApplySceneBindingToForm(long index)
+    {
+        if ((uint)index >= (uint)_sceneBindings.Count)
         {
             return;
         }
@@ -327,6 +447,7 @@ public sealed partial class BindingDockViewModel : ViewModel
         SelectedParameterIndex.Value = IndexOf(_parameterPaths, entry.Parameter ?? "");
         ItemScene.Value = entry.ItemScene ?? "";
         SelectedItemViewIndex.Value = IndexOf(_itemViewValues, entry.ItemView ?? "");
+        RefreshKindLabels();
     }
 
     private bool TryReadForm(out SceneBindingEntry entry)
@@ -336,7 +457,7 @@ public sealed partial class BindingDockViewModel : ViewModel
         var member = ValueAt(_memberNames, SelectedMemberIndex.Value);
         if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(member) || _view is null)
         {
-            Status.Value = "Pick a control and a ViewModel member.";
+            Status.Value = "请选择控件和 ViewModel 成员。";
             return false;
         }
 
@@ -356,7 +477,7 @@ public sealed partial class BindingDockViewModel : ViewModel
         return true;
     }
 
-    private void Commit(IReadOnlyList<SceneBindingEntry> entries)
+    private void Commit(IReadOnlyList<SceneBindingEntry> entries, long selectIndex)
     {
         if (_view is null || _plugin is null)
         {
@@ -364,7 +485,7 @@ public sealed partial class BindingDockViewModel : ViewModel
         }
 
         var undo = _plugin.GetUndoRedo();
-        undo.CreateAction("Update Telepath bindings");
+        undo.CreateAction("更新 Telepath 绑定");
         if (entries.Count == 0)
         {
             undo.AddDoMethod(_view, Node.MethodName.RemoveMeta, SceneBindingSchema.MetaKey);
@@ -385,12 +506,96 @@ public sealed partial class BindingDockViewModel : ViewModel
 
         undo.CommitAction();
         _sceneBindings = SceneBindingSchema.Read(_view);
-        var selectedScene = SelectedSceneIndex.Value;
         WithSuppressedSelection(() =>
         {
             ReplaceItems(SceneItems, _sceneBindings.Select(static entry => FormatEntry(entry, readOnly: false)));
-            SelectedSceneIndex.Value = (uint)selectedScene < (uint)SceneItems.Count ? selectedScene : -1;
+            SceneCount.Value = SceneItems.Count;
+            SelectedSceneIndex.Value = (uint)selectIndex < (uint)SceneItems.Count ? selectIndex : -1;
         });
+        ApplySceneBindingToForm(SelectedSceneIndex.Value);
+    }
+
+    private void PrefillControlFromEditorSelection()
+    {
+        if (_view is null)
+        {
+            return;
+        }
+
+        var selected = _selection?.GetSelectedNodes().OfType<Node>().FirstOrDefault();
+        if (selected is null || ReferenceEquals(selected, _view))
+        {
+            return;
+        }
+
+        var path = selected.UniqueNameInOwner
+            ? "%" + selected.Name
+            : _view.GetPathTo(selected).ToString();
+        var index = IndexOf(_controlPaths, path);
+        if (index >= 0)
+        {
+            SelectedControlIndex.Value = index;
+        }
+    }
+
+    private void RefreshKindLabels()
+    {
+        LinkKind? inferred = null;
+        if (TryGetSelectedControlNode(out var node) && LinkKindInference.TryInfer(node, out var kind))
+        {
+            inferred = kind;
+        }
+
+        for (var i = 0; i < Kinds.Length; i++)
+        {
+            var text = Kinds[i] == LinkKind.Auto && inferred is { } value
+                ? $"Auto → {value}"
+                : Kinds[i].ToString();
+            if (i < KindLabels.Count)
+            {
+                if (KindLabels[i] != text)
+                {
+                    KindLabels[i] = text;
+                }
+            }
+            else
+            {
+                KindLabels.Add(text);
+            }
+        }
+    }
+
+    private LinkKind ResolveFormKind()
+    {
+        var kind = (uint)SelectedKindIndex.Value < (uint)Kinds.Length
+            ? Kinds[(int)SelectedKindIndex.Value]
+            : LinkKind.Auto;
+        if (kind != LinkKind.Auto)
+        {
+            return kind;
+        }
+
+        return TryGetSelectedControlNode(out var node) && LinkKindInference.TryInfer(node, out var inferred)
+            ? inferred
+            : LinkKind.Auto;
+    }
+
+    private bool TryGetSelectedControlNode(out Node node)
+    {
+        node = null!;
+        if (_view is null)
+        {
+            return false;
+        }
+
+        var path = ValueAt(_controlPaths, SelectedControlIndex.Value);
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        node = _view.GetNodeOrNull(path)!;
+        return node is not null;
     }
 
     private void WithSuppressedSelection(Action action)
@@ -432,7 +637,7 @@ public sealed partial class BindingDockViewModel : ViewModel
     private static string FormatControl(ControlInfo control)
         => control.HasUniqueName
             ? $"{control.Path}  ({control.TypeName})"
-            : $"{control.Path}  ({control.TypeName}, no unique name)";
+            : $"{control.Path}  ({control.TypeName}，无唯一名)";
 
     private static string FormatEntry(SceneBindingEntry entry, bool readOnly)
     {

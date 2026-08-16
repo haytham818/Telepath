@@ -4,8 +4,6 @@
 
 [node name="TelepathBindingDock" type="EditorDock" unique_id=2100100001]
 custom_minimum_size = Vector2(280, 240)
-offset_right = 400.0
-offset_bottom = 1200.0
 title = "UI绑定"
 icon_name = &"VisualShaderNodeVectorLen"
 default_slot = 4
@@ -15,9 +13,21 @@ metadata/telepath_bindings = [{
 "member": "Status",
 "path": "%Status"
 }, {
-"kind": "Items",
-"member": "AttributeItems",
-"path": "%AttributeList"
+"kind": "Visible",
+"member": "HasTarget",
+"path": "%SceneSection"
+}, {
+"kind": "Command",
+"member": "BeginAddCommand",
+"path": "%BeginAdd"
+}, {
+"kind": "Visible",
+"member": "ShowSceneEmpty",
+"path": "%SceneEmpty"
+}, {
+"kind": "Visible",
+"member": "ShowSceneList",
+"path": "%SceneList"
 }, {
 "kind": "Items",
 "member": "SceneItems",
@@ -26,6 +36,18 @@ metadata/telepath_bindings = [{
 "kind": "Selected",
 "member": "SelectedSceneIndex",
 "path": "%SceneList"
+}, {
+"kind": "Visible",
+"member": "ShowAttributeSection",
+"path": "%AttributeSection"
+}, {
+"kind": "Items",
+"member": "AttributeItems",
+"path": "%AttributeList"
+}, {
+"kind": "Visible",
+"member": "EditorVisible",
+"path": "%Editor"
 }, {
 "kind": "Items",
 "member": "ControlLabels",
@@ -51,6 +73,10 @@ metadata/telepath_bindings = [{
 "member": "SelectedKindIndex",
 "path": "%KindOption"
 }, {
+"kind": "Visible",
+"member": "ShowConverter",
+"path": "%ConverterRow"
+}, {
 "kind": "Items",
 "member": "ConverterLabels",
 "path": "%ConverterOption"
@@ -58,6 +84,10 @@ metadata/telepath_bindings = [{
 "kind": "Selected",
 "member": "SelectedConverterIndex",
 "path": "%ConverterOption"
+}, {
+"kind": "Visible",
+"member": "ShowParameter",
+"path": "%ParameterRow"
 }, {
 "kind": "Items",
 "member": "ParameterLabels",
@@ -67,9 +97,17 @@ metadata/telepath_bindings = [{
 "member": "SelectedParameterIndex",
 "path": "%ParameterOption"
 }, {
+"kind": "Visible",
+"member": "ShowItemFields",
+"path": "%ItemFields"
+}, {
 "kind": "Text",
 "member": "ItemScene",
 "path": "%ItemScene"
+}, {
+"kind": "Command",
+"member": "BrowseItemSceneCommand",
+"path": "%BrowseItemScene"
 }, {
 "kind": "Items",
 "member": "ItemViewLabels",
@@ -79,13 +117,25 @@ metadata/telepath_bindings = [{
 "member": "SelectedItemViewIndex",
 "path": "%ItemViewOption"
 }, {
+"kind": "Visible",
+"member": "ShowAddButton",
+"path": "%Add"
+}, {
 "kind": "Command",
 "member": "AddCommand",
 "path": "%Add"
 }, {
+"kind": "Visible",
+"member": "ShowApplyButton",
+"path": "%Update"
+}, {
 "kind": "Command",
 "member": "UpdateCommand",
 "path": "%Update"
+}, {
+"kind": "Visible",
+"member": "ShowRemove",
+"path": "%Remove"
 }, {
 "kind": "Command",
 "member": "RemoveCommand",
@@ -101,66 +151,114 @@ horizontal_scroll_mode = 0
 [node name="Root" type="VBoxContainer" parent="Scroll" unique_id=2100100003]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/separation = 6
-
-[node name="Title" type="Label" parent="Scroll/Root" unique_id=2100100004]
-layout_mode = 2
-text = "绑定控件对应的操作或属性到 ViewModel"
-horizontal_alignment = 1
+size_flags_vertical = 3
+theme_override_constants/separation = 4
 
 [node name="Status" type="Label" parent="Scroll/Root" unique_id=2100100005]
 unique_name_in_owner = true
 layout_mode = 2
-text = "Select a Telepath view (or a child of one)."
+text = "选中一个 Telepath View（或其子节点）。"
 autowrap_mode = 3
 
-[node name="AttrHeader" type="Label" parent="Scroll/Root" unique_id=2100100006]
-layout_mode = 2
-text = "当前脚本中存在的绑定 (只读)"
-
-[node name="AttributeList" type="ItemList" parent="Scroll/Root" unique_id=2100100007]
+[node name="SceneSection" type="VBoxContainer" parent="Scroll/Root" unique_id=2100100030]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 144)
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="SceneHeaderRow" type="HBoxContainer" parent="Scroll/Root/SceneSection" unique_id=2100100031]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="SceneHeader" type="Label" parent="Scroll/Root/SceneSection/SceneHeaderRow" unique_id=2100100008]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "场景绑定"
+
+[node name="BeginAdd" type="Button" parent="Scroll/Root/SceneSection/SceneHeaderRow" unique_id=2100100032]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(28, 0)
+layout_mode = 2
+disabled = true
+text = "+"
+
+[node name="SceneEmpty" type="Label" parent="Scroll/Root/SceneSection" unique_id=2100100033]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+text = "还没有场景绑定。"
+autowrap_mode = 3
+
+[node name="SceneList" type="ItemList" parent="Scroll/Root/SceneSection" unique_id=2100100009]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="SceneHeader" type="Label" parent="Scroll/Root" unique_id=2100100008]
-layout_mode = 2
-text = "当前场景存在的绑定 "
-
-[node name="SceneList" type="ItemList" parent="Scroll/Root" unique_id=2100100009]
+[node name="AttributeSection" type="VBoxContainer" parent="Scroll/Root" unique_id=2100100034]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 144)
+visible = false
 layout_mode = 2
-size_flags_vertical = 3
+theme_override_constants/separation = 4
 
-[node name="ControlLabel" type="Label" parent="Scroll/Root" unique_id=2100100010]
+[node name="AttrHeader" type="Label" parent="Scroll/Root/AttributeSection" unique_id=2100100006]
 layout_mode = 2
-text = "UI 控件 (Control)"
+text = "脚本绑定（只读）"
 
-[node name="ControlOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100011]
+[node name="AttributeList" type="ItemList" parent="Scroll/Root/AttributeSection" unique_id=2100100007]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 56)
+layout_mode = 2
+
+[node name="Editor" type="VBoxContainer" parent="Scroll/Root" unique_id=2100100035]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ControlRow" type="HBoxContainer" parent="Scroll/Root/Editor" unique_id=2100100036]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ControlLabel" type="Label" parent="Scroll/Root/Editor/ControlRow" unique_id=2100100010]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "控件"
+
+[node name="ControlOption" type="OptionButton" parent="Scroll/Root/Editor/ControlRow" unique_id=2100100011]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="MemberRow" type="HBoxContainer" parent="Scroll/Root/Editor" unique_id=2100100037]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="MemberLabel" type="Label" parent="Scroll/Root/Editor/MemberRow" unique_id=2100100012]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "成员"
+
+[node name="MemberOption" type="OptionButton" parent="Scroll/Root/Editor/MemberRow" unique_id=2100100013]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="MemberLabel" type="Label" parent="Scroll/Root" unique_id=2100100012]
+[node name="KindRow" type="HBoxContainer" parent="Scroll/Root/Editor" unique_id=2100100038]
 layout_mode = 2
-text = "ViewModel 成员"
+theme_override_constants/separation = 8
 
-[node name="MemberOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100013]
+[node name="KindLabel" type="Label" parent="Scroll/Root/Editor/KindRow" unique_id=2100100014]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "类型"
+
+[node name="KindOption" type="OptionButton" parent="Scroll/Root/Editor/KindRow" unique_id=2100100015]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-
-[node name="KindLabel" type="Label" parent="Scroll/Root" unique_id=2100100014]
-layout_mode = 2
-text = "绑定类型"
-
-[node name="KindOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100015]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-action_mode = 1
 selected = 0
 item_count = 9
 popup/item_0/text = "Auto"
@@ -182,65 +280,103 @@ popup/item_7/id = 7
 popup/item_8/text = "Items"
 popup/item_8/id = 8
 
-[node name="ConverterLabel" type="Label" parent="Scroll/Root" unique_id=2100100016]
-layout_mode = 2
-text = "类型转换器"
-
-[node name="ConverterOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100017]
+[node name="ConverterRow" type="HBoxContainer" parent="Scroll/Root/Editor" unique_id=2100100039]
 unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-action_mode = 1
-
-[node name="ParameterLabel" type="Label" parent="Scroll/Root" unique_id=2100100018]
-layout_mode = 2
-text = "命令参数"
-
-[node name="ParameterOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100019]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="ItemSceneLabel" type="Label" parent="Scroll/Root" unique_id=2100100020]
-layout_mode = 2
-text = "Item scene"
-
-[node name="ItemScene" type="LineEdit" parent="Scroll/Root" unique_id=2100100021]
-unique_name_in_owner = true
-layout_mode = 2
-placeholder_text = "res://.../Item.tscn"
-
-[node name="ItemViewLabel" type="Label" parent="Scroll/Root" unique_id=2100100022]
-layout_mode = 2
-text = "Item view"
-
-[node name="ItemViewOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100023]
-unique_name_in_owner = true
-layout_mode = 2
-size_flags_horizontal = 3
-action_mode = 1
-
-[node name="Buttons" type="HBoxContainer" parent="Scroll/Root" unique_id=2100100024]
+visible = false
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Add" type="Button" parent="Scroll/Root/Buttons" unique_id=2100100025]
-unique_name_in_owner = true
+[node name="ConverterLabel" type="Label" parent="Scroll/Root/Editor/ConverterRow" unique_id=2100100016]
+custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
-size_flags_horizontal = 3
-disabled = true
-text = "Add"
+text = "转换器"
 
-[node name="Update" type="Button" parent="Scroll/Root/Buttons" unique_id=2100100026]
+[node name="ConverterOption" type="OptionButton" parent="Scroll/Root/Editor/ConverterRow" unique_id=2100100017]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-disabled = true
-text = "Update"
 
-[node name="Remove" type="Button" parent="Scroll/Root/Buttons" unique_id=2100100027]
+[node name="ParameterRow" type="HBoxContainer" parent="Scroll/Root/Editor" unique_id=2100100040]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ParameterLabel" type="Label" parent="Scroll/Root/Editor/ParameterRow" unique_id=2100100018]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "参数"
+
+[node name="ParameterOption" type="OptionButton" parent="Scroll/Root/Editor/ParameterRow" unique_id=2100100019]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+
+[node name="ItemFields" type="VBoxContainer" parent="Scroll/Root/Editor" unique_id=2100100041]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ItemSceneRow" type="HBoxContainer" parent="Scroll/Root/Editor/ItemFields" unique_id=2100100042]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ItemSceneLabel" type="Label" parent="Scroll/Root/Editor/ItemFields/ItemSceneRow" unique_id=2100100020]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "项场景"
+
+[node name="ItemScene" type="LineEdit" parent="Scroll/Root/Editor/ItemFields/ItemSceneRow" unique_id=2100100021]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+placeholder_text = "res://.../Item.tscn"
+
+[node name="BrowseItemScene" type="Button" parent="Scroll/Root/Editor/ItemFields/ItemSceneRow" unique_id=2100100043]
+unique_name_in_owner = true
+layout_mode = 2
+text = "浏览"
+
+[node name="ItemViewRow" type="HBoxContainer" parent="Scroll/Root/Editor/ItemFields" unique_id=2100100044]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="ItemViewLabel" type="Label" parent="Scroll/Root/Editor/ItemFields/ItemViewRow" unique_id=2100100022]
+custom_minimum_size = Vector2(72, 0)
+layout_mode = 2
+text = "项 View"
+
+[node name="ItemViewOption" type="OptionButton" parent="Scroll/Root/Editor/ItemFields/ItemViewRow" unique_id=2100100023]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Scroll/Root/Editor" unique_id=2100100024]
+layout_mode = 2
+theme_override_constants/separation = 8
+alignment = 2
+
+[node name="Add" type="Button" parent="Scroll/Root/Editor/Buttons" unique_id=2100100025]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
 disabled = true
-text = "Remove"
+text = "添加"
+
+[node name="Update" type="Button" parent="Scroll/Root/Editor/Buttons" unique_id=2100100026]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "应用"
+
+[node name="Remove" type="Button" parent="Scroll/Root/Editor/Buttons" unique_id=2100100027]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+disabled = true
+text = "删除"

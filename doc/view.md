@@ -68,9 +68,12 @@ Windows 上 git symlink 需要 `core.symlinks`，否则改为复制。
 `FrameProviderDispatcher.cs` 是运行时 Autoload，出现在 addon 根目录，不是
 Editor 代码。
 
-选中带 `[TelepathView<T>]` 的节点（或其子节点）时，右侧 **Telepath** dock 列出
-唯一名控件和已编译的 ViewModel 成员。连线写入根节点 metadata，改绑定不必等 C#
-重建。改 `[Bindable]` / `[Command]` 后仍需重建，Dock 才能看到新成员。
+选中带 `[TelepathView<T>]` 的节点（或其子节点）时，右侧 **UI绑定** dock
+以绑定列表为主：点 `[+]` 添加，点一行展开编辑卡后「应用」或「删除」。
+`Kind = Auto` 会显示推断结果（如 `Auto → Text`）；转换器 / 命令参数 / 项模板
+只在当前 Kind 需要时出现。没有 `[BindTo]` 时不占只读区。连线写入根节点
+metadata，改绑定不必等 C# 重建。改 `[Bindable]` / `[Command]` 后仍需重建，
+Dock 才能看到新成员。
 
 游戏 View 不要加 `[Tool]`：编辑器里它们是占位节点，Dock 靠脚本路径解析类型。
 **仅** Binding Dock 自己可以 `[Tool]`。Dock 是薄 Telepath View，布局在
