@@ -38,7 +38,7 @@ public sealed class TelepathViewModelGeneratorTests
         Assert.Contains("public global::R3.BindableReactiveProperty<string> @CountText", generated);
         Assert.Contains("@Count.Select(@GetCountText)", generated);
         Assert.Contains("public global::R3.ReactiveCommand @IncrementCommand", generated);
-        Assert.Contains("@CanIncrement().ToReactiveCommand(_ => @OnIncrement())", generated);
+        Assert.Contains("Command(@OnIncrement, @CanIncrement())", generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
 
@@ -65,7 +65,7 @@ public sealed class TelepathViewModelGeneratorTests
         Assert.Empty(result.Diagnostics);
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
         Assert.Contains("public global::R3.ReactiveCommand<string> @SearchCommand", generated);
-        Assert.Contains("@CanSearch().ToReactiveCommand<string>(arg => @OnSearch(arg))", generated);
+        Assert.Contains("Command<string>(@OnSearch, @CanSearch())", generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
 
@@ -189,6 +189,7 @@ public sealed class TelepathViewModelGeneratorTests
         Assert.Empty(result.Diagnostics);
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
         Assert.Contains("public global::R3.ReactiveCommand<string> @Go", generated);
+        Assert.Contains("Command<string>(@OnSearch)", generated);
         Assert.DoesNotContain("GoCommand", generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
@@ -429,6 +430,16 @@ public sealed class TelepathViewModelGeneratorTests
                 protected T Track<T>(T disposable)
                     where T : System.IDisposable
                     => disposable;
+
+                protected R3.ReactiveCommand Command(
+                    System.Action execute,
+                    R3.Observable<bool>? canExecute = null)
+                    => new(_ => { });
+
+                protected R3.ReactiveCommand<T> Command<T>(
+                    System.Action<T> execute,
+                    R3.Observable<bool>? canExecute = null)
+                    => new(_ => { });
 
                 protected R3.ReactiveCommand AsyncCommand(
                     System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask> execute,

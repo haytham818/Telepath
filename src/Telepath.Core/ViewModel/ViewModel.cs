@@ -19,7 +19,7 @@ namespace Telepath.Core;
 ///     public CounterViewModel()
 ///     {
 ///         Count = Track(new BindableReactiveProperty&lt;int&gt;(0));
-///         IncrementCommand = Track(new ReactiveCommand(_ =&gt; Count.Value++));
+///         IncrementCommand = Command(() =&gt; Count.Value++);
 ///         SaveCommand = AsyncCommand(async ct =&gt; await SaveAsync(ct));
 ///     }
 /// }

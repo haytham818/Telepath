@@ -7,6 +7,36 @@ namespace Telepath.Core;
 public abstract partial class ViewModel
 {
     /// <summary>
+    /// Creates a tracked command.
+    /// </summary>
+    protected ReactiveCommand Command(
+        Action execute,
+        Observable<bool>? canExecute = null)
+    {
+        ArgumentNullException.ThrowIfNull(execute);
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
+
+        return canExecute is null
+            ? Track(new ReactiveCommand(_ => execute()))
+            : Track(canExecute.ToReactiveCommand(_ => execute()));
+    }
+
+    /// <summary>
+    /// Creates a tracked parameterized command.
+    /// </summary>
+    protected ReactiveCommand<T> Command<T>(
+        Action<T> execute,
+        Observable<bool>? canExecute = null)
+    {
+        ArgumentNullException.ThrowIfNull(execute);
+        ObjectDisposedException.ThrowIf(IsDisposed, this);
+
+        return canExecute is null
+            ? Track(new ReactiveCommand<T>(execute))
+            : Track(canExecute.ToReactiveCommand(execute));
+    }
+
+    /// <summary>
     /// Creates a tracked async command. Default <see cref="AwaitOperation.Drop"/>
     /// ignores overlapping executes, <see cref="ReactiveCommand.CanExecute"/> is
     /// false while running, and <see cref="Dispose"/> cancels the token.

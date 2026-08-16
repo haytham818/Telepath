@@ -117,51 +117,15 @@ internal static class ViewModelSourceRenderer
                 source.Append("        => ")
                     .Append(backing)
                     .Append(" ??= ");
-                if (member.IsAsync)
-                {
-                    AppendAsyncCommand(source, member);
-                    source.AppendLine(";");
-                    break;
-                }
-
-                source.Append("Track(");
-                if (string.IsNullOrEmpty(member.CanExecute))
-                {
-                    source.Append("new ")
-                        .Append(member.ValueTypeDisplay)
-                        .Append('(');
-                    AppendCommandExecute(source, member);
-                    source.AppendLine("));");
-                }
-                else
-                {
-                    source.Append('@')
-                        .Append(member.CanExecute);
-                    if (member.CanExecuteIsMethod)
-                    {
-                        source.Append("()");
-                    }
-
-                    source.Append(".ToReactiveCommand");
-                    if (member.CommandParameterTypeDisplay is not null)
-                    {
-                        source.Append('<')
-                            .Append(member.CommandParameterTypeDisplay)
-                            .Append('>');
-                    }
-
-                    source.Append('(');
-                    AppendCommandExecute(source, member);
-                    source.AppendLine("));");
-                }
-
+                AppendCommandFactory(source, member);
+                source.AppendLine(";");
                 break;
         }
     }
 
-    private static void AppendAsyncCommand(StringBuilder source, ViewModelGeneratedMember member)
+    private static void AppendCommandFactory(StringBuilder source, ViewModelGeneratedMember member)
     {
-        source.Append("AsyncCommand");
+        source.Append(member.IsAsync ? "AsyncCommand" : "Command");
         if (member.CommandParameterTypeDisplay is not null)
         {
             source.Append('<')
@@ -170,31 +134,7 @@ internal static class ViewModelSourceRenderer
         }
 
         source.Append('(');
-        if (member.CommandParameterTypeDisplay is null)
-        {
-            source.Append("async ct => await @")
-                .Append(member.SourceMemberName)
-                .Append('(');
-            if (member.HasCancellationToken)
-            {
-                source.Append("ct");
-            }
-
-            source.Append(')');
-        }
-        else
-        {
-            source.Append("async (arg, ct) => await @")
-                .Append(member.SourceMemberName)
-                .Append("(arg");
-            if (member.HasCancellationToken)
-            {
-                source.Append(", ct");
-            }
-
-            source.Append(')');
-        }
-
+        AppendCommandExecute(source, member);
         if (!string.IsNullOrEmpty(member.CanExecute))
         {
             source.Append(", @")
@@ -210,17 +150,35 @@ internal static class ViewModelSourceRenderer
 
     private static void AppendCommandExecute(StringBuilder source, ViewModelGeneratedMember member)
     {
-        if (member.CommandParameterTypeDisplay is null)
+        if (!member.IsAsync)
         {
-            source.Append("_ => @")
-                .Append(member.SourceMemberName)
-                .Append("()");
+            source.Append('@').Append(member.SourceMemberName);
             return;
         }
 
-        source.Append("arg => @")
+        if (member.CommandParameterTypeDisplay is null)
+        {
+            source.Append("async ct => await @")
+                .Append(member.SourceMemberName)
+                .Append('(');
+            if (member.HasCancellationToken)
+            {
+                source.Append("ct");
+            }
+
+            source.Append(')');
+            return;
+        }
+
+        source.Append("async (arg, ct) => await @")
             .Append(member.SourceMemberName)
-            .Append("(arg)");
+            .Append("(arg");
+        if (member.HasCancellationToken)
+        {
+            source.Append(", ct");
+        }
+
+        source.Append(')');
     }
 
     private static void AppendDerivedSource(StringBuilder source, ViewModelGeneratedMember member)

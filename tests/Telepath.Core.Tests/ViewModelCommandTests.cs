@@ -104,6 +104,45 @@ public sealed class ViewModelCommandTests
     }
 
     [Fact]
+    public void CommandExecutesAndPassesParameter()
+    {
+        using var viewModel = new TestViewModel();
+        var runs = 0;
+        string? received = null;
+        var increment = viewModel.Create(() => runs++);
+        var search = viewModel.Create<string>(value => received = value);
+
+        increment.Execute(Unit.Default);
+        search.Execute("query");
+
+        Assert.Equal(1, runs);
+        Assert.Equal("query", received);
+    }
+
+    [Fact]
+    public void CommandMirrorsCanExecute()
+    {
+        using var canExecute = new BindableReactiveProperty<bool>(false);
+        using var viewModel = new TestViewModel();
+        var command = viewModel.Create(() => { }, canExecute);
+
+        Assert.False(command.CanExecute());
+        canExecute.Value = true;
+        Assert.True(command.CanExecute());
+        canExecute.Value = false;
+        Assert.False(command.CanExecute());
+    }
+
+    [Fact]
+    public void CommandThrowsWhenViewModelAlreadyDisposed()
+    {
+        var viewModel = new TestViewModel();
+        viewModel.Dispose();
+
+        Assert.Throws<ObjectDisposedException>(() => viewModel.Create(() => { }));
+    }
+
+    [Fact]
     public void AsyncCommandThrowsWhenViewModelAlreadyDisposed()
     {
         var viewModel = new TestViewModel();
@@ -129,6 +168,12 @@ public sealed class ViewModelCommandTests
 
     private sealed class TestViewModel : ViewModel
     {
+        public ReactiveCommand Create(Action execute, Observable<bool>? canExecute = null)
+            => Command(execute, canExecute);
+
+        public ReactiveCommand<T> Create<T>(Action<T> execute, Observable<bool>? canExecute = null)
+            => Command(execute, canExecute);
+
         public ReactiveCommand Create(
             Func<CancellationToken, ValueTask> execute,
             Observable<bool>? canExecute = null)
