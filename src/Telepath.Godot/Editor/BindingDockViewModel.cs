@@ -23,7 +23,6 @@ public sealed partial class BindingDockViewModel : ViewModel
     ];
 
     private EditorPlugin? _plugin;
-    private EditorFileDialog? _itemSceneDialog;
     private Node? _view;
     private Type? _viewType;
     private Type? _viewModelType;
@@ -127,7 +126,6 @@ public sealed partial class BindingDockViewModel : ViewModel
 
     protected override void OnDispose()
     {
-        CloseItemSceneDialog();
         _plugin = null;
         _view = null;
         _viewType = null;
@@ -257,47 +255,6 @@ public sealed partial class BindingDockViewModel : ViewModel
         HasTarget,
         SelectedSceneIndex,
         static (hasTarget, scene) => hasTarget && scene >= 0);
-
-    [Command]
-    private void OnBrowseItemScene()
-    {
-        CloseItemSceneDialog();
-        _itemSceneDialog = new EditorFileDialog
-        {
-            FileMode = EditorFileDialog.FileModeEnum.OpenFile,
-            Access = EditorFileDialog.AccessEnum.Resources,
-            Title = "选择项场景",
-        };
-        _itemSceneDialog.Filters = ["*.tscn ; Scene"];
-        _itemSceneDialog.FileSelected += OnItemSceneSelected;
-        _itemSceneDialog.Canceled += OnItemSceneCanceled;
-        EditorInterface.Singleton.PopupDialogCentered(_itemSceneDialog, new Vector2I(720, 480));
-    }
-
-    private void OnItemSceneSelected(string path)
-    {
-        ItemScene.Value = path;
-        CloseItemSceneDialog();
-    }
-
-    private void OnItemSceneCanceled() => CloseItemSceneDialog();
-
-    private void CloseItemSceneDialog()
-    {
-        if (_itemSceneDialog is null)
-        {
-            return;
-        }
-
-        var dialog = _itemSceneDialog;
-        _itemSceneDialog = null;
-        dialog.FileSelected -= OnItemSceneSelected;
-        dialog.Canceled -= OnItemSceneCanceled;
-        if (GodotObject.IsInstanceValid(dialog))
-        {
-            dialog.Free();
-        }
-    }
 
     private void OnSelectionChanged()
     {

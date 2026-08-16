@@ -2,8 +2,8 @@
 extends EditorPlugin
 
 ## GDScript shell so the plugin instance is not a C# [Tool] script.
-## selection_changed is connected here so it is not a C# ManagedCallable on
-## the editor singleton (those become dead Delegate::Invoke after ALC reload).
+## selection_changed and dock button signals stay in GDScript; C# ManagedCallables
+## on editor objects pin the ALC across rebuilds (godotengine/godot#81903).
 
 const AutoloadName := "FrameProviderDispatcher"
 const AutoloadPath := "res://addons/Telepath/FrameProviderDispatcher.gd"

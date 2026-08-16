@@ -6,4 +6,4 @@ Includes Frame/Time providers, Node/UI/Signal/Delta extensions. Does **not** inc
 
 Do **not** enable the official `addons/R3.Godot` plugin alongside Telepath — type names collide (`namespace R3`).
 
-`FrameProviderDispatcher.gd` is the Autoload shell (also registered by the GDScript editor plugin). It instantiates `FrameProviderDispatcher.cs` only at runtime. The Binding Dock pumps frames in the editor and implements `ISerializationListener` so C# rebuilds can drop `EditorSelection` subscriptions before the ALC unloads. Godot resolves C# scripts only from the host assembly.
+`FrameProviderDispatcher.gd` is the Autoload shell (also registered by the GDScript editor plugin). It instantiates `FrameProviderDispatcher.cs` only at runtime. The Binding Dock is a GDScript `EditorDock`; `BindingDockBridge` is the only C# `[Tool]` and must not subscribe to Godot signals. Godot resolves C# scripts only from the host assembly.

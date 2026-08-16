@@ -5,9 +5,8 @@ namespace Telepath.Godot.Editor;
 
 /// <summary>
 /// Godot snapshots collectible <see cref="Callable"/>s before
-/// <see cref="ISerializationListener.OnBeforeSerialize"/>. Disconnecting C#
-/// events there double-disconnects, and lambdas restore as dead
-/// <c>Delegate::Invoke</c>. Drop those after reload, then rebind.
+/// <see cref="ISerializationListener.OnBeforeSerialize"/>. Leftover
+/// <c>Delegate::Invoke</c> connections from older C# docks are dropped here.
 /// </summary>
 internal static class StaleCallableCleanup
 {

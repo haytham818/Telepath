@@ -74,7 +74,7 @@ public sealed class ViewLifecycle<TViewModel>
 
     /// <summary>
     /// Drops bindings and, when this lifecycle owns the ViewModel, disposes it.
-    /// Safe to call more than once; used by the editor dock before ALC unload.
+    /// Safe to call more than once.
     /// </summary>
     public void Release()
     {

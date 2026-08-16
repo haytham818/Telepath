@@ -67,8 +67,11 @@ Windows 上 git symlink 需要 `core.symlinks`，否则改为复制。
 
 `FrameProviderDispatcher.gd` 是 Autoload 外壳，`FrameProviderDispatcher.cs`
 是运行时子节点，都在 addon 根目录，不是 Editor 代码。编辑器插件入口是
-GDScript；`selection_changed` 也在 GDScript 里转发给 Dock。C# 不要 `+=` 编辑器单例，
-否则热重载会留下死的 `Delegate::Invoke`。Dock 在 `OnAfterDeserialize` 清掉失效连接后再接线。
+GDScript；`selection_changed` 和 Dock 上的按钮 / 列表信号也在 GDScript 里转发。
+C# 不要 `+=` Godot 信号，也不要用 `Callable.From` / R3 `FromEvent` 接编辑器控件
+（godotengine/godot#81903）：引擎在 `ISerializationListener` **之前**快照
+`ManagedCallable`，lambda 无法跨 ALC 恢复，表现为
+`delegate_handle.value == nullptr` 并钉住程序集卸载。
 
 选中带 `[TelepathView<T>]` 的节点（或其子节点）时，右侧 **UI绑定** dock
 以绑定列表为主：点 `[+]` 添加，点一行展开编辑卡后「应用」或「删除」。
@@ -78,11 +81,12 @@ metadata，改绑定不必等 C# 重建。改 `[Bindable]` / `[Command]` 后仍�
 Dock 才能看到新成员。
 
 游戏 View 不要加 `[Tool]`：编辑器里它们是占位节点，Dock 靠脚本路径解析类型。
-**仅** Binding Dock 自己可以 `[Tool]`。Dock 是薄 Telepath View，布局在
-[`TelepathBindingDock.tscn`](../src/Telepath.Godot/Editor/TelepathBindingDock.tscn)，
-逻辑在 `BindingDockViewModel`；不要在 C# 里 `new` 控件，也不要 F6 该场景
-（依赖编辑器 API）。打开 tscn 调布局时，场景编辑器里的 `[Tool]` 实例不会订阅
-选择；只有插件 `Attach` 过的活 Dock 才会接线。
+Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot/Editor/TelepathBindingDock.gd)）；
+布局在 [`TelepathBindingDock.tscn`](../src/Telepath.Godot/Editor/TelepathBindingDock.tscn)。
+唯一的 C# `[Tool]` 是 `BindingDockBridge`：只做反射、Undo 和一向属性同步，
+**不**接 Godot 信号。逻辑在 `BindingDockViewModel`。不要在 C# 里 `new` 控件，
+也不要 F6 该场景（依赖编辑器 API）。打开 tscn 调布局时不会创建 C# bridge；
+只有插件 `Attach` 过的活 Dock 才会接线。
 
 控件请设 **唯一名称**（`%CountLabel`）。路径一改，无唯一名的绑定会断。
 

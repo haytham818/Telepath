@@ -16,11 +16,12 @@
 | `FrameProviderDispatcher.gd` | 宿主 Autoload 外壳；**编辑器里不创建 C# 子节点**，避免热重载钉住 ALC |
 | `FrameProviderDispatcher.cs` | 运行时 Autoload 子节点；每帧 `Run`，并在 `_Ready` 里初始化默认系统 |
 | `TelepathEditorPlugin.gd` | 编辑器插件外壳（非 C#）；C# 重建时自身不占用 ALC |
-| `TelepathBindingDock` | 唯一的 C# `[Tool]`；`ISerializationListener` 在卸载前断开 `EditorSelection` / 绑定并停帧泵 |
+| `TelepathBindingDock.gd` | Dock 场景脚本；按钮 / 列表 / 选择信号都在 GDScript 连接 |
+| `BindingDockBridge` | 唯一的 C# `[Tool]`；禁止 `+=` Godot 信号；`ISerializationListener` 在卸载前丢掉 ViewModel |
 
 `TelepathEditorPlugin` 会 `AddAutoloadSingleton` 注册 **GDScript** 外壳；演示宿主的 `project.godot` 也写了 `[autoload]`，运行时不必先开编辑器。插件入口本身也是 GDScript：C# `EditorPlugin` 会在热重载时被引擎一直握着，从而钉住 ALC。
 
-C# 程序集热重载会失败，如果还有 C# `[Tool]` 把 `Delegate::Invoke` 挂在编辑器单例上。`selection_changed` 改由 GDScript 插件转发；Dock 在 `OnAfterDeserialize` 里丢掉热重载残留的失效 Callable，再重新接线。若仍报错，重启编辑器。
+C# 程序集热重载会失败，如果还有 C# `[Tool]` 把 `Delegate::Invoke` 挂在 Godot 对象上。引擎在 `ISerializationListener.OnBeforeSerialize` **之前**遍历 `ManagedCallable`（`csharp_script.cpp`），空 `delegate_handle` 无法序列化。Dock 的 UI 信号改由 GDScript 连接；C# 只一向写控件属性。若仍报错，重启编辑器一次以清掉旧连接。
 
 Godot 只在**宿主主程序集**里解析 C# 脚本。`FrameProviderDispatcher.gd` / `.cs` 与 `plugin.cfg` 在 `src/Telepath.Godot/Addon/`，`TelepathEditorPlugin.gd` 与 Binding Dock 在 `src/Telepath.Godot/Editor/`，均符号链接到 `samples/Showcase/addons/Telepath/`，由 `Telepath.Showcase` 编译。`Telepath.Godot` 用 `InternalsVisibleTo("Telepath.Showcase")` 暴露 Provider 的 internal 成员。Addon / Editor 源码不编进 `Telepath.Godot.dll`。
 
