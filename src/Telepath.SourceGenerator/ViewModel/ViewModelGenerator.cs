@@ -407,19 +407,25 @@ internal static class ViewModelGenerator
         out ViewModelGeneratedMember model)
     {
         model = null!;
+        string? invalidReason = null;
         if (candidate.Member is not IMethodSymbol method
             || method.IsStatic
             || method.MethodKind != MethodKind.Ordinary
-            || !method.ReturnsVoid
             || method.IsGenericMethod
-            || method.Parameters.Length > 1
-            || method.Parameters.Any(static parameter => parameter.RefKind != RefKind.None))
+            || method.Parameters.Any(static parameter => parameter.RefKind != RefKind.None)
+            || !TryClassifyCommandSignature(
+                method,
+                out var isAsync,
+                out var hasCancellationToken,
+                out var parameterType,
+                out invalidReason))
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ViewModelMetadata.InvalidCommand,
                 candidate.Location,
                 candidate.Member?.Name ?? "<unknown>",
-                "must be an instance method returning void with zero or one parameter"));
+                invalidReason
+                    ?? "must be an instance method returning void, Task, or ValueTask with zero or one parameter (plus optional CancellationToken)"));
             return false;
         }
 
@@ -443,9 +449,8 @@ internal static class ViewModelGenerator
             return false;
         }
 
-        var parameterTypeDisplay = method.Parameters.Length == 1
-            ? method.Parameters[0].Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)
-            : null;
+        var parameterTypeDisplay = parameterType?
+            .ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
         var commandTypeDisplay = parameterTypeDisplay is null
             ? "global::R3.ReactiveCommand"
             : $"global::R3.ReactiveCommand<{parameterTypeDisplay}>";
@@ -458,8 +463,102 @@ internal static class ViewModelGenerator
             ImmutableArray<string>.Empty,
             candidate.CanExecute,
             canExecuteIsMethod,
-            parameterTypeDisplay);
+            parameterTypeDisplay,
+            isAsync,
+            hasCancellationToken);
         return true;
+    }
+
+    private static bool TryClassifyCommandSignature(
+        IMethodSymbol method,
+        out bool isAsync,
+        out bool hasCancellationToken,
+        out ITypeSymbol? parameterType,
+        out string? invalidReason)
+    {
+        isAsync = false;
+        hasCancellationToken = false;
+        parameterType = null;
+        invalidReason = null;
+
+        if (method.ReturnsVoid)
+        {
+            if (method.IsAsync)
+            {
+                invalidReason = "async void is not supported; return Task or ValueTask";
+                return false;
+            }
+        }
+        else if (IsNonGenericTaskOrValueTask(method.ReturnType))
+        {
+            isAsync = true;
+        }
+        else
+        {
+            invalidReason = "must return void, Task, or ValueTask";
+            return false;
+        }
+
+        var parameters = method.Parameters;
+        if (parameters.Length == 0)
+        {
+            return true;
+        }
+
+        if (parameters.Length == 1)
+        {
+            if (IsCancellationToken(parameters[0].Type))
+            {
+                if (!isAsync)
+                {
+                    invalidReason = "CancellationToken is only valid on Task or ValueTask commands";
+                    return false;
+                }
+
+                hasCancellationToken = true;
+                return true;
+            }
+
+            parameterType = parameters[0].Type;
+            return true;
+        }
+
+        if (parameters.Length == 2)
+        {
+            if (!isAsync || !IsCancellationToken(parameters[1].Type))
+            {
+                invalidReason =
+                    "must have zero or one parameter, with an optional trailing CancellationToken on async commands";
+                return false;
+            }
+
+            if (IsCancellationToken(parameters[0].Type))
+            {
+                invalidReason = "the command parameter cannot be CancellationToken";
+                return false;
+            }
+
+            hasCancellationToken = true;
+            parameterType = parameters[0].Type;
+            return true;
+        }
+
+        invalidReason =
+            "must have zero or one parameter, with an optional trailing CancellationToken on async commands";
+        return false;
+    }
+
+    private static bool IsNonGenericTaskOrValueTask(ITypeSymbol type)
+    {
+        return type is INamedTypeSymbol { Arity: 0 } named
+            && named.Name is "Task" or "ValueTask"
+            && named.ContainingNamespace.ToDisplayString() == "System.Threading.Tasks";
+    }
+
+    private static bool IsCancellationToken(ITypeSymbol type)
+    {
+        return type.Name == "CancellationToken"
+            && type.ContainingNamespace.ToDisplayString() == "System.Threading";
     }
 
     private static bool TryResolveCanExecute(

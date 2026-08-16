@@ -26,7 +26,7 @@ src/Telepath.Godot/Binding/Attrtbutes/LinkKind.cs             覆盖推断
 src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 
-示例：[CounterApp](../samples/Showcase/CounterApp/)（场景绑定 + Converter），[SearchApp](../samples/Showcase/SearchApp/)（`ReactiveCommand<T>` + Parameter），[ListApp](../samples/Showcase/ListApp/)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.tscn)（容器 + 子 View）。项模板 [TodoItemView](../samples/Showcase/TodoApp/TodoItemView.cs) 仍用 `[BindTo]` 作为逃逸口。
+示例：[CounterApp](../samples/Showcase/CounterApp/)（场景绑定 + Converter），[SearchApp](../samples/Showcase/SearchApp/)（异步命令 + `ProgressBar` 的 `Value` / `Visible`），[ListApp](../samples/Showcase/ListApp/)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.tscn)（容器 + 子 View）。项模板 [TodoItemView](../samples/Showcase/TodoApp/TodoItemView.cs) 仍用 `[BindTo]` 作为逃逸口。
 
 具体 View 必须：
 

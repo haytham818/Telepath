@@ -24,6 +24,14 @@ metadata/telepath_bindings = [{
 "parameter": "%Query",
 "path": "%Search"
 }, {
+"kind": "Value",
+"member": "Progress",
+"path": "%Progress"
+}, {
+"kind": "Visible",
+"member": "IsSearching",
+"path": "%Progress"
+}, {
 "kind": "Text",
 "member": "Result",
 "path": "%Result"
@@ -61,6 +69,15 @@ placeholder_text = "Type a query"
 unique_name_in_owner = true
 layout_mode = 2
 text = "Search"
+
+[node name="Progress" type="ProgressBar" parent="Center/VBox" unique_id=2103841909]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 16)
+layout_mode = 2
+max_value = 1.0
+step = 0.01
+show_percentage = true
 
 [node name="Result" type="Label" parent="Center/VBox" unique_id=2103841908]
 unique_name_in_owner = true

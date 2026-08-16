@@ -70,6 +70,108 @@ public sealed class TelepathViewModelGeneratorTests
     }
 
     [Fact]
+    public void GeneratesAsyncCommand()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using R3;
+            using Telepath.Core;
+
+            namespace Demo;
+
+            public sealed partial class SearchViewModel : ViewModel
+            {
+                [Command(CanExecute = nameof(CanSearch))]
+                private async Task OnSearch(string query, CancellationToken cancellationToken)
+                {
+                    await Task.CompletedTask;
+                }
+
+                private Observable<bool> CanSearch() => Observable.Return(true);
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("public global::R3.ReactiveCommand<string> @SearchCommand", generated);
+        Assert.Contains(
+            "AsyncCommand<string>(async (arg, ct) => await @OnSearch(arg, ct), @CanSearch())",
+            generated);
+        Assert.DoesNotContain("Track(AsyncCommand", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void GeneratesParameterlessAsyncCommandWithCancellationToken()
+    {
+        const string source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Telepath.Core;
+
+            public sealed partial class SampleViewModel : ViewModel
+            {
+                [Command]
+                private ValueTask OnSave(CancellationToken cancellationToken) => ValueTask.CompletedTask;
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("public global::R3.ReactiveCommand @SaveCommand", generated);
+        Assert.Contains("AsyncCommand(async ct => await @OnSave(ct))", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void ReportsTaskResultCommand()
+    {
+        const string source = """
+            using System.Threading.Tasks;
+            using Telepath.Core;
+
+            public sealed partial class SampleViewModel : ViewModel
+            {
+                [Command]
+                private Task<int> OnGo() => Task.FromResult(1);
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPM004", diagnostic.Id);
+        Assert.Contains("void, Task, or ValueTask", diagnostic.GetMessage());
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsAsyncVoidCommand()
+    {
+        const string source = """
+            using Telepath.Core;
+
+            public sealed partial class SampleViewModel : ViewModel
+            {
+                [Command]
+                private async void OnGo() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPM004", diagnostic.Id);
+        Assert.Contains("async void", diagnostic.GetMessage());
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
     public void CommandNameOverrideSkipsCommandSuffix()
     {
         const string source = """
@@ -327,6 +429,16 @@ public sealed class TelepathViewModelGeneratorTests
                 protected T Track<T>(T disposable)
                     where T : System.IDisposable
                     => disposable;
+
+                protected R3.ReactiveCommand AsyncCommand(
+                    System.Func<System.Threading.CancellationToken, System.Threading.Tasks.ValueTask> execute,
+                    R3.Observable<bool>? canExecute = null)
+                    => new(_ => { });
+
+                protected R3.ReactiveCommand<T> AsyncCommand<T>(
+                    System.Func<T, System.Threading.CancellationToken, System.Threading.Tasks.ValueTask> execute,
+                    R3.Observable<bool>? canExecute = null)
+                    => new(_ => { });
             }
 
             [System.AttributeUsage(System.AttributeTargets.Field | System.AttributeTargets.Method)]

@@ -12,7 +12,9 @@ internal sealed class ViewModelGeneratedMember
         ImmutableArray<string> from,
         string? canExecute,
         bool canExecuteIsMethod,
-        string? commandParameterTypeDisplay = null)
+        string? commandParameterTypeDisplay = null,
+        bool isAsync = false,
+        bool hasCancellationToken = false)
     {
         Kind = kind;
         PropertyName = propertyName;
@@ -22,6 +24,8 @@ internal sealed class ViewModelGeneratedMember
         CanExecute = canExecute;
         CanExecuteIsMethod = canExecuteIsMethod;
         CommandParameterTypeDisplay = commandParameterTypeDisplay;
+        IsAsync = isAsync;
+        HasCancellationToken = hasCancellationToken;
     }
 
     public ViewModelMemberKind Kind { get; }
@@ -39,4 +43,8 @@ internal sealed class ViewModelGeneratedMember
     public bool CanExecuteIsMethod { get; }
 
     public string? CommandParameterTypeDisplay { get; }
+
+    public bool IsAsync { get; }
+
+    public bool HasCancellationToken { get; }
 }

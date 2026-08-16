@@ -116,7 +116,15 @@ internal static class ViewModelSourceRenderer
                     .AppendLine();
                 source.Append("        => ")
                     .Append(backing)
-                    .Append(" ??= Track(");
+                    .Append(" ??= ");
+                if (member.IsAsync)
+                {
+                    AppendAsyncCommand(source, member);
+                    source.AppendLine(";");
+                    break;
+                }
+
+                source.Append("Track(");
                 if (string.IsNullOrEmpty(member.CanExecute))
                 {
                     source.Append("new ")
@@ -149,6 +157,55 @@ internal static class ViewModelSourceRenderer
 
                 break;
         }
+    }
+
+    private static void AppendAsyncCommand(StringBuilder source, ViewModelGeneratedMember member)
+    {
+        source.Append("AsyncCommand");
+        if (member.CommandParameterTypeDisplay is not null)
+        {
+            source.Append('<')
+                .Append(member.CommandParameterTypeDisplay)
+                .Append('>');
+        }
+
+        source.Append('(');
+        if (member.CommandParameterTypeDisplay is null)
+        {
+            source.Append("async ct => await @")
+                .Append(member.SourceMemberName)
+                .Append('(');
+            if (member.HasCancellationToken)
+            {
+                source.Append("ct");
+            }
+
+            source.Append(')');
+        }
+        else
+        {
+            source.Append("async (arg, ct) => await @")
+                .Append(member.SourceMemberName)
+                .Append("(arg");
+            if (member.HasCancellationToken)
+            {
+                source.Append(", ct");
+            }
+
+            source.Append(')');
+        }
+
+        if (!string.IsNullOrEmpty(member.CanExecute))
+        {
+            source.Append(", @")
+                .Append(member.CanExecute);
+            if (member.CanExecuteIsMethod)
+            {
+                source.Append("()");
+            }
+        }
+
+        source.Append(')');
     }
 
     private static void AppendCommandExecute(StringBuilder source, ViewModelGeneratedMember member)
