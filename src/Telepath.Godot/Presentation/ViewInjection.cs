@@ -21,7 +21,29 @@ internal static class ViewInjection
 
     public static void Clear(Control view)
     {
+        if (!GodotObject.IsInstanceValid(view))
+        {
+            return;
+        }
+
         GetViewModelProperty(view).SetValue(view, null);
+    }
+
+    public static void IgnoreMouse(Control view)
+    {
+        if (!GodotObject.IsInstanceValid(view))
+        {
+            return;
+        }
+
+        view.MouseFilter = Control.MouseFilterEnum.Ignore;
+        foreach (var child in view.GetChildren())
+        {
+            if (child is Control control)
+            {
+                IgnoreMouse(control);
+            }
+        }
     }
 
     private static PropertyInfo GetViewModelProperty(Control view)
@@ -40,6 +62,11 @@ internal static class ViewInjection
 
     public static void Remove(Control view)
     {
+        if (!GodotObject.IsInstanceValid(view))
+        {
+            return;
+        }
+
         var parent = view.GetParent();
         parent?.RemoveChild(view);
         view.QueueFree();

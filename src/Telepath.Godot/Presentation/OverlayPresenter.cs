@@ -5,7 +5,9 @@ namespace Telepath.Godot;
 
 /// <summary>
 /// Instantiates overlay scenes into one slot. Covered layers stay in the tree;
-/// only the removed layer is freed. Does not dispose ViewModels.
+/// only the removed layer is freed after <see cref="IViewTransition.PlayExitAsync"/>
+/// (or immediately when the view does not implement it). Does not dispose
+/// ViewModels. <see cref="Reset"/> and <see cref="Clear"/> skip animation.
 /// </summary>
 public sealed class OverlayPresenter
 {
@@ -13,6 +15,9 @@ public sealed class OverlayPresenter
     private readonly ViewRegistry _registry;
     private readonly bool _blocksPassThrough;
     private readonly List<Control> _views = [];
+    private readonly HashSet<Control> _exiting = [];
+    private readonly ViewTransitionSession _transitions = new();
+    private bool _skipEnter;
 
     public OverlayPresenter(Control slot, ViewRegistry registry, bool blocksPassThrough = true)
     {
@@ -29,9 +34,17 @@ public sealed class OverlayPresenter
     public void Reset(IReadOnlyList<IViewModel> items)
     {
         Clear();
-        for (var i = 0; i < items.Count; i++)
+        _skipEnter = true;
+        try
         {
-            Insert(i, items[i]);
+            for (var i = 0; i < items.Count; i++)
+            {
+                Insert(i, items[i]);
+            }
+        }
+        finally
+        {
+            _skipEnter = false;
         }
     }
 
@@ -52,31 +65,70 @@ public sealed class OverlayPresenter
         ApplyLayout(view);
         _views.Insert(index, view);
         _slot.AddChild(view);
-        if (index < _slot.GetChildCount() - 1)
-        {
-            _slot.MoveChild(view, index);
-        }
-
+        PlaceLive(view, index);
         UpdateMouseFilter();
+        if (!_skipEnter)
+        {
+            _transitions.PlayEnter(view);
+        }
     }
 
     public void RemoveAt(int index)
     {
         var view = _views[index];
         _views.RemoveAt(index);
-        ViewInjection.Remove(view);
+        BeginExit(view);
         UpdateMouseFilter();
     }
 
     public void Clear()
     {
+        AbortAll();
+        UpdateMouseFilter();
+    }
+
+    private void PlaceLive(Control view, int liveIndex)
+    {
+        if (liveIndex >= _views.Count - 1)
+        {
+            return;
+        }
+
+        var desired = _views[liveIndex + 1].GetIndex();
+        if (view.GetIndex() != desired)
+        {
+            _slot.MoveChild(view, desired);
+        }
+    }
+
+    private void BeginExit(Control view)
+    {
+        ViewInjection.Clear(view);
+        ViewInjection.IgnoreMouse(view);
+        _exiting.Add(view);
+        _transitions.PlayExit(view, FinishExit);
+    }
+
+    private void FinishExit(Control view)
+    {
+        _exiting.Remove(view);
+        ViewInjection.Remove(view);
+    }
+
+    private void AbortAll()
+    {
+        _transitions.CancelAll();
         for (var i = _views.Count - 1; i >= 0; i--)
         {
             ViewInjection.Remove(_views[i]);
         }
 
         _views.Clear();
-        UpdateMouseFilter();
+        foreach (var view in _exiting.ToArray())
+        {
+            _exiting.Remove(view);
+            ViewInjection.Remove(view);
+        }
     }
 
     private static void ApplyLayout(Control view)
