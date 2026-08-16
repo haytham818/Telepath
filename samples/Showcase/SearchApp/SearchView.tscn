@@ -76,8 +76,6 @@ visible = false
 custom_minimum_size = Vector2(0, 16)
 layout_mode = 2
 max_value = 1.0
-step = 0.01
-show_percentage = true
 
 [node name="Result" type="Label" parent="Center/VBox" unique_id=2103841908]
 unique_name_in_owner = true
