@@ -14,6 +14,9 @@ public partial class ShellView : Control
     [NodeInject("%Content")]
     private Control _content = null!;
 
+    [NodeInject("%Overlay")]
+    private Control _overlay = null!;
+
     public override partial void _Notification(int what);
 
     private ShellViewModel CreateViewModel() => new();
@@ -25,11 +28,14 @@ public partial class ShellView : Control
             .Register<CounterViewModel>("res://CounterApp/CounterView.tscn")
             .Register<SearchViewModel>("res://SearchApp/SearchView.tscn")
             .Register<ListViewModel>("res://ListApp/ListView.tscn")
-            .Register<TodoListViewModel>("res://TodoApp/TodoListView.tscn");
+            .Register<TodoListViewModel>("res://TodoApp/TodoListView.tscn")
+            .Register<PauseDemoViewModel>("res://Shell/PauseDemoView.tscn")
+            .Register<AboutViewModel>("res://Shell/AboutView.tscn");
         bindings.BindContent(vm.ActiveItem, _content.Content(registry));
+        bindings.BindOverlay(vm.Overlay.Layers, _overlay.Overlays(registry));
         if (vm.ActiveItem.Value is null)
         {
-            vm.Navigate(new DirectoryViewModel(vm));
+            vm.Navigate(new DirectoryViewModel(vm, vm.Overlay));
         }
     }
 }

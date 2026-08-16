@@ -9,11 +9,14 @@ namespace Telepath.Showcase.Shell;
 public sealed partial class DirectoryViewModel : ViewModel
 {
     private readonly INavigator _navigator;
+    private readonly IOverlay _overlay;
 
-    public DirectoryViewModel(INavigator navigator)
+    public DirectoryViewModel(INavigator navigator, IOverlay overlay)
     {
         ArgumentNullException.ThrowIfNull(navigator);
+        ArgumentNullException.ThrowIfNull(overlay);
         _navigator = navigator;
+        _overlay = overlay;
     }
 
     [Command]
@@ -27,4 +30,7 @@ public sealed partial class DirectoryViewModel : ViewModel
 
     [Command]
     private void OnOpenTodo() => _navigator.Navigate(new TodoListViewModel());
+
+    [Command]
+    private void OnOpenPauseDemo() => _navigator.Navigate(new PauseDemoViewModel(_overlay));
 }

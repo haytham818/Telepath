@@ -33,7 +33,7 @@ public class Conductor : ViewModel, IConductor
     public ReactiveCommand BackCommand { get; }
 
     /// <inheritdoc />
-    public void Navigate(IViewModel viewModel)
+    public virtual void Navigate(IViewModel viewModel)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         ArgumentNullException.ThrowIfNull(viewModel);
@@ -67,7 +67,7 @@ public class Conductor : ViewModel, IConductor
     }
 
     /// <inheritdoc />
-    public bool Back()
+    public virtual bool Back()
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         if (_backStack.Count == 0)
@@ -92,7 +92,7 @@ public class Conductor : ViewModel, IConductor
     }
 
     /// <inheritdoc />
-    public void CloseSelf()
+    public virtual void CloseSelf()
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         if (ActiveItem.Value is { } current)
@@ -102,7 +102,7 @@ public class Conductor : ViewModel, IConductor
     }
 
     /// <inheritdoc />
-    public void Close(IViewModel viewModel)
+    public virtual void Close(IViewModel viewModel)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         ArgumentNullException.ThrowIfNull(viewModel);
@@ -154,19 +154,27 @@ public class Conductor : ViewModel, IConductor
         UpdateCanGoBack();
     }
 
-    private void UpdateCanGoBack()
+    /// <summary>
+    /// Recomputes <see cref="CanGoBack"/> from <see cref="ComputeCanGoBack"/>.
+    /// </summary>
+    protected void UpdateCanGoBack()
     {
         if (CanGoBack.IsDisposed)
         {
             return;
         }
 
-        var canGoBack = _backStack.Count > 0;
+        var canGoBack = ComputeCanGoBack();
         if (CanGoBack.Value != canGoBack)
         {
             CanGoBack.Value = canGoBack;
         }
     }
+
+    /// <summary>
+    /// Returns whether <see cref="Back"/> would succeed. Override to include overlays.
+    /// </summary>
+    protected virtual bool ComputeCanGoBack() => _backStack.Count > 0;
 
     private static void Activate(IViewModel viewModel)
     {
