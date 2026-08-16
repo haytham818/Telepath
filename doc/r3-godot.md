@@ -20,7 +20,7 @@
 
 `TelepathEditorPlugin` 会 `AddAutoloadSingleton` 注册 **GDScript** 外壳；演示宿主的 `project.godot` 也写了 `[autoload]`，运行时不必先开编辑器。插件入口本身也是 GDScript：C# `EditorPlugin` 会在热重载时被引擎一直握着，从而钉住 ALC。
 
-C# 程序集热重载会失败，如果还有 C# `[Tool]` 实例把委托挂在编辑器单例上（尤其是 `EditorSelection`）。这是 Godot [#78513](https://github.com/godotengine/godot/issues/78513) 的已知限制。Telepath 用 GDScript 插件入口 + Dock 上的 `ISerializationListener` 在卸载前松开这些委托。若仍报错，重启编辑器。
+C# 程序集热重载会失败，如果还有 C# `[Tool]` 把 `Delegate::Invoke` 挂在编辑器单例上。`selection_changed` 改由 GDScript 插件转发；Dock 在 `OnAfterDeserialize` 里丢掉热重载残留的失效 Callable，再重新接线。若仍报错，重启编辑器。
 
 Godot 只在**宿主主程序集**里解析 C# 脚本。`FrameProviderDispatcher.gd` / `.cs` 与 `plugin.cfg` 在 `src/Telepath.Godot/Addon/`，`TelepathEditorPlugin.gd` 与 Binding Dock 在 `src/Telepath.Godot/Editor/`，均符号链接到 `samples/Showcase/addons/Telepath/`，由 `Telepath.Showcase` 编译。`Telepath.Godot` 用 `InternalsVisibleTo("Telepath.Showcase")` 暴露 Provider 的 internal 成员。Addon / Editor 源码不编进 `Telepath.Godot.dll`。
 

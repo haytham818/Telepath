@@ -33,19 +33,37 @@ public partial class TelepathBindingDock : EditorDock, ISerializationListener
 
     public void Detach()
     {
-        SuspendForReload();
+        _frames?.Stop();
+        _frames = null;
+        SetProcess(false);
+        SetPhysicsProcess(false);
+        __telepathViewLifecycle?.Release();
+        __telepathViewLifecycle = null;
         _plugin = null;
+    }
+
+    public void NotifySelectionChanged()
+    {
+        if (ViewModel is BindingDockViewModel viewModel)
+        {
+            viewModel.RefreshSelection();
+        }
     }
 
     public void OnBeforeSerialize()
     {
-        // Called by Godot before ALC unload. _ExitTree is not.
-        SuspendForReload();
+        // ManagedCallable snapshot already happened. Do not `-=` Godot signals here.
+        _frames?.Stop();
+        _frames = null;
+        SetProcess(false);
+        SetPhysicsProcess(false);
     }
 
     public void OnAfterDeserialize()
     {
         AlcUnloadHook.Register();
+        StaleCallableCleanup.DropInvalid(EditorInterface.Singleton.GetSelection());
+        StaleCallableCleanup.DropInvalidTree(this);
         EnsurePump();
         __telepathViewLifecycle = null;
         if (IsInsideTree() && IsNodeReady())
@@ -71,17 +89,6 @@ public partial class TelepathBindingDock : EditorDock, ISerializationListener
         _frames.Start();
         SetProcess(true);
         SetPhysicsProcess(true);
-    }
-
-    private void SuspendForReload()
-    {
-        _frames?.Stop();
-        _frames = null;
-        SetProcess(false);
-        SetPhysicsProcess(false);
-        BindingDockViewModel.DisconnectActiveSelection();
-        __telepathViewLifecycle?.Release();
-        __telepathViewLifecycle = null;
     }
 }
 #endif

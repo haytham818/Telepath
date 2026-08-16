@@ -23,7 +23,6 @@ public sealed partial class BindingDockViewModel : ViewModel
     ];
 
     private EditorPlugin? _plugin;
-    private EditorSelection? _selection;
     private EditorFileDialog? _itemSceneDialog;
     private Node? _view;
     private Type? _viewType;
@@ -37,7 +36,6 @@ public sealed partial class BindingDockViewModel : ViewModel
     private readonly List<string> _parameterPaths = [];
     private readonly List<string> _itemViewValues = [];
     private bool _suppressSelection;
-    private static BindingDockViewModel? _active;
 
     [Bindable]
     private bool _hasTarget = false;
@@ -122,42 +120,18 @@ public sealed partial class BindingDockViewModel : ViewModel
         }
 
         _plugin = plugin;
-        _active = this;
-        _selection = EditorInterface.Singleton.GetSelection();
-        _selection.SelectionChanged += OnSelectionChanged;
         OnSelectionChanged();
     }
 
-    internal static void DisconnectActiveSelection()
-    {
-        _active?.UnsubscribeSelection();
-    }
+    internal void RefreshSelection() => OnSelectionChanged();
 
     protected override void OnDispose()
     {
-        if (ReferenceEquals(_active, this))
-        {
-            _active = null;
-        }
-
         CloseItemSceneDialog();
-        UnsubscribeSelection();
-
         _plugin = null;
         _view = null;
         _viewType = null;
         _viewModelType = null;
-    }
-
-    private void UnsubscribeSelection()
-    {
-        if (_selection is null)
-        {
-            return;
-        }
-
-        _selection.SelectionChanged -= OnSelectionChanged;
-        _selection = null;
     }
 
     [Bindable(nameof(AttributeCount))]
@@ -327,7 +301,7 @@ public sealed partial class BindingDockViewModel : ViewModel
 
     private void OnSelectionChanged()
     {
-        var selected = _selection?.GetSelectedNodes().OfType<Node>().FirstOrDefault();
+        var selected = CurrentEditorNode();
         var view = ViewScriptResolver.FindTelepathView(selected);
         if (view is null || !ViewScriptResolver.TryResolve(view, out var viewType, out var viewModelType))
         {
@@ -349,6 +323,12 @@ public sealed partial class BindingDockViewModel : ViewModel
 
         Refresh();
     }
+
+    private static Node? CurrentEditorNode()
+        => EditorInterface.Singleton.GetSelection()
+            .GetSelectedNodes()
+            .OfType<Node>()
+            .FirstOrDefault();
 
     private void ClearTarget()
     {
@@ -565,7 +545,7 @@ public sealed partial class BindingDockViewModel : ViewModel
             return;
         }
 
-        var selected = _selection?.GetSelectedNodes().OfType<Node>().FirstOrDefault();
+        var selected = CurrentEditorNode();
         if (selected is null || ReferenceEquals(selected, _view))
         {
             return;
