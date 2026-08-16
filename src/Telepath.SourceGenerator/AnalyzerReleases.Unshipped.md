@@ -9,9 +9,10 @@ TPV004 | Telepath.View | Error | Binding callback validation
 TPV005 | Telepath.View | Error | Ready callback validation
 TPV006 | Telepath.View | Error | Generated member conflict validation
 TPV007 | Telepath.View | Error | ViewModel contract validation
-TPV008 | Telepath.View | Error | LinkTo control type validation
-TPV009 | Telepath.View | Error | LinkTo declaration validation
-TPV010 | Telepath.View | Error | LinkTo converter validation
+TPV008 | Telepath.View | Error | BindTo control type validation
+TPV009 | Telepath.View | Error | NodeInject declaration validation
+TPV010 | Telepath.View | Error | BindTo declaration validation
+TPV011 | Telepath.View | Error | BindTo converter validation
 TPM001 | Telepath.ViewModel | Error | ViewModel target validation
 TPM002 | Telepath.ViewModel | Error | Bindable target validation
 TPM003 | Telepath.ViewModel | Error | Bindable From member validation

@@ -103,7 +103,7 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
-    public void ReportsMissingOnBindWhenNoLinkTo()
+    public void ReportsMissingOnBindWhenNoBindTo()
     {
         const string source = """
             using Telepath.Godot;
@@ -131,7 +131,7 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
-    public void GeneratesLinkToReadyAndBindWithoutOnBind()
+    public void GeneratesNodeInjectAndBindToWithoutOnBind()
     {
         const string source = """
             using Telepath.Godot;
@@ -149,10 +149,12 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<CounterViewModel>]
             public partial class CounterView : Godot.Control
             {
-                [LinkTo("%CountLabel", nameof(CounterViewModel.CountText))]
+                [NodeInject("%CountLabel")]
+                [BindTo(nameof(CounterViewModel.CountText))]
                 private Godot.Label _countLabel = null!;
 
-                [LinkTo("%IncrementButton", nameof(CounterViewModel.Increment))]
+                [NodeInject("%IncrementButton")]
+                [BindTo(nameof(CounterViewModel.Increment))]
                 private Godot.Button _incrementButton = null!;
 
                 public override partial void _Notification(int what);
@@ -181,7 +183,7 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
-    public void ReportsUnsupportedLinkToControl()
+    public void ReportsUnsupportedBindToControl()
     {
         const string source = """
             using Telepath.Godot;
@@ -189,7 +191,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<TestViewModel>]
             public partial class TestView : Godot.Control
             {
-                [LinkTo("%Root", "Value")]
+                [NodeInject("%Root")]
+                [BindTo("Value")]
                 private Godot.Control _root = null!;
 
                 public override partial void _Notification(int what);
@@ -238,34 +241,44 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<FormViewModel>]
             public partial class FormView : Godot.Control
             {
-                [LinkTo("%Title", nameof(FormViewModel.Title))]
+                [NodeInject("%Title")]
+                [BindTo(nameof(FormViewModel.Title))]
                 private Godot.Label _title = null!;
 
-                [LinkTo("%Body", nameof(FormViewModel.Body))]
+                [NodeInject("%Body")]
+                [BindTo(nameof(FormViewModel.Body))]
                 private Godot.RichTextLabel _body = null!;
 
-                [LinkTo("%Name", nameof(FormViewModel.Name))]
+                [NodeInject("%Name")]
+                [BindTo(nameof(FormViewModel.Name))]
                 private Godot.LineEdit _name = null!;
 
-                [LinkTo("%Notes", nameof(FormViewModel.Notes))]
+                [NodeInject("%Notes")]
+                [BindTo(nameof(FormViewModel.Notes))]
                 private Godot.TextEdit _notes = null!;
 
-                [LinkTo("%Enabled", nameof(FormViewModel.Enabled))]
+                [NodeInject("%Enabled")]
+                [BindTo(nameof(FormViewModel.Enabled))]
                 private Godot.CheckBox _enabled = null!;
 
-                [LinkTo("%Featured", nameof(FormViewModel.Featured))]
+                [NodeInject("%Featured")]
+                [BindTo(nameof(FormViewModel.Featured))]
                 private Godot.CheckButton _featured = null!;
 
-                [LinkTo("%Choice", nameof(FormViewModel.Choice))]
+                [NodeInject("%Choice")]
+                [BindTo(nameof(FormViewModel.Choice))]
                 private Godot.OptionButton _choice = null!;
 
-                [LinkTo("%Volume", nameof(FormViewModel.Volume))]
+                [NodeInject("%Volume")]
+                [BindTo(nameof(FormViewModel.Volume))]
                 private Godot.Slider _volume = null!;
 
-                [LinkTo("%Progress", nameof(FormViewModel.Progress))]
+                [NodeInject("%Progress")]
+                [BindTo(nameof(FormViewModel.Progress))]
                 private Godot.ProgressBar _progress = null!;
 
-                [LinkTo("%Save", nameof(FormViewModel.Save))]
+                [NodeInject("%Save")]
+                [BindTo(nameof(FormViewModel.Save))]
                 private Godot.Button _save = null!;
 
                 public override partial void _Notification(int what);
@@ -315,13 +328,16 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<PanelViewModel>]
             public partial class PanelView : Godot.Control
             {
-                [LinkTo("%Panel", nameof(PanelViewModel.ShowPanel), Kind = LinkKind.Visible)]
+                [NodeInject("%Panel")]
+                [BindTo(nameof(PanelViewModel.ShowPanel), Kind = LinkKind.Visible)]
                 private Godot.Control _panel = null!;
 
-                [LinkTo("%Lock", nameof(PanelViewModel.Locked), Kind = LinkKind.Disabled)]
+                [NodeInject("%Lock")]
+                [BindTo(nameof(PanelViewModel.Locked), Kind = LinkKind.Disabled)]
                 private Godot.Button _lock = null!;
 
-                [LinkTo("%Weird", nameof(PanelViewModel.DoThing), Kind = LinkKind.Command)]
+                [NodeInject("%Weird")]
+                [BindTo(nameof(PanelViewModel.DoThing), Kind = LinkKind.Command)]
                 private Godot.CheckBox _weird = null!;
 
                 public override partial void _Notification(int what);
@@ -349,7 +365,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<TestViewModel>]
             public partial class TestView : Godot.Control
             {
-                [LinkTo("%Items", "Selected", Kind = LinkKind.Selected)]
+                [NodeInject("%Items")]
+                [BindTo("Selected", Kind = LinkKind.Selected)]
                 private Godot.ItemList _items = null!;
 
                 public override partial void _Notification(int what);
@@ -383,7 +400,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<TestViewModel>]
             public partial class TestView : Godot.Control
             {
-                [LinkTo("%Title", "Value", Kind = LinkKind.Toggle)]
+                [NodeInject("%Title")]
+                [BindTo("Value", Kind = LinkKind.Toggle)]
                 private Godot.Label _title = null!;
 
                 public override partial void _Notification(int what);
@@ -401,7 +419,7 @@ public sealed class TelepathViewGeneratorTests
         var result = RunGenerator(source);
 
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("TPV009", diagnostic.Id);
+        Assert.Equal("TPV010", diagnostic.Id);
         Assert.Empty(result.GeneratedSources);
     }
 
@@ -424,10 +442,12 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<SearchViewModel>]
             public partial class SearchView : Godot.Control
             {
-                [LinkTo("%Query", nameof(SearchViewModel.Query))]
+                [NodeInject("%Query")]
+                [BindTo(nameof(SearchViewModel.Query))]
                 private Godot.LineEdit _query = null!;
 
-                [LinkTo("%Search", nameof(SearchViewModel.Search), Parameter = nameof(_query))]
+                [NodeInject("%Search")]
+                [BindTo(nameof(SearchViewModel.Search), Parameter = nameof(_query))]
                 private Godot.Button _search = null!;
 
                 public override partial void _Notification(int what);
@@ -463,7 +483,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<SearchViewModel>]
             public partial class SearchView : Godot.Control
             {
-                [LinkTo("%Query", nameof(SearchViewModel.Search), Kind = LinkKind.Command)]
+                [NodeInject("%Query")]
+                [BindTo(nameof(SearchViewModel.Search), Kind = LinkKind.Command)]
                 private Godot.LineEdit _query = null!;
 
                 public override partial void _Notification(int what);
@@ -481,7 +502,7 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
-    public void GeneratesMultipleLinkToOnSameField()
+    public void GeneratesMultipleBindToOnSameField()
     {
         const string source = """
             using Telepath.Godot;
@@ -499,11 +520,13 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<SearchViewModel>]
             public partial class SearchView : Godot.Control
             {
-                [LinkTo("%Query", nameof(SearchViewModel.Query))]
-                [LinkTo("%Query", nameof(SearchViewModel.Search), Kind = LinkKind.Command)]
+                [NodeInject("%Query")]
+                [BindTo(nameof(SearchViewModel.Query))]
+                [BindTo(nameof(SearchViewModel.Search), Kind = LinkKind.Command)]
                 private Godot.LineEdit _query = null!;
 
-                [LinkTo("%Search", nameof(SearchViewModel.Search), Parameter = nameof(_query))]
+                [NodeInject("%Search")]
+                [BindTo(nameof(SearchViewModel.Search), Parameter = nameof(_query))]
                 private Godot.Button _search = null!;
 
                 public override partial void _Notification(int what);
@@ -525,7 +548,7 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
-    public void ReportsConflictingNodePathsOnSameMember()
+    public void ReportsBindToWithoutNodeInject()
     {
         const string source = """
             using Telepath.Godot;
@@ -533,8 +556,7 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<TestViewModel>]
             public partial class TestView : Godot.Control
             {
-                [LinkTo("%Query", "Query")]
-                [LinkTo("%Other", "Search", Kind = LinkKind.Command)]
+                [BindTo("Query")]
                 private Godot.LineEdit _query = null!;
 
                 public override partial void _Notification(int what);
@@ -545,7 +567,6 @@ public sealed class TelepathViewGeneratorTests
             public sealed class TestViewModel : Telepath.Core.IViewModel
             {
                 public object Query { get; } = new();
-                public object Search { get; } = new();
                 public bool IsDisposed => false;
                 public void Dispose() { }
             }
@@ -554,8 +575,8 @@ public sealed class TelepathViewGeneratorTests
         var result = RunGenerator(source);
 
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("TPV009", diagnostic.Id);
-        Assert.Contains("same node path", diagnostic.GetMessage());
+        Assert.Equal("TPV010", diagnostic.Id);
+        Assert.Contains("NodeInject", diagnostic.GetMessage());
         Assert.Empty(result.GeneratedSources);
     }
 
@@ -568,7 +589,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<TestViewModel>]
             public partial class TestView : Godot.Control
             {
-                [LinkTo("%Search", "Search", Parameter = "Missing")]
+                [NodeInject("%Search")]
+                [BindTo("Search", Parameter = "Missing")]
                 private Godot.Button _search = null!;
 
                 public override partial void _Notification(int what);
@@ -586,7 +608,7 @@ public sealed class TelepathViewGeneratorTests
         var result = RunGenerator(source);
 
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("TPV009", diagnostic.Id);
+        Assert.Equal("TPV010", diagnostic.Id);
         Assert.Empty(result.GeneratedSources);
     }
 
@@ -599,7 +621,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<TestViewModel>]
             public partial class TestView : Godot.Control
             {
-                [LinkTo("%Title", "Title", Parameter = nameof(_title))]
+                [NodeInject("%Title")]
+                [BindTo("Title", Parameter = nameof(_title))]
                 private Godot.Label _title = null!;
 
                 public override partial void _Notification(int what);
@@ -617,12 +640,12 @@ public sealed class TelepathViewGeneratorTests
         var result = RunGenerator(source);
 
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("TPV009", diagnostic.Id);
+        Assert.Equal("TPV010", diagnostic.Id);
         Assert.Empty(result.GeneratedSources);
     }
 
     [Fact]
-    public void GeneratesLinkToConverter()
+    public void GeneratesBindToConverter()
     {
         const string source = """
             using Telepath.Godot;
@@ -644,7 +667,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<CounterViewModel>]
             public partial class CounterView : Godot.Control
             {
-                [LinkTo("%CountLabel", nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
+                [NodeInject("%CountLabel")]
+                [BindTo(nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
                 private Godot.Label _countLabel = null!;
 
                 public override partial void _Notification(int what);
@@ -681,7 +705,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<CounterViewModel>]
             public partial class CounterView : Godot.Control
             {
-                [LinkTo("%CountLabel", nameof(CounterViewModel.Count), Converter = typeof(Telepath.Core.ToStringConverter<int>))]
+                [NodeInject("%CountLabel")]
+                [BindTo(nameof(CounterViewModel.Count), Converter = typeof(Telepath.Core.ToStringConverter<int>))]
                 private Godot.Label _countLabel = null!;
 
                 public override partial void _Notification(int what);
@@ -714,7 +739,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<TestViewModel>]
             public partial class TestView : Godot.Control
             {
-                [LinkTo("%Increment", "Increment", Converter = typeof(CountTextConverter))]
+                [NodeInject("%Increment")]
+                [BindTo("Increment", Converter = typeof(CountTextConverter))]
                 private Godot.Button _increment = null!;
 
                 public override partial void _Notification(int what);
@@ -733,7 +759,7 @@ public sealed class TelepathViewGeneratorTests
         var result = RunGenerator(source);
 
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("TPV010", diagnostic.Id);
+        Assert.Equal("TPV011", diagnostic.Id);
         Assert.Contains("command", diagnostic.GetMessage());
         Assert.Empty(result.GeneratedSources);
     }
@@ -747,7 +773,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<TestViewModel>]
             public partial class TestView : Godot.Control
             {
-                [LinkTo("%Title", "Title", Converter = typeof(string))]
+                [NodeInject("%Title")]
+                [BindTo("Title", Converter = typeof(string))]
                 private Godot.Label _title = null!;
 
                 public override partial void _Notification(int what);
@@ -766,7 +793,7 @@ public sealed class TelepathViewGeneratorTests
         var result = RunGenerator(source);
 
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("TPV010", diagnostic.Id);
+        Assert.Equal("TPV011", diagnostic.Id);
         Assert.Empty(result.GeneratedSources);
     }
 
@@ -785,7 +812,8 @@ public sealed class TelepathViewGeneratorTests
             [TelepathView<TestViewModel>]
             public partial class TestView : Godot.Control
             {
-                [LinkTo("%Title", "Title", Converter = typeof(CountTextConverter))]
+                [NodeInject("%Title")]
+                [BindTo("Title", Converter = typeof(CountTextConverter))]
                 private Godot.Label _title = null!;
 
                 public override partial void _Notification(int what);
@@ -804,8 +832,49 @@ public sealed class TelepathViewGeneratorTests
         var result = RunGenerator(source);
 
         var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("TPV010", diagnostic.Id);
+        Assert.Equal("TPV011", diagnostic.Id);
         Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void GeneratesInjectOnlyWithOnBind()
+    {
+        const string source = """
+            using Telepath.Core;
+            using Telepath.Godot;
+
+            namespace Demo;
+
+            public sealed class ListViewModel : Telepath.Core.IViewModel
+            {
+                public object Items { get; } = new();
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+
+            [TelepathView<ListViewModel>]
+            public partial class ListView : Godot.Control
+            {
+                [NodeInject("%Items")]
+                private Godot.ItemList _items = null!;
+
+                public override partial void _Notification(int what);
+
+                private ListViewModel CreateViewModel() => new();
+
+                private void OnBind(ListViewModel vm, BindingSet bindings) { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("__TelepathOnReady", generated);
+        Assert.Contains("GetNode<global::Godot.ItemList>(\"%Items\")", generated);
+        Assert.DoesNotContain("__TelepathOnBind", generated);
+        Assert.Contains("OnBind", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
     }
 
     private static GeneratorRunResult RunGenerator(string viewSource)
@@ -1014,16 +1083,25 @@ public sealed class TelepathViewGeneratorTests
             {
             }
 
-            [System.AttributeUsage(System.AttributeTargets.Field | System.AttributeTargets.Property, AllowMultiple = true)]
-            public sealed class LinkToAttribute : System.Attribute
+            [System.AttributeUsage(System.AttributeTargets.Field | System.AttributeTargets.Property, AllowMultiple = false)]
+            public sealed class NodeInjectAttribute : System.Attribute
             {
-                public LinkToAttribute(string nodePath, string member)
+                public NodeInjectAttribute(string nodePath)
                 {
                     NodePath = nodePath;
-                    Member = member;
                 }
 
                 public string NodePath { get; }
+            }
+
+            [System.AttributeUsage(System.AttributeTargets.Field | System.AttributeTargets.Property, AllowMultiple = true)]
+            public sealed class BindToAttribute : System.Attribute
+            {
+                public BindToAttribute(string member)
+                {
+                    Member = member;
+                }
+
                 public string Member { get; }
                 public LinkKind Kind { get; set; }
                 public string Parameter { get; set; }

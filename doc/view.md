@@ -11,8 +11,9 @@ src/Telepath.Godot/Binding/GodotCommands.cs      按钮 / LineEdit 命令
 src/Telepath.Godot/View/ViewLifecycle.cs         ViewModel / 绑定寿命
 src/Telepath.Godot/View/ITelepathView.cs         可注入 ViewModel 的 View 契约
 src/Telepath.Godot/View/TelepathViewAttribute.cs View 标记
-src/Telepath.Godot/Binding/Attrtbutes/LinkToAttribute.cs  声明式绑定
-src/Telepath.Godot/Binding/Attrtbutes/LinkKind.cs         覆盖推断
+src/Telepath.Godot/Binding/Attrtbutes/NodeInjectAttribute.cs  节点注入
+src/Telepath.Godot/Binding/Attrtbutes/BindToAttribute.cs      声明式绑定
+src/Telepath.Godot/Binding/Attrtbutes/LinkKind.cs             覆盖推断
 src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 
@@ -24,7 +25,7 @@ src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 - 标记 `[TelepathView<TViewModel>]`
 - 声明 `public override partial void _Notification(int what);`
 - 提供 `CreateViewModel()`
-- 用 `[LinkTo]` 声明绑定，和/或手写 `OnBind(...)`；可选提供 `OnReady()`
+- 用 `[NodeInject]` / `[BindTo]` 声明注入与绑定，和/或手写 `OnBind(...)`；可选提供 `OnReady()`
 
 `_Notification` 的声明必须写在用户源码中，Godot 的源生成器才能登记该回调。
 Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
@@ -37,7 +38,7 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 
 | 节点生命周期 | ViewModel | 绑定 |
 |----------|-----------|------|
-| `_Ready` | 若未注入则 `CreateViewModel()` 一次 | 解析 `[LinkTo]` 节点后 `OnBind` |
+| `_Ready` | 若未注入则 `CreateViewModel()` 一次 | 解析 `[NodeInject]` 节点后 `OnBind` |
 | `_EnterTree`（已 Ready、无绑定） | 不 new | 再次接线 |
 | `_ExitTree` | **不** `Dispose` | `BindingSet.Dispose` |
 | `NotificationPredelete` | 自己 `CreateViewModel()` 的才 `ViewModel.Dispose()`；注入的不 Dispose | 已在出树时断开 |
@@ -47,14 +48,18 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 ## API
 
 - `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`。注入的 VM 在节点释放时不 `Dispose`
-- `[LinkTo(nodePath, member)]`：生成 `GetNode` 与 `Bind(source, target)`；可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换。同一字段可叠多条（节点路径必须相同）
+- `[NodeInject(nodePath)]`：生成 `GetNode`；同一字段只能一条
+- `[BindTo(member)]`：生成 `Bind(source, target)`；必须搭配同字段的 `[NodeInject]`。可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换。同一字段可叠多条
+- 允许只有 `[NodeInject]`、没有 `[BindTo]`（仅注入，在 `OnBind` 手写接线）
 - `OnReady()`：可选；在生成的节点解析之后调用
 - `OnBind(vm, bindings)`：可选；在声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
 - `_Notification`：只声明 partial 方法，不要自行实现或覆盖其他生命周期方法
 
+View 仍须提供 `OnBind` 和/或至少一条 `[BindTo]`（仅有注入、既无 BindTo 也无 OnBind 会报错）。
+
 `BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）、`BindCommand` 和 `BindItems`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
 
-## `[LinkTo]` 推断
+## `[BindTo]` 推断
 
 按最具体控件类型选择方法。`CheckBox` / `OptionButton` 优先于 `BaseButton`。
 
@@ -72,7 +77,8 @@ Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
 `Visible` / `Disabled` 不靠类型猜：
 
 ```csharp
-[LinkTo("%Panel", nameof(Vm.ShowAdvanced), Kind = LinkKind.Visible)]
+[NodeInject("%Panel")]
+[BindTo(nameof(Vm.ShowAdvanced), Kind = LinkKind.Visible)]
 private Control _panel = null!;
 ```
 
@@ -80,14 +86,16 @@ private Control _panel = null!;
 - `.Disabled()` → `BaseButton.Disabled`（Godot 的 `Control` 没有 Disabled）
 - `Kind` 也可覆盖推断，例如 CheckBox 当命令：`Kind = LinkKind.Command`
 - 带参命令：按钮按下时从另一个控件取值。`LineEdit` + `Kind = Command` 则走 `TextSubmitted`，不必写 `Parameter`
-- 同一控件要绑多条（例如 `LineEdit` 既双向文本又回车提交）时，在同一字段上叠 `[LinkTo]`，不必再写 `OnBind`
+- 同一控件要绑多条（例如 `LineEdit` 既双向文本又回车提交）时，在同一字段上叠 `[BindTo]`，不必再写 `OnBind`
 
 ```csharp
-[LinkTo("%Query", nameof(SearchViewModel.Query))]
-[LinkTo("%Query", nameof(SearchViewModel.SearchCommand), Kind = LinkKind.Command)]
+[NodeInject("%Query")]
+[BindTo(nameof(SearchViewModel.Query))]
+[BindTo(nameof(SearchViewModel.SearchCommand), Kind = LinkKind.Command)]
 private LineEdit _query = null!;
 
-[LinkTo("%Search", nameof(SearchViewModel.SearchCommand), Parameter = nameof(_query))]
+[NodeInject("%Search")]
+[BindTo(nameof(SearchViewModel.SearchCommand), Parameter = nameof(_query))]
 private Button _search = null!;
 ```
 
@@ -105,7 +113,8 @@ public sealed class CountTextConverter : IValueConverter<int, string>
     public string Convert(int value) => $"Count: {value}";
 }
 
-[LinkTo("%CountLabel", nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
+[NodeInject("%CountLabel")]
+[BindTo(nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
 private Label _countLabel = null!;
 ```
 
@@ -115,10 +124,12 @@ private Label _countLabel = null!;
 [TelepathView<CounterViewModel>]
 public partial class CounterView : Control
 {
-    [LinkTo("%CountLabel", nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
+    [NodeInject("%CountLabel")]
+    [BindTo(nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
     private Label _countLabel = null!;
 
-    [LinkTo("%IncrementButton", nameof(CounterViewModel.IncrementCommand))]
+    [NodeInject("%IncrementButton")]
+    [BindTo(nameof(CounterViewModel.IncrementCommand))]
     private Button _incrementButton = null!;
 
     public override partial void _Notification(int what);
@@ -131,11 +142,15 @@ public partial class CounterView : Control
 
 集合不走 `BindingTarget<T>`。`CollectionTarget<T>` 提供 `Reset` / `Insert` / `RemoveAt` / `Replace` / `Move`。`ObservableList<T>` 增量更新，`Observable<IReadOnlyList<T>>`（含 `BindableReactiveProperty`）每次整表 `Reset`。可选 `Func` / `IValueConverter` 把项转成目标类型。
 
-Godot：`ItemList.Items()`、`OptionButton.Items()` 都是 `CollectionTarget<string>`。选中仍是标量：`ItemList` 要写 `Kind = LinkKind.Selected`，`OptionButton` 继续默认 `Selected`。容器模板用 `Container.Items(create)` 或 `Items<TView, TViewModel>(PackedScene)`，在 `AddChild` 之前注入项 ViewModel；出树时 `Detach` 会拆掉生成的子节点，不释放项 VM。`[LinkTo]` 不生成 `BindItems`，在 `OnBind` 手写。
+Godot：`ItemList.Items()`、`OptionButton.Items()` 都是 `CollectionTarget<string>`。选中仍是标量：`ItemList` 要写 `Kind = LinkKind.Selected`，`OptionButton` 继续默认 `Selected`。容器模板用 `Container.Items(create)` 或 `Items<TView, TViewModel>(PackedScene)`，在 `AddChild` 之前注入项 ViewModel；出树时 `Detach` 会拆掉生成的子节点，不释放项 VM。`[BindTo]` 不生成 `BindItems`，在 `OnBind` 手写；可只用 `[NodeInject]` 注入容器。
 
 ```csharp
-[LinkTo("%Items", nameof(ListViewModel.Selected), Kind = LinkKind.Selected)]
+[NodeInject("%Items")]
+[BindTo(nameof(ListViewModel.Selected), Kind = LinkKind.Selected)]
 private ItemList _items = null!;
+
+[NodeInject("%Choices")]
+private OptionButton _choices = null!;
 
 private void OnBind(ListViewModel vm, BindingSet bindings)
 {

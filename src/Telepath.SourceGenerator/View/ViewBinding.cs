@@ -1,6 +1,6 @@
 namespace Telepath.SourceGenerator;
 
-internal enum LinkToKind
+internal enum BindToKind
 {
     Auto = 0,
     Text,
@@ -12,23 +12,35 @@ internal enum LinkToKind
     Disabled,
 }
 
-internal sealed class LinkToBinding
+internal sealed class NodeInjection
 {
-    public LinkToBinding(
+    public NodeInjection(string targetMemberName, string nodePath, string nodeTypeDisplay)
+    {
+        TargetMemberName = targetMemberName;
+        NodePath = nodePath;
+        NodeTypeDisplay = nodeTypeDisplay;
+    }
+
+    public string TargetMemberName { get; }
+
+    public string NodePath { get; }
+
+    public string NodeTypeDisplay { get; }
+}
+
+internal sealed class ViewBinding
+{
+    public ViewBinding(
         string targetMemberName,
-        string nodePath,
         string viewModelMember,
-        string nodeTypeDisplay,
-        LinkToKind kind,
+        BindToKind kind,
         string? parameterMemberName = null,
         string? parameterAccess = null,
         string? converterTypeDisplay = null,
         bool implicitToString = false)
     {
         TargetMemberName = targetMemberName;
-        NodePath = nodePath;
         ViewModelMember = viewModelMember;
-        NodeTypeDisplay = nodeTypeDisplay;
         Kind = kind;
         ParameterMemberName = parameterMemberName;
         ParameterAccess = parameterAccess;
@@ -38,13 +50,9 @@ internal sealed class LinkToBinding
 
     public string TargetMemberName { get; }
 
-    public string NodePath { get; }
-
     public string ViewModelMember { get; }
 
-    public string NodeTypeDisplay { get; }
-
-    public LinkToKind Kind { get; }
+    public BindToKind Kind { get; }
 
     public string? ParameterMemberName { get; }
 
@@ -56,12 +64,12 @@ internal sealed class LinkToBinding
 
     public string TargetAccessor => Kind switch
     {
-        LinkToKind.Text => ".Text()",
-        LinkToKind.Toggle => ".Toggle()",
-        LinkToKind.Value => ".Value()",
-        LinkToKind.Selected => ".Selected()",
-        LinkToKind.Visible => ".Visible()",
-        LinkToKind.Disabled => ".Disabled()",
-        _ => throw new InvalidOperationException($"Unsupported LinkTo kind '{Kind}'."),
+        BindToKind.Text => ".Text()",
+        BindToKind.Toggle => ".Toggle()",
+        BindToKind.Value => ".Value()",
+        BindToKind.Selected => ".Selected()",
+        BindToKind.Visible => ".Visible()",
+        BindToKind.Disabled => ".Disabled()",
+        _ => throw new InvalidOperationException($"Unsupported BindTo kind '{Kind}'."),
     };
 }

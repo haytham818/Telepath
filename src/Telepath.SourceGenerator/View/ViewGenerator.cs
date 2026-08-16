@@ -89,7 +89,7 @@ internal static class ViewGenerator
             return;
         }
 
-        if (!TryCollectLinkTos(context, viewType, viewName, out var linkTos))
+        if (!TryCollectBindings(context, viewType, viewName, out var injections, out var bindings))
         {
             return;
         }
@@ -106,7 +106,7 @@ internal static class ViewGenerator
             return;
         }
 
-        if (!hasOnBind && linkTos.Count == 0)
+        if (!hasOnBind && bindings.Count == 0)
         {
             context.ReportDiagnostic(Diagnostic.Create(
                 ViewMetadata.InvalidOnBind,
@@ -155,7 +155,8 @@ internal static class ViewGenerator
             viewModelDisplay,
             hasOnReady: onReadyMethods.Length == 1,
             hasOnBind: hasOnBind,
-            linkTos);
+            injections,
+            bindings);
 
         context.AddSource(
             $"{SymbolHelpers.SanitizeHintName(viewType.ToDisplayString())}.TelepathView.g.cs",
@@ -198,19 +199,22 @@ internal static class ViewGenerator
             && SymbolHelpers.HasMetadataName(method.Parameters[1].Type, ViewMetadata.BindingSetName);
     }
 
-    private static bool TryCollectLinkTos(
+    private static bool TryCollectBindings(
         SourceProductionContext context,
         INamedTypeSymbol viewType,
         string viewName,
-        out List<LinkToBinding> linkTos)
+        out List<NodeInjection> injections,
+        out List<ViewBinding> bindings)
     {
-        linkTos = [];
+        injections = [];
+        bindings = [];
         var valid = true;
 
         foreach (var member in viewType.GetMembers())
         {
-            var attributes = SymbolHelpers.GetAttributes(member, ViewMetadata.LinkToAttributeName).ToArray();
-            if (attributes.Length == 0)
+            var injectAttributes = SymbolHelpers.GetAttributes(member, ViewMetadata.NodeInjectAttributeName).ToArray();
+            var bindAttributes = SymbolHelpers.GetAttributes(member, ViewMetadata.BindToAttributeName).ToArray();
+            if (injectAttributes.Length == 0 && bindAttributes.Length == 0)
             {
                 continue;
             }
@@ -222,11 +226,13 @@ internal static class ViewGenerator
                 _ => null,
             };
 
+            var location = member.Locations.FirstOrDefault() ?? Location.None;
+
             if (memberType is null || member.IsStatic)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
-                    ViewMetadata.InvalidLinkTo,
-                    member.Locations.FirstOrDefault() ?? Location.None,
+                    injectAttributes.Length > 0 ? ViewMetadata.InvalidNodeInject : ViewMetadata.InvalidBindTo,
+                    location,
                     viewName,
                     member.Name,
                     "must be an instance field or property"));
@@ -237,8 +243,8 @@ internal static class ViewGenerator
             if (member is IPropertySymbol property && property.SetMethod is null)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
-                    ViewMetadata.InvalidLinkTo,
-                    member.Locations.FirstOrDefault() ?? Location.None,
+                    injectAttributes.Length > 0 ? ViewMetadata.InvalidNodeInject : ViewMetadata.InvalidBindTo,
+                    location,
                     viewName,
                     member.Name,
                     "properties must have a setter"));
@@ -250,8 +256,8 @@ internal static class ViewGenerator
             if (underlyingType is not INamedTypeSymbol namedType)
             {
                 context.ReportDiagnostic(Diagnostic.Create(
-                    ViewMetadata.UnsupportedLinkToControl,
-                    member.Locations.FirstOrDefault() ?? Location.None,
+                    ViewMetadata.UnsupportedBindToControl,
+                    location,
                     viewName,
                     member.Name,
                     memberType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
@@ -259,47 +265,74 @@ internal static class ViewGenerator
                 continue;
             }
 
-            string? sharedNodePath = null;
-            var nodePathConflict = false;
-
-            foreach (var attribute in attributes)
+            if (injectAttributes.Length > 1)
             {
-                var nodePath = attribute.ConstructorArguments.Length > 0
-                    ? attribute.ConstructorArguments[0].Value as string
-                    : null;
-                var viewModelMember = attribute.ConstructorArguments.Length > 1
-                    ? attribute.ConstructorArguments[1].Value as string
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ViewMetadata.InvalidNodeInject,
+                    location,
+                    viewName,
+                    member.Name,
+                    "only one [NodeInject] is allowed per member"));
+                valid = false;
+                continue;
+            }
+
+            if (bindAttributes.Length > 0 && injectAttributes.Length == 0)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    ViewMetadata.InvalidBindTo,
+                    location,
+                    viewName,
+                    member.Name,
+                    "requires [NodeInject] on the same member"));
+                valid = false;
+                continue;
+            }
+
+            string? nodePath = null;
+            if (injectAttributes.Length == 1)
+            {
+                nodePath = injectAttributes[0].ConstructorArguments.Length > 0
+                    ? injectAttributes[0].ConstructorArguments[0].Value as string
                     : null;
 
-                if (string.IsNullOrWhiteSpace(nodePath) || string.IsNullOrWhiteSpace(viewModelMember))
+                if (string.IsNullOrWhiteSpace(nodePath))
                 {
                     context.ReportDiagnostic(Diagnostic.Create(
-                        ViewMetadata.InvalidLinkTo,
-                        member.Locations.FirstOrDefault() ?? Location.None,
+                        ViewMetadata.InvalidNodeInject,
+                        location,
                         viewName,
                         member.Name,
-                        "node path and member name must be non-empty"));
+                        "node path must be non-empty"));
                     valid = false;
                     continue;
                 }
 
-                if (sharedNodePath is null)
-                {
-                    sharedNodePath = nodePath;
-                }
-                else if (sharedNodePath != nodePath && !nodePathConflict)
+                injections.Add(new NodeInjection(
+                    member.Name,
+                    nodePath!,
+                    namedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat)));
+            }
+
+            foreach (var attribute in bindAttributes)
+            {
+                var viewModelMember = attribute.ConstructorArguments.Length > 0
+                    ? attribute.ConstructorArguments[0].Value as string
+                    : null;
+
+                if (string.IsNullOrWhiteSpace(viewModelMember))
                 {
                     context.ReportDiagnostic(Diagnostic.Create(
-                        ViewMetadata.InvalidLinkTo,
-                        member.Locations.FirstOrDefault() ?? Location.None,
+                        ViewMetadata.InvalidBindTo,
+                        location,
                         viewName,
                         member.Name,
-                        "multiple [LinkTo] on the same member must use the same node path"));
-                    nodePathConflict = true;
+                        "member name must be non-empty"));
                     valid = false;
+                    continue;
                 }
 
-                if (!TryResolveLinkToKind(
+                if (!TryResolveBindToKind(
                         context,
                         attribute,
                         namedType,
@@ -338,16 +371,14 @@ internal static class ViewGenerator
                     continue;
                 }
 
-                var implicitToString = kind == LinkToKind.Text
+                var implicitToString = kind == BindToKind.Text
                     && converterTypeDisplay is null
                     && (SymbolHelpers.IsOrInheritsFrom(namedType, ViewMetadata.LabelName)
                         || SymbolHelpers.IsOrInheritsFrom(namedType, ViewMetadata.RichTextLabelName));
 
-                linkTos.Add(new LinkToBinding(
+                bindings.Add(new ViewBinding(
                     member.Name,
-                    nodePath!,
                     viewModelMember!,
-                    namedType.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
                     kind,
                     parameterMemberName,
                     parameterAccess,
@@ -359,13 +390,13 @@ internal static class ViewGenerator
         return valid;
     }
 
-    private static bool TryResolveLinkToKind(
+    private static bool TryResolveBindToKind(
         SourceProductionContext context,
         AttributeData attribute,
         INamedTypeSymbol controlType,
         string viewName,
         ISymbol member,
-        out LinkToKind kind)
+        out BindToKind kind)
     {
         kind = default;
         var location = member.Locations.FirstOrDefault() ?? Location.None;
@@ -377,10 +408,10 @@ internal static class ViewGenerator
 
         if (hasExplicitKind)
         {
-            if (!Enum.IsDefined(typeof(LinkToKind), rawKind))
+            if (!Enum.IsDefined(typeof(BindToKind), rawKind))
             {
                 context.ReportDiagnostic(Diagnostic.Create(
-                    ViewMetadata.InvalidLinkTo,
+                    ViewMetadata.InvalidBindTo,
                     location,
                     viewName,
                     member.Name,
@@ -388,8 +419,8 @@ internal static class ViewGenerator
                 return false;
             }
 
-            kind = (LinkToKind)rawKind;
-            if (kind == LinkToKind.Auto)
+            kind = (BindToKind)rawKind;
+            if (kind == BindToKind.Auto)
             {
                 hasExplicitKind = false;
             }
@@ -403,7 +434,7 @@ internal static class ViewGenerator
             }
 
             context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.UnsupportedLinkToControl,
+                ViewMetadata.UnsupportedBindToControl,
                 location,
                 viewName,
                 member.Name,
@@ -417,7 +448,7 @@ internal static class ViewGenerator
         }
 
         context.ReportDiagnostic(Diagnostic.Create(
-            ViewMetadata.InvalidLinkTo,
+            ViewMetadata.InvalidBindTo,
             location,
             viewName,
             member.Name,
@@ -425,36 +456,36 @@ internal static class ViewGenerator
         return false;
     }
 
-    private static bool TryInferKind(INamedTypeSymbol controlType, out LinkToKind kind)
+    private static bool TryInferKind(INamedTypeSymbol controlType, out BindToKind kind)
     {
         if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CheckBoxName)
             || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CheckButtonName))
         {
-            kind = LinkToKind.Toggle;
+            kind = BindToKind.Toggle;
             return true;
         }
 
         if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName))
         {
-            kind = LinkToKind.Selected;
+            kind = BindToKind.Selected;
             return true;
         }
 
         if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.BaseButtonName))
         {
-            kind = LinkToKind.Command;
+            kind = BindToKind.Command;
             return true;
         }
 
         if (IsTextControl(controlType))
         {
-            kind = LinkToKind.Text;
+            kind = BindToKind.Text;
             return true;
         }
 
         if (SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RangeName))
         {
-            kind = LinkToKind.Value;
+            kind = BindToKind.Value;
             return true;
         }
 
@@ -462,21 +493,21 @@ internal static class ViewGenerator
         return false;
     }
 
-    private static bool IsKindCompatible(LinkToKind kind, INamedTypeSymbol controlType)
+    private static bool IsKindCompatible(BindToKind kind, INamedTypeSymbol controlType)
     {
         return kind switch
         {
-            LinkToKind.Text => IsTextControl(controlType),
-            LinkToKind.Command =>
+            BindToKind.Text => IsTextControl(controlType),
+            BindToKind.Command =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.BaseButtonName)
                 || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.LineEditName),
-            LinkToKind.Toggle or LinkToKind.Disabled =>
+            BindToKind.Toggle or BindToKind.Disabled =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.BaseButtonName),
-            LinkToKind.Value => SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RangeName),
-            LinkToKind.Selected =>
+            BindToKind.Value => SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.RangeName),
+            BindToKind.Selected =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.OptionButtonName)
                 || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ItemListName),
-            LinkToKind.Visible =>
+            BindToKind.Visible =>
                 SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.CanvasItemName)
                 || SymbolHelpers.IsOrInheritsFrom(controlType, ViewMetadata.ControlName),
             _ => false,
@@ -498,7 +529,7 @@ internal static class ViewGenerator
         INamedTypeSymbol targetType,
         string viewName,
         ISymbol member,
-        LinkToKind kind,
+        BindToKind kind,
         out string? parameterMemberName,
         out string? parameterAccess)
     {
@@ -511,10 +542,10 @@ internal static class ViewGenerator
         }
 
         var location = member.Locations.FirstOrDefault() ?? Location.None;
-        if (kind != LinkToKind.Command)
+        if (kind != BindToKind.Command)
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.InvalidLinkTo,
+                ViewMetadata.InvalidBindTo,
                 location,
                 viewName,
                 member.Name,
@@ -525,11 +556,11 @@ internal static class ViewGenerator
         if (!SymbolHelpers.IsOrInheritsFrom(targetType, ViewMetadata.BaseButtonName))
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.InvalidLinkTo,
+                ViewMetadata.InvalidBindTo,
                 location,
                 viewName,
                 member.Name,
-                "Parameter requires the [LinkTo] target to be a Godot.BaseButton"));
+                "Parameter requires the [BindTo] target to be a Godot.BaseButton"));
             return false;
         }
 
@@ -537,7 +568,7 @@ internal static class ViewGenerator
         if (matches.Length != 1 || matches[0].IsStatic)
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.InvalidLinkTo,
+                ViewMetadata.InvalidBindTo,
                 location,
                 viewName,
                 member.Name,
@@ -556,7 +587,7 @@ internal static class ViewGenerator
             || !TryGetParameterAccess(namedParameterType, out parameterAccess))
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.InvalidLinkTo,
+                ViewMetadata.InvalidBindTo,
                 location,
                 viewName,
                 member.Name,
@@ -573,7 +604,7 @@ internal static class ViewGenerator
         AttributeData attribute,
         string viewName,
         ISymbol member,
-        LinkToKind kind,
+        BindToKind kind,
         out string? converterTypeDisplay)
     {
         converterTypeDisplay = null;
@@ -586,7 +617,7 @@ internal static class ViewGenerator
             }
 
             context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.InvalidLinkToConverter,
+                ViewMetadata.InvalidBindToConverter,
                 location,
                 viewName,
                 member.Name,
@@ -594,10 +625,10 @@ internal static class ViewGenerator
             return false;
         }
 
-        if (kind == LinkToKind.Command)
+        if (kind == BindToKind.Command)
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.InvalidLinkToConverter,
+                ViewMetadata.InvalidBindToConverter,
                 location,
                 viewName,
                 member.Name,
@@ -613,7 +644,7 @@ internal static class ViewGenerator
             || !SymbolHelpers.HasPublicParameterlessConstructor(namedConverter))
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.InvalidLinkToConverter,
+                ViewMetadata.InvalidBindToConverter,
                 location,
                 viewName,
                 member.Name,

@@ -6,14 +6,17 @@ namespace Telepath.Showcase.SearchApp;
 [TelepathView<SearchViewModel>]
 public partial class SearchView : Control
 {
-    [LinkTo("%Query", nameof(SearchViewModel.Query))]
-    [LinkTo("%Query", nameof(SearchViewModel.SearchCommand), Kind = LinkKind.Command)]
+    [NodeInject("%Query")]
+    [BindTo(nameof(SearchViewModel.Query))]
+    [BindTo(nameof(SearchViewModel.SearchCommand), Kind = LinkKind.Command)]
     private LineEdit _query = null!;
 
-    [LinkTo("%Search", nameof(SearchViewModel.SearchCommand), Parameter = nameof(_query))]
+    [NodeInject("%Search")]
+    [BindTo(nameof(SearchViewModel.SearchCommand), Parameter = nameof(_query))]
     private Button _search = null!;
 
-    [LinkTo("%Result", nameof(SearchViewModel.Result))]
+    [NodeInject("%Result")]
+    [BindTo(nameof(SearchViewModel.Result))]
     private Label _result = null!;
 
     public override partial void _Notification(int what);

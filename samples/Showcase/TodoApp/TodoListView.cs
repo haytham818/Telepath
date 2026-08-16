@@ -10,13 +10,16 @@ public partial class TodoListView : Control
     [Export]
     public PackedScene ItemScene { get; set; } = null!;
 
-    [LinkTo("%Draft", nameof(TodoListViewModel.Draft))]
-    [LinkTo("%Draft", nameof(TodoListViewModel.AddCommand), Kind = LinkKind.Command)]
+    [NodeInject("%Draft")]
+    [BindTo(nameof(TodoListViewModel.Draft))]
+    [BindTo(nameof(TodoListViewModel.AddCommand), Kind = LinkKind.Command)]
     private LineEdit _draft = null!;
 
-    [LinkTo("%Add", nameof(TodoListViewModel.AddCommand), Parameter = nameof(_draft))]
+    [NodeInject("%Add")]
+    [BindTo(nameof(TodoListViewModel.AddCommand), Parameter = nameof(_draft))]
     private Button _add = null!;
 
+    [NodeInject("%Items")]
     private VBoxContainer _items = null!;
 
     public override partial void _Notification(int what);
@@ -25,7 +28,6 @@ public partial class TodoListView : Control
 
     private void OnReady()
     {
-        _items = GetNode<VBoxContainer>("%Items");
         ItemScene ??= GD.Load<PackedScene>("res://TodoApp/TodoItemView.tscn");
     }
 

@@ -11,7 +11,7 @@ public static class ToStringConverter
 
 /// <summary>
 /// Typed wrapper around <see cref="ToStringConverter.Convert{T}"/> for explicit
-/// <c>[LinkTo]</c> Converter declarations.
+/// <c>[BindTo]</c> Converter declarations.
 /// </summary>
 public sealed class ToStringConverter<T> : IValueConverter<T, string>
 {

@@ -6,13 +6,16 @@ namespace Telepath.Showcase.TodoApp;
 [TelepathView<TodoItemViewModel>]
 public partial class TodoItemView : HBoxContainer
 {
-    [LinkTo("%Done", nameof(TodoItemViewModel.Done))]
+    [NodeInject("%Done")]
+    [BindTo(nameof(TodoItemViewModel.Done))]
     private CheckBox _done = null!;
 
-    [LinkTo("%Title", nameof(TodoItemViewModel.Title))]
+    [NodeInject("%Title")]
+    [BindTo(nameof(TodoItemViewModel.Title))]
     private Label _title = null!;
 
-    [LinkTo("%Remove", nameof(TodoItemViewModel.RemoveCommand))]
+    [NodeInject("%Remove")]
+    [BindTo(nameof(TodoItemViewModel.RemoveCommand))]
     private Button _remove = null!;
 
     public override partial void _Notification(int what);

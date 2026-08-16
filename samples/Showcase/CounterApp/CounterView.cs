@@ -6,16 +6,20 @@ namespace Telepath.Showcase.CounterApp;
 [TelepathView<CounterViewModel>]
 public partial class CounterView : Control
 {
-    [LinkTo("%CountLabel", nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
+    [NodeInject("%CountLabel")]
+    [BindTo(nameof(CounterViewModel.Count), Converter = typeof(CountTextConverter))]
     private Label _countLabel = null!;
 
-    [LinkTo("%DecrementButton", nameof(CounterViewModel.DecrementCommand))]
+    [NodeInject("%DecrementButton")]
+    [BindTo(nameof(CounterViewModel.DecrementCommand))]
     private Button _decrementButton = null!;
 
-    [LinkTo("%ResetButton", nameof(CounterViewModel.ResetCommand))]
+    [NodeInject("%ResetButton")]
+    [BindTo(nameof(CounterViewModel.ResetCommand))]
     private Button _resetButton = null!;
 
-    [LinkTo("%IncrementButton", nameof(CounterViewModel.IncrementCommand))]
+    [NodeInject("%IncrementButton")]
+    [BindTo(nameof(CounterViewModel.IncrementCommand))]
     private Button _incrementButton = null!;
 
     public override partial void _Notification(int what);

@@ -1,7 +1,7 @@
 namespace Telepath.Godot;
 
 /// <summary>
-/// Binding kind for <see cref="LinkToAttribute"/>. <see cref="Auto"/> infers from the control type.
+/// Binding kind for <see cref="BindToAttribute"/>. <see cref="Auto"/> infers from the control type.
 /// </summary>
 public enum LinkKind
 {

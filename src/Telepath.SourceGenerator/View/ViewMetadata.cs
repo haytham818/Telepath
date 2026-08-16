@@ -5,7 +5,8 @@ namespace Telepath.SourceGenerator;
 internal static class ViewMetadata
 {
     public const string ViewAttributeName = "Telepath.Godot.TelepathViewAttribute`1";
-    public const string LinkToAttributeName = "Telepath.Godot.LinkToAttribute";
+    public const string NodeInjectAttributeName = "Telepath.Godot.NodeInjectAttribute";
+    public const string BindToAttributeName = "Telepath.Godot.BindToAttribute";
     public const string ControlName = "Godot.Control";
     public const string CanvasItemName = "Godot.CanvasItem";
     public const string LabelName = "Godot.Label";
@@ -51,7 +52,7 @@ internal static class ViewMetadata
     public static readonly DiagnosticDescriptor InvalidOnBind = new(
         id: "TPV004",
         title: "Invalid OnBind callback",
-        messageFormat: "Telepath view '{0}' must declare 'void OnBind({1} vm, Telepath.Core.BindingSet bindings)' or at least one [LinkTo] member",
+        messageFormat: "Telepath view '{0}' must declare 'void OnBind({1} vm, Telepath.Core.BindingSet bindings)' or at least one [BindTo] member",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
@@ -80,26 +81,34 @@ internal static class ViewMetadata
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor UnsupportedLinkToControl = new(
+    public static readonly DiagnosticDescriptor UnsupportedBindToControl = new(
         id: "TPV008",
-        title: "Unsupported LinkTo control type",
-        messageFormat: "[LinkTo] on '{0}.{1}' cannot infer a binding for '{2}'; use a supported control or set Kind",
+        title: "Unsupported BindTo control type",
+        messageFormat: "[BindTo] on '{0}.{1}' cannot infer a binding for '{2}'; use a supported control or set Kind",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor InvalidLinkTo = new(
+    public static readonly DiagnosticDescriptor InvalidNodeInject = new(
         id: "TPV009",
-        title: "Invalid LinkTo declaration",
-        messageFormat: "[LinkTo] on '{0}.{1}' is invalid: {2}",
+        title: "Invalid NodeInject declaration",
+        messageFormat: "[NodeInject] on '{0}.{1}' is invalid: {2}",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
 
-    public static readonly DiagnosticDescriptor InvalidLinkToConverter = new(
+    public static readonly DiagnosticDescriptor InvalidBindTo = new(
         id: "TPV010",
-        title: "Invalid LinkTo converter",
-        messageFormat: "[LinkTo] on '{0}.{1}' has an invalid Converter: {2}",
+        title: "Invalid BindTo declaration",
+        messageFormat: "[BindTo] on '{0}.{1}' is invalid: {2}",
+        category: DiagnosticCategory,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InvalidBindToConverter = new(
+        id: "TPV011",
+        title: "Invalid BindTo converter",
+        messageFormat: "[BindTo] on '{0}.{1}' has an invalid Converter: {2}",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);
