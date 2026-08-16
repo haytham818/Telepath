@@ -116,7 +116,7 @@ autowrap_mode = 3
 
 [node name="AttrHeader" type="Label" parent="Scroll/Root" unique_id=2100100006]
 layout_mode = 2
-text = "[BindTo] (read-only)"
+text = "当前脚本中存在的绑定 (只读)"
 
 [node name="AttributeList" type="ItemList" parent="Scroll/Root" unique_id=2100100007]
 unique_name_in_owner = true
@@ -126,7 +126,7 @@ size_flags_vertical = 3
 
 [node name="SceneHeader" type="Label" parent="Scroll/Root" unique_id=2100100008]
 layout_mode = 2
-text = "当前场景存在的绑定"
+text = "当前场景存在的绑定 "
 
 [node name="SceneList" type="ItemList" parent="Scroll/Root" unique_id=2100100009]
 unique_name_in_owner = true
