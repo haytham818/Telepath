@@ -54,7 +54,7 @@ internal static class ViewMetadata
     public static readonly DiagnosticDescriptor InvalidOnBind = new(
         id: "TPV004",
         title: "Invalid OnBind callback",
-        messageFormat: "Telepath view '{0}' must declare 'void OnBind({1} vm, Telepath.Core.BindingSet bindings)' or at least one [BindTo] member",
+        messageFormat: "OnBind on Telepath view '{0}' must be 'void OnBind({1} vm, Telepath.Core.BindingSet bindings)'",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);

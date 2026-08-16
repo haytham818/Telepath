@@ -32,7 +32,6 @@ internal static class ViewSourceRenderer
         AppendContainingTypesStart(source, viewType.ContainingType);
 
         var needsGeneratedReady = injections.Count > 0;
-        var needsGeneratedBind = bindings.Count > 0;
 
         source.Append("partial class @")
             .Append(viewType.Name)
@@ -53,9 +52,7 @@ internal static class ViewSourceRenderer
             .Append(needsGeneratedReady ? "__TelepathOnReady" : hasOnReady ? "OnReady" : "static () => { }")
             .AppendLine(",");
         source.AppendLine("            CreateViewModel,");
-        source.Append("            ")
-            .Append(needsGeneratedBind ? "__TelepathOnBind" : "OnBind")
-            .AppendLine(");");
+        source.AppendLine("            __TelepathOnBind);");
         source.AppendLine();
         source.Append("    public ")
             .Append(viewModelDisplay)
@@ -77,11 +74,8 @@ internal static class ViewSourceRenderer
             AppendReady(source, injections, hasOnReady);
         }
 
-        if (needsGeneratedBind)
-        {
-            source.AppendLine();
-            AppendBind(source, viewModelDisplay, bindings, hasOnBind);
-        }
+        source.AppendLine();
+        AppendBind(source, viewModelDisplay, bindings, hasOnBind);
 
         source.AppendLine("}");
 
@@ -125,6 +119,7 @@ internal static class ViewSourceRenderer
             .Append(viewModelDisplay)
             .AppendLine(" vm, global::Telepath.Core.BindingSet bindings)");
         source.AppendLine("    {");
+        source.AppendLine("        global::Telepath.Godot.SceneBindingApplier.Apply(this, vm, bindings);");
         foreach (var binding in bindings)
         {
             if (binding.Kind == BindToKind.Command)

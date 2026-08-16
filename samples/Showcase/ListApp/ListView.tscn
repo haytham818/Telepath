@@ -10,6 +10,40 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_list")
+metadata/telepath_bindings = [{
+"kind": "Text",
+"member": "Draft",
+"path": "%Draft"
+}, {
+"kind": "Command",
+"member": "AddCommand",
+"path": "%Draft"
+}, {
+"kind": "Command",
+"member": "AddCommand",
+"parameter": "%Draft",
+"path": "%Add"
+}, {
+"kind": "Items",
+"member": "Items",
+"path": "%Items"
+}, {
+"kind": "Selected",
+"member": "Selected",
+"path": "%Items"
+}, {
+"kind": "Command",
+"member": "RemoveCommand",
+"path": "%Remove"
+}, {
+"kind": "Command",
+"member": "ClearCommand",
+"path": "%Clear"
+}, {
+"kind": "Items",
+"member": "Items",
+"path": "%Choices"
+}]
 
 [node name="Center" type="CenterContainer" parent="." unique_id=1847201902]
 layout_mode = 1

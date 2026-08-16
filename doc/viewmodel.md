@@ -58,7 +58,7 @@ public sealed partial class CounterViewModel : ViewModel
 }
 ```
 
-UI 格式化（例如把 `Count` 显示成 `"Count: 3"`）不要做成派生 bindable，用 View 侧 `[BindTo(..., Converter = typeof(...))]`，见 [view.md](view.md)。
+UI 格式化（例如把 `Count` 显示成 `"Count: 3"`）不要做成派生 bindable，用场景绑定的 `converter` 或 View 侧 `[BindTo(..., Converter = typeof(...))]`，见 [view.md](view.md)。
 
 方法零个参数生成 `ReactiveCommand`，一个参数生成 `ReactiveCommand<T>`。两个及以上参数会报错。View 侧用 `[BindTo(..., Parameter = nameof(_query))]` 在按钮按下时取值，见 [view.md](view.md)。
 

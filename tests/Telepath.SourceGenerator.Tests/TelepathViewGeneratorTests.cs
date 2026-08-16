@@ -103,7 +103,7 @@ public sealed class TelepathViewGeneratorTests
     }
 
     [Fact]
-    public void ReportsMissingOnBindWhenNoBindTo()
+    public void GeneratesThinViewWithoutBindTo()
     {
         const string source = """
             using Telepath.Godot;
@@ -125,9 +125,12 @@ public sealed class TelepathViewGeneratorTests
 
         var result = RunGenerator(source);
 
-        var diagnostic = Assert.Single(result.Diagnostics);
-        Assert.Equal("TPV004", diagnostic.Id);
-        Assert.Empty(result.GeneratedSources);
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("__TelepathOnBind", generated);
+        Assert.Contains("SceneBindingApplier.Apply(this, vm, bindings)", generated);
+        Assert.DoesNotContain("OnBind(vm, bindings)", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
     }
 
     [Fact]
@@ -1185,8 +1188,9 @@ public sealed class TelepathViewGeneratorTests
         var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
         Assert.Contains("__TelepathOnReady", generated);
         Assert.Contains("GetNode<global::Godot.ItemList>(\"%Items\")", generated);
-        Assert.DoesNotContain("__TelepathOnBind", generated);
-        Assert.Contains("OnBind", generated);
+        Assert.Contains("__TelepathOnBind", generated);
+        Assert.Contains("SceneBindingApplier.Apply(this, vm, bindings)", generated);
+        Assert.Contains("OnBind(vm, bindings)", generated);
         AssertNoCompilationErrors(result.OutputCompilation);
     }
 
@@ -1485,6 +1489,16 @@ public sealed class TelepathViewGeneratorTests
                 where TViewModel : class, Telepath.Core.IViewModel
             {
                 TViewModel? ViewModel { get; set; }
+            }
+
+            public static class SceneBindingApplier
+            {
+                public static void Apply(
+                    global::Godot.Control view,
+                    object viewModel,
+                    global::Telepath.Core.BindingSet bindings)
+                {
+                }
             }
         }
         """;

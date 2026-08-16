@@ -106,16 +106,6 @@ internal static class ViewGenerator
             return;
         }
 
-        if (!hasOnBind && bindings.Count == 0)
-        {
-            context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.InvalidOnBind,
-                candidate.Location,
-                viewName,
-                viewModelType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
-            return;
-        }
-
         var onReadyMethods = SymbolHelpers.GetDeclaredInstanceMethods(viewType, "OnReady").ToArray();
         if (onReadyMethods.Length > 1
             || onReadyMethods.Length == 1

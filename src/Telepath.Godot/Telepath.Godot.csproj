@@ -11,4 +11,8 @@
     <PackageReference Include="GodotSharp" Version="4.7.1" />
     <ProjectReference Include="..\Telepath.Core\Telepath.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Remove="Editor/**" />
+    <None Include="Editor/**" />
+  </ItemGroup>
 </Project>

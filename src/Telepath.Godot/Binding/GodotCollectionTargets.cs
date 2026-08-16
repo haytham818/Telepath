@@ -1,3 +1,4 @@
+using System.Reflection;
 using Godot;
 using Telepath.Core;
 
@@ -135,6 +136,33 @@ public static class GodotCollectionTargets
             var view = scene.Instantiate<TView>();
             view.ViewModel = item;
             return view;
+        });
+    }
+
+    public static CollectionTarget<TViewModel> Items<TViewModel>(
+        this Container container,
+        PackedScene scene)
+        where TViewModel : class, IViewModel
+    {
+        ArgumentNullException.ThrowIfNull(scene);
+        return container.Items<TViewModel>(item =>
+        {
+            var view = scene.Instantiate<Control>();
+            if (view is ITelepathView<TViewModel> typed)
+            {
+                typed.ViewModel = item;
+                return view;
+            }
+
+            var property = view.GetType().GetProperty("ViewModel");
+            if (property is not null && property.CanWrite)
+            {
+                property.SetValue(view, item);
+                return view;
+            }
+
+            throw new InvalidOperationException(
+                $"Instantiated item view '{view.GetType().Name}' does not implement ITelepathView<{typeof(TViewModel).Name}>.");
         });
     }
 

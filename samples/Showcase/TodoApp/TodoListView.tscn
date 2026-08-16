@@ -1,7 +1,6 @@
 [gd_scene format=3 uid="uid://c9todolistsc"]
 
 [ext_resource type="Script" uid="uid://c9todolistvw" path="res://TodoApp/TodoListView.cs" id="1_list"]
-[ext_resource type="PackedScene" uid="uid://c9todoitemsc" path="res://TodoApp/TodoItemView.tscn" id="2_item"]
 
 [node name="TodoListView" type="Control"]
 layout_mode = 3
@@ -11,7 +10,26 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_list")
-ItemScene = ExtResource("2_item")
+metadata/telepath_bindings = [{
+"kind": "Text",
+"member": "Draft",
+"path": "%Draft"
+}, {
+"kind": "Command",
+"member": "AddCommand",
+"path": "%Draft"
+}, {
+"kind": "Command",
+"member": "AddCommand",
+"parameter": "%Draft",
+"path": "%Add"
+}, {
+"item_scene": "res://TodoApp/TodoItemView.tscn",
+"item_view": "Telepath.Showcase.TodoApp.TodoItemView",
+"kind": "Items",
+"member": "Items",
+"path": "%Items"
+}]
 
 [node name="Center" type="CenterContainer" parent="."]
 layout_mode = 1

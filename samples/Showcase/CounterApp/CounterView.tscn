@@ -10,6 +10,24 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_counter")
+metadata/telepath_bindings = [{
+"converter": "Telepath.Showcase.CounterApp.CountTextConverter",
+"kind": "Text",
+"member": "Count",
+"path": "%CountLabel"
+}, {
+"kind": "Command",
+"member": "DecrementCommand",
+"path": "%DecrementButton"
+}, {
+"kind": "Command",
+"member": "ResetCommand",
+"path": "%ResetButton"
+}, {
+"kind": "Command",
+"member": "IncrementCommand",
+"path": "%IncrementButton"
+}]
 
 [node name="Center" type="CenterContainer" parent="." unique_id=869398894]
 layout_mode = 1

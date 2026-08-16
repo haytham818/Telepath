@@ -10,6 +10,24 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_search")
+metadata/telepath_bindings = [{
+"kind": "Text",
+"member": "Query",
+"path": "%Query"
+}, {
+"kind": "Command",
+"member": "SearchCommand",
+"path": "%Query"
+}, {
+"kind": "Command",
+"member": "SearchCommand",
+"parameter": "%Query",
+"path": "%Search"
+}, {
+"kind": "Text",
+"member": "Result",
+"path": "%Result"
+}]
 
 [node name="Center" type="CenterContainer" parent="." unique_id=2103841902]
 layout_mode = 1

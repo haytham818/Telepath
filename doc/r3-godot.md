@@ -17,7 +17,7 @@
 
 `TelepathEditorPlugin` 会 `AddAutoloadSingleton`；演示宿主的 `project.godot` 也写了 `[autoload]`，运行时不必先开编辑器。
 
-Godot 只在**宿主主程序集**里解析 C# 脚本。`FrameProviderDispatcher` 与 `TelepathEditorPlugin` 放在 `samples/Showcase/addons/Telepath/`，由 `Telepath.Showcase` 编译。`Telepath.Godot` 用 `InternalsVisibleTo("Telepath.Showcase")` 暴露 Provider 的 internal 成员。
+Godot 只在**宿主主程序集**里解析 C# 脚本。`FrameProviderDispatcher` 在 `samples/Showcase/addons/Telepath/`；`TelepathEditorPlugin` 在 `src/Telepath.Godot/Editor/`（符号链接到 addon 的 `Editor/`），均由 `Telepath.Showcase` 编译。`Telepath.Godot` 用 `InternalsVisibleTo("Telepath.Showcase")` 暴露 Provider 的 internal 成员。编辑器源码不编进 `Telepath.Godot.dll`。
 
 `Delay` / `Throttle` / `Timeout` / `ObserveOn` / `IntervalFrame` 等依赖默认 Provider。ViewModel **构造期**不要用帧算子；Autoload `_Ready` 之后才有默认时钟。
 

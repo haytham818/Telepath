@@ -3,6 +3,7 @@ using Telepath.Godot;
 
 namespace Telepath.Showcase.TodoApp;
 
+// Attribute bindings remain valid as an escape hatch; the list scene uses the editor binder.
 [TelepathView<TodoItemViewModel>]
 public partial class TodoItemView : HBoxContainer
 {
