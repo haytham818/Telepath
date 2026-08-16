@@ -9,6 +9,8 @@ src/Telepath.Core/ViewModel/
   ViewModel.Commands.cs
   BindableAttribute.cs
   CommandAttribute.cs
+src/Telepath.Core/Presentation/
+  Conductor.cs、INavigator.cs、IActivatable.cs
 src/Telepath.SourceGenerator/ViewModel/
 ```
 
@@ -89,4 +91,4 @@ private async Task OnSearch(string query, CancellationToken cancellationToken)
 | `_ExitTree` | **不** `Dispose`（节点可能再进树） | 断绑定 |
 | 真正释放（`NotificationPredelete` / `Free`） | 自己创建的才 `Dispose`；注入的项 VM 由集合拥有者释放 | 在 `_ExitTree` 时已断 |
 
-R3 的 `AddTo(Node)` 在出树时 Dispose，只适合绑定订阅，不要用来挂 ViewModel。View 生命周期见 [view.md](view.md)，时钟与胶水见 [r3-godot.md](r3-godot.md)。
+R3 的 `AddTo(Node)` 在出树时 Dispose，只适合绑定订阅，不要用来挂 ViewModel。这是**资源寿命**，不等于打开 / 关闭 / 暂停：导航由 `Conductor` 调用可选的 `IActivatable`，离栈才 `Dispose` 页 VM，见 [presentation.md](presentation.md)。View 生命周期见 [view.md](view.md)，时钟与胶水见 [r3-godot.md](r3-godot.md)。

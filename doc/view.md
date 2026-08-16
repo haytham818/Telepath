@@ -18,6 +18,8 @@ src/Telepath.Godot/Binding/SceneBindingApplier.cs 运行时按场景条目接线
 src/Telepath.Godot/View/ViewLifecycle.cs         ViewModel / 绑定寿命
 src/Telepath.Godot/View/ITelepathView.cs         可注入 ViewModel 的 View 契约
 src/Telepath.Godot/View/TelepathViewAttribute.cs View 标记
+src/Telepath.Core/Presentation/                  导体、INavigator、可选 IActivatable（见 presentation.md）
+src/Telepath.Godot/Presentation/                 ViewRegistry、ContentPresenter、BindContent 适配
 src/Telepath.Godot/Addon/                        plugin.cfg、FrameProviderDispatcher.gd / .cs（不编进库）
 src/Telepath.Godot/Editor/                       GDScript 插件外壳、Binding Dock 场景与 ViewModel（不编进 Telepath.Godot.dll）
 src/Telepath.Godot/Binding/Attrtbutes/NodeInjectAttribute.cs  节点注入
@@ -26,7 +28,7 @@ src/Telepath.Godot/Binding/Attrtbutes/LinkKind.cs             覆盖推断
 src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 
-示例：[CounterApp](../samples/Showcase/CounterApp/)（场景绑定 + Converter），[SearchApp](../samples/Showcase/SearchApp/)（异步命令 + `ProgressBar` 的 `Value` / `Visible`），[ListApp](../samples/Showcase/ListApp/)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.tscn)（容器 + 子 View）。项模板 [TodoItemView](../samples/Showcase/TodoApp/TodoItemView.cs) 仍用 `[BindTo]` 作为逃逸口。
+示例：[CounterApp](../samples/Showcase/CounterApp/)（场景绑定 + Converter），[SearchApp](../samples/Showcase/SearchApp/)（异步命令 + `ProgressBar` 的 `Value` / `Visible`），[ListApp](../samples/Showcase/ListApp/)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.tscn)（容器 + 子 View）。项模板 [TodoItemView](../samples/Showcase/TodoApp/TodoItemView.cs) 仍用 `[BindTo]` 作为逃逸口。换屏壳：[Shell](../samples/Showcase/Shell/)。
 
 具体 View 必须：
 
@@ -121,12 +123,15 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 
 不要 `viewModel.AddTo(node)`。订阅进 `BindingSet`，或 `bindings.Add(...)`。
 
+这是**资源寿命**，不等于 UI 打开 / 关闭 / 被遮挡。导航由导体驱动，见 [presentation.md](presentation.md)。
+
 ## API
 
 - `ViewModel`：可注入；`_Ready` 时仍为空才 `CreateViewModel()`。注入的 VM 在节点释放时不 `Dispose`
 - 场景 `telepath_bindings`：运行时 `GetNode` 并 `Bind` / `BindCommand` / `BindItems`
 - `[NodeInject(nodePath)]`：生成 `GetNode`；同一字段只能一条
 - `[BindTo(member)]`：生成 `Bind(source, target)` 或 `BindItems`；必须搭配同字段的 `[NodeInject]`。可用 `Kind` 覆盖推断，`Parameter` 给带参命令取值，`Converter` 做类型转换，`ItemView` / `ItemScene` 给容器模板。同一字段可叠多条
+- `BindContent`：把导体的 `ActiveItem` 接到内容槽；在 `OnBind` 里 `bindings.BindContent(vm.ActiveItem, slot.Content(registry))`，见 [presentation.md](presentation.md)
 - 允许只有 `[NodeInject]`、没有 `[BindTo]`（仅注入，在 `OnBind` 手写接线）
 - `OnReady()`：可选；在生成的节点解析之后调用
 - `OnBind(vm, bindings)`：可选；在场景绑定和声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
@@ -134,7 +139,7 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 
 薄 View 可以既没有 `[BindTo]` 也没有 `OnBind`（绑定全在场景上）。写了 `OnBind` 则签名必须是 `void OnBind(TViewModel vm, BindingSet bindings)`。
 
-`BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）、`BindCommand` 和 `BindItems`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
+`BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）、`BindCommand`、`BindItems` 和 `BindContent`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
 
 ## `[BindTo]` 推断
 
@@ -225,4 +230,4 @@ private VBoxContainer _items = null!;
 
 生成 `bindings.BindItems(vm.Items, _items.Items())` 和 `bindings.BindItems(vm.Items, _list.Items<TodoItemView, TodoItemViewModel>(ItemScene))`。原生列表可用 `Converter` 把项转成 `string`；容器模板不能带 `Converter`。
 
-`[Bindable] private ObservableList<T>? _items` 生成惰性 `ObservableList<T> Items`，不要包成 `BindableReactiveProperty`。整表替换仍用 `BindableReactiveProperty<IReadOnlyList<T>>`。项若是 ViewModel，从集合移除和父 `OnDispose` 时由拥有者 `Dispose`。示例：[ListApp](../samples/Showcase/ListApp/)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/)（容器 + 子 View）。ViewModel 契约见 [viewmodel.md](viewmodel.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。
+`[Bindable] private ObservableList<T>? _items` 生成惰性 `ObservableList<T> Items`，不要包成 `BindableReactiveProperty`。整表替换仍用 `BindableReactiveProperty<IReadOnlyList<T>>`。项若是 ViewModel，从集合移除和父 `OnDispose` 时由拥有者 `Dispose`。示例：[ListApp](../samples/Showcase/ListApp/)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/)（容器 + 子 View）。ViewModel 契约见 [viewmodel.md](viewmodel.md)，换屏见 [presentation.md](presentation.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。
