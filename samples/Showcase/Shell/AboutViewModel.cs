@@ -8,7 +8,7 @@ public sealed partial class AboutViewModel : ViewModel
 
     [Bindable]
     private string _message =
-        "This overlay covers the page. Bindings stay; the page Deactivates until you close.";
+        "This overlay covers the page. The view stays; Pause or Continue chooses whether it Deactivates.";
 
     public AboutViewModel(IOverlay overlay)
     {

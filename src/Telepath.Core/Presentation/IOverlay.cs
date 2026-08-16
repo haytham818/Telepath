@@ -5,7 +5,8 @@ namespace Telepath.Core;
 
 /// <summary>
 /// Stack of overlay ViewModels shown on top of the current screen.
-/// Covered views stay bound; only the top overlay is in the foreground.
+/// Covered views stay bound. <see cref="CoverMode.Pause"/> deactivates them;
+/// <see cref="CoverMode.Continue"/> leaves them running.
 /// </summary>
 public interface IOverlay
 {
@@ -22,8 +23,9 @@ public interface IOverlay
     /// <summary>
     /// Pushes <paramref name="viewModel"/> as the new top overlay.
     /// The overlay takes ownership and will dispose the instance when it leaves the stack.
+    /// <paramref name="cover"/> chooses whether the covered page pauses or keeps running.
     /// </summary>
-    void Push(IViewModel viewModel);
+    void Push(IViewModel viewModel, CoverMode cover = CoverMode.Pause);
 
     /// <summary>
     /// Pops the top overlay. Returns <see langword="false"/> when the stack is empty.
@@ -43,7 +45,8 @@ public interface IOverlay
 
     /// <summary>
     /// Closes every overlay. When <paramref name="resumeCovered"/> is
-    /// <see langword="true"/>, the covered screen is activated again.
+    /// <see langword="true"/> and the first layer used <see cref="CoverMode.Pause"/>,
+    /// the covered screen is activated again.
     /// </summary>
     void Clear(bool resumeCovered = true);
 }

@@ -47,5 +47,9 @@ public sealed partial class PauseDemoViewModel : ViewModel, IActivatable
     [Command]
     private void OnCover() => _overlay.Push(new AboutViewModel(_overlay));
 
+    [Command]
+    private void OnCoverContinue() =>
+        _overlay.Push(new AboutViewModel(_overlay), CoverMode.Continue);
+
     protected override void OnDispose() => Deactivate();
 }

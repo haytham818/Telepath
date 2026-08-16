@@ -4,13 +4,15 @@ using R3;
 namespace Telepath.Core;
 
 /// <summary>
-/// Multi-layer overlay stack. Covered views stay in the tree with bindings;
-/// only the top layer is <see cref="IActivatable.Activate"/>d. The optional
+/// Multi-layer overlay stack. Covered views stay in the tree with bindings.
+/// <see cref="CoverMode.Pause"/> deactivates the covered item;
+/// <see cref="CoverMode.Continue"/> leaves it running. The optional
 /// <c>covered</c> callback is the screen underneath the first overlay.
 /// </summary>
 public class Overlay : ViewModel, IOverlay
 {
     private readonly Func<IViewModel?>? _covered;
+    private readonly List<CoverMode> _covers = [];
 
     public Overlay(Func<IViewModel?>? covered = null)
     {
@@ -26,7 +28,7 @@ public class Overlay : ViewModel, IOverlay
     public BindableReactiveProperty<bool> HasOverlay { get; }
 
     /// <inheritdoc />
-    public void Push(IViewModel viewModel)
+    public void Push(IViewModel viewModel, CoverMode cover = CoverMode.Pause)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
         ArgumentNullException.ThrowIfNull(viewModel);
@@ -54,15 +56,19 @@ public class Overlay : ViewModel, IOverlay
                 "Cannot push the covered screen as an overlay.", nameof(viewModel));
         }
 
-        if (Layers.Count > 0)
+        if (cover == CoverMode.Pause)
         {
-            Deactivate(Layers[^1]);
-        }
-        else if (covered is not null)
-        {
-            Deactivate(covered);
+            if (Layers.Count > 0)
+            {
+                Deactivate(Layers[^1]);
+            }
+            else if (covered is not null)
+            {
+                Deactivate(covered);
+            }
         }
 
+        _covers.Add(cover);
         Layers.Add(viewModel);
         UpdateHasOverlay();
         Activate(viewModel);
@@ -78,10 +84,17 @@ public class Overlay : ViewModel, IOverlay
         }
 
         var leaving = Layers[^1];
+        var cover = _covers[^1];
         Deactivate(leaving);
         Layers.RemoveAt(Layers.Count - 1);
+        _covers.RemoveAt(_covers.Count - 1);
         UpdateHasOverlay();
         leaving.Dispose();
+
+        if (cover != CoverMode.Pause)
+        {
+            return true;
+        }
 
         if (Layers.Count > 0)
         {
@@ -116,6 +129,7 @@ public class Overlay : ViewModel, IOverlay
         }
 
         Layers.RemoveAt(index);
+        _covers.RemoveAt(index);
         UpdateHasOverlay();
         viewModel.Dispose();
     }
@@ -150,6 +164,7 @@ public class Overlay : ViewModel, IOverlay
             return;
         }
 
+        var pausedCovered = _covers[0] == CoverMode.Pause;
         Deactivate(Layers[^1]);
         var closing = new IViewModel[Layers.Count];
         for (var i = 0; i < Layers.Count; i++)
@@ -158,13 +173,14 @@ public class Overlay : ViewModel, IOverlay
         }
 
         Layers.Clear();
+        _covers.Clear();
         UpdateHasOverlay();
         for (var i = closing.Length - 1; i >= 0; i--)
         {
             closing[i].Dispose();
         }
 
-        if (resumeCovered)
+        if (resumeCovered && pausedCovered)
         {
             ResumeCovered();
         }

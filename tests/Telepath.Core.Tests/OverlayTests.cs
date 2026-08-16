@@ -210,6 +210,86 @@ public sealed class OverlayTests
         Assert.Equal(2, overlay.Layers.Count);
     }
 
+    [Fact]
+    public void ContinuePushLeavesCoveredRunning()
+    {
+        var log = new List<string>();
+        var screen = new Page("screen", log);
+        screen.Activate();
+        using var overlay = new Overlay(() => screen);
+        var panel = new Page("about", log);
+
+        overlay.Push(panel, CoverMode.Continue);
+
+        Assert.True(overlay.HasOverlay.Value);
+        Assert.False(screen.IsDisposed);
+        Assert.Equal(new[] { "screen:activate", "about:activate" }, log);
+    }
+
+    [Fact]
+    public void ContinueBackDoesNotReactivateCovered()
+    {
+        var log = new List<string>();
+        var screen = new Page("screen", log);
+        screen.Activate();
+        using var overlay = new Overlay(() => screen);
+        overlay.Push(new Page("about", log), CoverMode.Continue);
+        log.Clear();
+
+        Assert.True(overlay.Back());
+
+        Assert.Empty(overlay.Layers);
+        Assert.Equal(new[] { "about:deactivate", "about:dispose" }, log);
+    }
+
+    [Fact]
+    public void ContinueThenPauseOnlyPausesTheOverlayBeneath()
+    {
+        var log = new List<string>();
+        var screen = new Page("screen", log);
+        screen.Activate();
+        using var overlay = new Overlay(() => screen);
+        var first = new Page("a", log);
+        var second = new Page("b", log);
+
+        overlay.Push(first, CoverMode.Continue);
+        overlay.Push(second, CoverMode.Pause);
+
+        Assert.Equal(
+            new[]
+            {
+                "screen:activate",
+                "a:activate",
+                "a:deactivate",
+                "b:activate"
+            },
+            log);
+
+        log.Clear();
+        Assert.True(overlay.Back());
+        Assert.Equal(new[] { "b:deactivate", "b:dispose", "a:activate" }, log);
+
+        log.Clear();
+        Assert.True(overlay.Back());
+        Assert.Equal(new[] { "a:deactivate", "a:dispose" }, log);
+    }
+
+    [Fact]
+    public void ClearContinueStackDoesNotResumeCovered()
+    {
+        var log = new List<string>();
+        var screen = new Page("screen", log);
+        screen.Activate();
+        using var overlay = new Overlay(() => screen);
+        overlay.Push(new Page("about", log), CoverMode.Continue);
+        log.Clear();
+
+        overlay.Clear();
+
+        Assert.Empty(overlay.Layers);
+        Assert.Equal(new[] { "about:deactivate", "about:dispose" }, log);
+    }
+
     private sealed class Page : ViewModel, IActivatable
     {
         private readonly List<string> _log;

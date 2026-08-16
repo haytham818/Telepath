@@ -3,13 +3,14 @@
 导航状态在 ViewModel 上，不是 Autoload 服务定位器。两种宿主策略：
 
 - **单槽换屏**（`Conductor`）：当前页独占槽；换页 `QueueFree` 旧视图，VM 可留在返回栈。
-- **Overlay 栈**（`Overlay`）：多层视图同时留在树上并保持绑定；只有顶层 `Activate`，被盖住的页 `Deactivate` 但不销毁。
+- **Overlay 栈**（`Overlay`）：多层视图同时留在树上并保持绑定。`CoverMode.Pause` 会 `Deactivate` 被盖住的页；`CoverMode.Continue` 让它继续跑。
 
 ```
 src/Telepath.Core/Presentation/
   INavigator.cs       子页请求 Navigate / Back / CloseSelf
   IConductor.cs       当前页、Close、栈
   IOverlay.cs         叠层 Push / Back / CloseSelf / Clear
+  CoverMode.cs        Pause（停下层）/ Continue（下层继续跑）
   IActivatable.cs     可选进前台 / 离前台钩子
   Conductor.cs        单槽：压栈、弹出、离栈即 Dispose
   Overlay.cs          多层：留视图、遮挡暂停
@@ -87,9 +88,9 @@ public sealed class ShellViewModel : Conductor
 
 `Overlay` 不实现 `INavigator`，避免面板 `Back` 误伤屏幕栈。面板拿 `IOverlay`。
 
-- `Push(vm)`：`Deactivate` 当前顶层；若这是第一层，再 `Deactivate` 被盖住的屏（构造期 `Func<IViewModel?>? covered`）。加入 `Layers` 并 `Activate`。
-- `Back()`：弹出顶层并 `Dispose`；若还有层则 `Activate` 新顶，否则 `Activate` covered。
-- `Clear(resumeCovered)`：关掉全部。`resumeCovered: false` 给换屏用，避免多一次 Activate 旧屏。
+- `Push(vm, cover)`：`cover` 默认 `Pause`，`Deactivate` 当前顶层或被盖住的屏；`Continue` 则下层继续跑。加入 `Layers` 并 `Activate` 新层。
+- `Back()`：弹出顶层并 `Dispose`。仅当该层是 `Pause` 时，才 `Activate` 新顶或 covered。
+- `Clear(resumeCovered)`：关掉全部。`resumeCovered: false` 给换屏用；若第一层是 `Continue`，也不会 Activate 旧屏。
 - `HasOverlay`：给壳 Back 和空槽鼠标穿透。
 
 Godot 槽必须是普通 `Control`（不要 `Container`），否则无法叠满。空槽 `MouseFilter = Ignore`，有层时 `Stop`。
@@ -124,7 +125,7 @@ private void OnBind(ShellViewModel vm, BindingSet bindings)
 }
 ```
 
-壳场景把 `BackCommand` 绑到返回按钮；内容槽和 Overlay 槽只在 `OnBind` 里接线。Showcase 的 Overlay pause 页用节拍验证：盖上 About 后计数停、视图仍在；关掉后继续。
+壳场景把 `BackCommand` 绑到返回按钮；内容槽和 Overlay 槽只在 `OnBind` 里接线。Showcase 的 Overlay pause 页用节拍验证两种 Cover：`Pause` 后计数停，`Continue` 后计数不停；视图都还在。
 
 ## 以后
 
