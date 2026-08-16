@@ -160,6 +160,21 @@ layout_mode = 2
 text = "选中一个 Telepath View（或其子节点）。"
 autowrap_mode = 3
 
+[node name="AttributeSection" type="VBoxContainer" parent="Scroll/Root" unique_id=2100100034]
+unique_name_in_owner = true
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="AttrHeader" type="Label" parent="Scroll/Root/AttributeSection" unique_id=2100100006]
+layout_mode = 2
+text = "脚本绑定（只读）"
+
+[node name="AttributeList" type="ItemList" parent="Scroll/Root/AttributeSection" unique_id=2100100007]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 72)
+layout_mode = 2
+
 [node name="SceneSection" type="VBoxContainer" parent="Scroll/Root" unique_id=2100100030]
 unique_name_in_owner = true
 visible = false
@@ -196,21 +211,6 @@ visible = false
 custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_vertical = 3
-
-[node name="AttributeSection" type="VBoxContainer" parent="Scroll/Root" unique_id=2100100034]
-unique_name_in_owner = true
-visible = false
-layout_mode = 2
-theme_override_constants/separation = 4
-
-[node name="AttrHeader" type="Label" parent="Scroll/Root/AttributeSection" unique_id=2100100006]
-layout_mode = 2
-text = "脚本绑定（只读）"
-
-[node name="AttributeList" type="ItemList" parent="Scroll/Root/AttributeSection" unique_id=2100100007]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 56)
-layout_mode = 2
 
 [node name="Editor" type="VBoxContainer" parent="Scroll/Root" unique_id=2100100035]
 unique_name_in_owner = true

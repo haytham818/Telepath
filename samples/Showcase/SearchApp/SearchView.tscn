@@ -1,6 +1,6 @@
-[gd_scene format=3 uid="uid://b1k7q2searchsc"]
+[gd_scene format=3 uid="uid://cl3o7xlibbdfu"]
 
-[ext_resource type="Script" uid="uid://b1k7q2searchvw" path="res://SearchApp/SearchView.cs" id="1_search"]
+[ext_resource type="Script" uid="uid://cl3o7xlibbdjg" path="res://SearchApp/SearchView.cs" id="1_search"]
 
 [node name="SearchView" type="Control" unique_id=2103841901]
 layout_mode = 3
@@ -54,8 +54,8 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 custom_minimum_size = Vector2(280, 0)
 layout_mode = 2
-placeholder_text = "Type a query"
 size_flags_horizontal = 3
+placeholder_text = "Type a query"
 
 [node name="Search" type="Button" parent="Center/VBox/Row" unique_id=2103841907]
 unique_name_in_owner = true
