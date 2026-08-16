@@ -212,9 +212,4 @@ private void OnBind(ShellViewModel vm, BindingSet bindings)
 
 壳场景把 `BackCommand` 绑到返回按钮；内容槽和 Overlay 根只在 `OnBind` 里接线。Showcase 的 Overlay pause 页用节拍验证 Cover：`Pause` 后计数停，`Continue` 后计数不停；Modal 永远画在 Popup 之上；Toast 不暂停计数，壳 Back 也不关它。
 
-## 以后
-
-- 文件选择：原生 Godot `FileDialog` 或自定义 `DialogViewModel<T>` 走 `Run`
-- 装配：Autoload 组合根给壳工厂；`CreateViewModel()` 留作逃逸口
-
-不做：Prism Region、字符串路由表、Messenger、全局 DialogService、按名 `ShowDialog("Confirm")`、自研 DI、把 `IActivatable` 塞进每个 ViewModel、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 走 `BindView`）。
+不做：Prism Region、字符串路由表、Messenger、全局 DialogService、按名 `ShowDialog("Confirm")`、自研 DI、Autoload 组合根 / 壳工厂（对象图由宿主 `CreateViewModel` 和构造注入拼）、离开守卫 / `IGuardClose`（何时允许离开是壳的策略，问一句走 `IInteraction`）、文件选择（原生 `FileDialog` 或自定义 `DialogViewModel<T>` 走 `Run`，不进 Core）、把 `IActivatable` 塞进每个 ViewModel、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 走 `BindView`）。
