@@ -4,7 +4,7 @@ namespace Telepath.Showcase.TodoApp;
 
 public sealed partial class TodoItemViewModel : ViewModel
 {
-    private readonly Action<TodoItemViewModel> _remove;
+    private readonly Func<TodoItemViewModel, Task> _remove;
 
     [Bindable]
     private string _title;
@@ -12,7 +12,7 @@ public sealed partial class TodoItemViewModel : ViewModel
     [Bindable]
     private bool _done;
 
-    public TodoItemViewModel(string title, Action<TodoItemViewModel> remove)
+    public TodoItemViewModel(string title, Func<TodoItemViewModel, Task> remove)
     {
         _title = title;
         _done = false;
@@ -20,5 +20,5 @@ public sealed partial class TodoItemViewModel : ViewModel
     }
 
     [Command]
-    private void OnRemove() => _remove(this);
+    private Task OnRemove() => _remove(this);
 }

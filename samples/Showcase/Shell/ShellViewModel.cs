@@ -14,10 +14,13 @@ public sealed class ShellViewModel : Conductor
 
     public OverlayHost Overlay { get; }
 
+    public IInteraction Interaction { get; }
+
     public ShellViewModel()
     {
         Overlay = Track(new OverlayHost(() => ActiveItem.Value));
         Overlay.Register(Banner);
+        Interaction = new Interaction(Overlay);
         Track(Overlay.HasBackableOverlay.Subscribe(_ => UpdateCanGoBack()));
     }
 

@@ -6,14 +6,18 @@ namespace Telepath.Showcase.TodoApp;
 
 public sealed partial class TodoListViewModel : ViewModel
 {
+    private readonly IInteraction _interaction;
+
     [Bindable]
     private string _draft = "";
 
     [Bindable]
     private ObservableList<TodoItemViewModel>? _items;
 
-    public TodoListViewModel()
+    public TodoListViewModel(IInteraction interaction)
     {
+        ArgumentNullException.ThrowIfNull(interaction);
+        _interaction = interaction;
         AddItem("Write list bindings");
         AddItem("Make coffee");
     }
@@ -29,8 +33,18 @@ public sealed partial class TodoListViewModel : ViewModel
 
     private void AddItem(string title) => Items.Add(new TodoItemViewModel(title, RemoveItem));
 
-    private void RemoveItem(TodoItemViewModel item)
+    private async Task RemoveItem(TodoItemViewModel item)
     {
+        if (!await _interaction.Confirm("Delete", $"Delete '{item.Title.Value}'?"))
+        {
+            return;
+        }
+
+        if (IsDisposed)
+        {
+            return;
+        }
+
         if (Items.Remove(item))
         {
             item.Dispose();

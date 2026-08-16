@@ -8,5 +8,6 @@ public partial class TodoListView : Control
 {
     public override partial void _Notification(int what);
 
-    private TodoListViewModel CreateViewModel() => new();
+    private TodoListViewModel CreateViewModel() =>
+        throw new InvalidOperationException("TodoListView expects an injected ViewModel.");
 }

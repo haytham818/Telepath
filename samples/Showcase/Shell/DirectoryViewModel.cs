@@ -10,13 +10,16 @@ public sealed partial class DirectoryViewModel : ViewModel
 {
     private readonly INavigator _navigator;
     private readonly IOverlayHost _overlay;
+    private readonly IInteraction _interaction;
 
-    public DirectoryViewModel(INavigator navigator, IOverlayHost overlay)
+    public DirectoryViewModel(INavigator navigator, IOverlayHost overlay, IInteraction interaction)
     {
         ArgumentNullException.ThrowIfNull(navigator);
         ArgumentNullException.ThrowIfNull(overlay);
+        ArgumentNullException.ThrowIfNull(interaction);
         _navigator = navigator;
         _overlay = overlay;
+        _interaction = interaction;
     }
 
     [Command]
@@ -29,7 +32,7 @@ public sealed partial class DirectoryViewModel : ViewModel
     private void OnOpenList() => _navigator.Navigate(new ListViewModel());
 
     [Command]
-    private void OnOpenTodo() => _navigator.Navigate(new TodoListViewModel());
+    private void OnOpenTodo() => _navigator.Navigate(new TodoListViewModel(_interaction));
 
     [Command]
     private void OnOpenPauseDemo() => _navigator.Navigate(new PauseDemoViewModel(_overlay));

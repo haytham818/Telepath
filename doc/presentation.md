@@ -1,10 +1,11 @@
 # Presentation
 
-导航状态在 ViewModel 上，不是 Autoload 服务定位器。两种宿主策略：
+导航状态在 ViewModel 上，不是 Autoload 服务定位器。
 
 - **单槽换屏**（`Conductor`）：当前页独占槽；换页 `QueueFree` 旧视图，VM 可留在返回栈。
 - **Overlay 栈**（`Overlay`）：一带之内多层视图同时留在树上并保持绑定。`CoverMode.Pause` 会 `Deactivate` 被盖住的页；`CoverMode.Continue` 让它继续跑。
 - **命名带**（`OverlayHost`）：多个独立 `Overlay` 栈，带间 z 序固定。Toast 永远在 Modal 之上，不和 Dialog 抢同一个 Back。
+- **Interaction**：页 VM `await Confirm` / `Run`，结果回来再继续。兑现走 `OverlayLayer.Modal`，不是消息总线。
 
 ```
 src/Telepath.Core/Presentation/
@@ -18,6 +19,10 @@ src/Telepath.Core/Presentation/
   Conductor.cs        单槽：压栈、弹出、离栈即 Dispose
   Overlay.cs          一带之内：留视图、遮挡暂停
   OverlayHost.cs      多带：独立栈 + 带间 Reconcile 激活
+  IInteraction.cs     Confirm / Run，请求/应答
+  DialogViewModel.cs  对话框 VM：Complete / Dismissed
+  ConfirmViewModel.cs 内置是否确认
+  Interaction.cs      包装 OverlayHost，默认推进 Modal
 src/Telepath.Core/Binding/
   ContentTarget.cs / ContentBindingExtensions.cs   BindContent
   OverlayTarget.cs / OverlayBindingExtensions.cs   BindOverlay
@@ -30,7 +35,7 @@ src/Telepath.Godot/Presentation/
   GodotOverlayTargets.cs      Control.Overlays(registry) / BindOverlayHost
 ```
 
-示例：[Shell](../samples/Showcase/Shell/)（目录进四个 App + Overlay pause / Modal / Toast / 自定义 Banner；壳上 Back 先关可返回的 Overlay，跳过 Toast）。
+示例：[Shell](../samples/Showcase/Shell/)（目录进四个 App + Overlay pause / Modal / Toast / 自定义 Banner；Todo 删除前确认；壳上 Back 先关可返回的 Overlay，跳过 Toast）。
 
 ## 两条寿命
 
@@ -59,7 +64,7 @@ src/Telepath.Godot/Presentation/
 - 同一实例已是当前页：`Navigate` 忽略。已在栈上：抛错（不做缓存 / bring-to-front）。
 - 导体 `Dispose` 时释放当前页和栈上剩余页。
 
-子页不要认识壳类型。需要跳转时，构造期注入 `INavigator`（与 Todo 项注入 `Action` 相同）。
+子页不要认识壳类型。需要跳转时，构造期注入 `INavigator`；需要提问时注入 `IInteraction`（与 Todo 项注入回调相同）。
 
 ```csharp
 public sealed class ShellViewModel : Conductor
@@ -69,11 +74,13 @@ public sealed class ShellViewModel : Conductor
         defaultCover: CoverMode.Continue, blocksPassThrough: false);
 
     public OverlayHost Overlay { get; }
+    public IInteraction Interaction { get; }
 
     public ShellViewModel()
     {
         Overlay = Track(new OverlayHost(() => ActiveItem.Value));
         Overlay.Register(Banner);
+        Interaction = new Interaction(Overlay);
         Track(Overlay.HasBackableOverlay.Subscribe(_ => UpdateCanGoBack()));
     }
 
@@ -136,6 +143,23 @@ host.Push(new BannerViewModel(host), bannerLayer);
 
 带内 Pause/Continue 仍由该带的 `Overlay` 记录。带间激活由 Host `Reconcile`：被更高带且该层 `Pause` 盖住的项不 `Activate`；`Continue` 带（Toast）不暂停下面。向较低带 Push 时，若上方已有 Pause 的 Modal，新项不会进前台。
 
+## Interaction
+
+`IInteraction` 是请求/应答，不是 Messenger。页 VM 构造期注入，和 `INavigator` 一样；不要全局 DialogService，也不要按字符串名弹窗。
+
+- `Confirm(title, message)`：`Task<bool>`。Yes 为 `true`；No、壳 Back、换屏 `Clear`、取消 token 都是 `false`，不抛 `OperationCanceledException`。
+- `Run(dialog, layer?)`：自定义 `DialogViewModel<T>`。默认推进 `OverlayLayer.Modal`。按钮只 `Complete(result)`，**不**拿 `IOverlay`。未回答就被关掉时用派生类的 `Dismissed`（确认框是 `false`）。
+- `Interaction` 包装 `IOverlayHost`：Push → await `Completion` → 对话框还活着则 `Close`。
+
+`ConfirmViewModel` 在 Core，场景由宿主 `ViewRegistry.Register<ConfirmViewModel>(...)`。Showcase 的确认框在 [ConfirmView.tscn](../samples/Showcase/Shell/ConfirmView.tscn)；Todo 删除走 `await Confirm`。
+
+```csharp
+if (!await interaction.Confirm("Delete", $"Delete '{item.Title.Value}'?"))
+{
+    return;
+}
+```
+
 ## Godot 宿主
 
 `Telepath.Godot` **不**提供挂到场景上的 `ScreenHost : Control`。宿主是组合对象：
@@ -157,12 +181,13 @@ private void OnBind(ShellViewModel vm, BindingSet bindings)
     var registry = new ViewRegistry()
         .Register<DirectoryViewModel>("res://Shell/DirectoryView.tscn")
         .Register<AboutViewModel>("res://Shell/AboutView.tscn")
-        .Register<ToastViewModel>("res://Shell/ToastView.tscn");
+        .Register<ToastViewModel>("res://Shell/ToastView.tscn")
+        .Register<ConfirmViewModel>("res://Shell/ConfirmView.tscn");
     bindings.BindContent(vm.ActiveItem, _content.Content(registry));
     bindings.BindOverlayHost(vm.Overlay, _overlay, registry);
     if (vm.ActiveItem.Value is null)
     {
-        vm.Navigate(new DirectoryViewModel(vm, vm.Overlay));
+        vm.Navigate(new DirectoryViewModel(vm, vm.Overlay, vm.Interaction));
     }
 }
 ```
@@ -173,8 +198,8 @@ private void OnBind(ShellViewModel vm, BindingSet bindings)
 
 ## 以后
 
-- Interaction：确认框 / 文件选择，对话框场景同样注入（走 `OverlayLayer.Modal`）
+- 文件选择：原生 Godot `FileDialog` 或自定义 `DialogViewModel<T>` 走 `Run`
 - `BindView`：父场景里已有子 TelepathView 节点，注入父 VM 上的某个子 VM 属性
 - 装配：Autoload 组合根给壳工厂；`CreateViewModel()` 留作逃逸口
 
-不做：Prism Region、字符串路由表、Messenger、自研 DI、把 `IActivatable` 塞进每个 ViewModel、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 仍走 `BindView`）。
+不做：Prism Region、字符串路由表、Messenger、全局 DialogService、按名 `ShowDialog("Confirm")`、自研 DI、把 `IActivatable` 塞进每个 ViewModel、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 仍走 `BindView`）。
