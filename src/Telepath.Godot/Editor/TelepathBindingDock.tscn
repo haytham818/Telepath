@@ -3,9 +3,12 @@
 [ext_resource type="Script" uid="uid://cq6w3qvgtw1lm" path="res://addons/Telepath/Editor/TelepathBindingDock.cs" id="1_dock"]
 
 [node name="TelepathBindingDock" type="EditorDock" unique_id=2100100001]
-title = "Telepath"
-default_slot = 4
 custom_minimum_size = Vector2(280, 240)
+offset_right = 400.0
+offset_bottom = 1200.0
+title = "UI绑定"
+icon_name = &"VisualShaderNodeVectorLen"
+default_slot = 4
 script = ExtResource("1_dock")
 metadata/telepath_bindings = [{
 "kind": "Text",
@@ -102,11 +105,13 @@ theme_override_constants/separation = 6
 
 [node name="Title" type="Label" parent="Scroll/Root" unique_id=2100100004]
 layout_mode = 2
-text = "Telepath Bindings"
+text = "绑定控件对应的操作或属性到 ViewModel"
+horizontal_alignment = 1
 
 [node name="Status" type="Label" parent="Scroll/Root" unique_id=2100100005]
 unique_name_in_owner = true
 layout_mode = 2
+text = "Select a Telepath view (or a child of one)."
 autowrap_mode = 3
 
 [node name="AttrHeader" type="Label" parent="Scroll/Root" unique_id=2100100006]
@@ -115,23 +120,23 @@ text = "[BindTo] (read-only)"
 
 [node name="AttributeList" type="ItemList" parent="Scroll/Root" unique_id=2100100007]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 144)
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="SceneHeader" type="Label" parent="Scroll/Root" unique_id=2100100008]
 layout_mode = 2
-text = "Scene bindings"
+text = "当前场景存在的绑定"
 
 [node name="SceneList" type="ItemList" parent="Scroll/Root" unique_id=2100100009]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 72)
+custom_minimum_size = Vector2(0, 144)
 layout_mode = 2
 size_flags_vertical = 3
 
 [node name="ControlLabel" type="Label" parent="Scroll/Root" unique_id=2100100010]
 layout_mode = 2
-text = "Control"
+text = "UI 控件 (Control)"
 
 [node name="ControlOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100011]
 unique_name_in_owner = true
@@ -140,7 +145,7 @@ size_flags_horizontal = 3
 
 [node name="MemberLabel" type="Label" parent="Scroll/Root" unique_id=2100100012]
 layout_mode = 2
-text = "ViewModel member"
+text = "ViewModel 成员"
 
 [node name="MemberOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100013]
 unique_name_in_owner = true
@@ -149,25 +154,47 @@ size_flags_horizontal = 3
 
 [node name="KindLabel" type="Label" parent="Scroll/Root" unique_id=2100100014]
 layout_mode = 2
-text = "Kind"
+text = "绑定类型"
 
 [node name="KindOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100015]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+action_mode = 1
+selected = 0
+item_count = 9
+popup/item_0/text = "Auto"
+popup/item_0/id = 0
+popup/item_1/text = "Text"
+popup/item_1/id = 1
+popup/item_2/text = "Command"
+popup/item_2/id = 2
+popup/item_3/text = "Toggle"
+popup/item_3/id = 3
+popup/item_4/text = "Value"
+popup/item_4/id = 4
+popup/item_5/text = "Selected"
+popup/item_5/id = 5
+popup/item_6/text = "Visible"
+popup/item_6/id = 6
+popup/item_7/text = "Disabled"
+popup/item_7/id = 7
+popup/item_8/text = "Items"
+popup/item_8/id = 8
 
 [node name="ConverterLabel" type="Label" parent="Scroll/Root" unique_id=2100100016]
 layout_mode = 2
-text = "Converter"
+text = "类型转换器"
 
 [node name="ConverterOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100017]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+action_mode = 1
 
 [node name="ParameterLabel" type="Label" parent="Scroll/Root" unique_id=2100100018]
 layout_mode = 2
-text = "Command parameter"
+text = "命令参数"
 
 [node name="ParameterOption" type="OptionButton" parent="Scroll/Root" unique_id=2100100019]
 unique_name_in_owner = true
@@ -191,6 +218,7 @@ text = "Item view"
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+action_mode = 1
 
 [node name="Buttons" type="HBoxContainer" parent="Scroll/Root" unique_id=2100100024]
 layout_mode = 2
@@ -200,16 +228,19 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+disabled = true
 text = "Add"
 
 [node name="Update" type="Button" parent="Scroll/Root/Buttons" unique_id=2100100026]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+disabled = true
 text = "Update"
 
 [node name="Remove" type="Button" parent="Scroll/Root/Buttons" unique_id=2100100027]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
+disabled = true
 text = "Remove"
