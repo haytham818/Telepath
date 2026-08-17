@@ -38,20 +38,6 @@ public sealed class Interaction : IInteraction
         }
     }
 
-    /// <inheritdoc />
-    public Task<bool> Confirm(
-        string title,
-        string message,
-        CancellationToken cancellationToken = default)
-    {
-        ArgumentNullException.ThrowIfNull(title);
-        ArgumentNullException.ThrowIfNull(message);
-        return Run(
-            new ConfirmViewModel(title, message),
-            OverlayLayer.Modal,
-            cancellationToken);
-    }
-
     private static void TryClose(IOverlayHost overlay, IViewModel dialog)
     {
         if (dialog.IsDisposed)

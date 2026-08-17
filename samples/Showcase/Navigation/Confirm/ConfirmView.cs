@@ -1,5 +1,4 @@
 using Godot;
-using Telepath.Core;
 using Telepath.Godot;
 
 namespace Telepath.Showcase;

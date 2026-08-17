@@ -18,13 +18,4 @@ public interface IInteraction
         DialogViewModel<T> dialog,
         OverlayLayer? layer = null,
         CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// Shows a yes/no confirm dialog. <see langword="false"/> when the user
-    /// chooses No, presses Back, or the request is cancelled.
-    /// </summary>
-    Task<bool> Confirm(
-        string title,
-        string message,
-        CancellationToken cancellationToken = default);
 }

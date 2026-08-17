@@ -5,7 +5,7 @@
 - **单槽换屏**（`Conductor`）：当前页独占槽；换页默认 `QueueFree` 旧视图，实现了 `IViewTransition` 的页先退场再释放；VM 可留在返回栈。
 - **Overlay 栈**（`Overlay`）：一带之内多层视图同时留在树上并保持绑定。`CoverMode.Pause` 会 `Deactivate` 被盖住的页；`CoverMode.Continue` 让它继续跑。
 - **命名带**（`OverlayHost`）：多个独立 `Overlay` 栈，带间 z 序固定。Toast 永远在 Modal 之上，不和 Dialog 抢同一个 Back。
-- **Interaction**：页 VM `await Confirm` / `Run`，结果回来再继续。兑现走 `OverlayLayer.Modal`，不是消息总线。
+- **Interaction**：页 VM `await Run(dialog)`，结果回来再继续。兑现走 `OverlayLayer.Modal`，不是消息总线。
 - **BindView**：父场景里已有的子 TelepathView 当绑定目标，注入父 VM 上的子 VM；不实例化、不 `QueueFree`。
 
 ```
@@ -25,9 +25,8 @@ src/Telepath.Core/Presentation/
     OverlayHost.cs                多带：独立栈 + 带间 Reconcile 激活
     OverlayTarget.cs / OverlayBindingExtensions.cs   BindOverlay
   Interaction/
-    IInteraction.cs               Confirm / Run，请求/应答
+    IInteraction.cs               Run，请求/应答
     DialogViewModel.cs            对话框 VM：Complete / Dismissed
-    ConfirmViewModel.cs           内置是否确认
     Interaction.cs                包装 OverlayHost，默认推进 Modal
   NestedView/
     ViewTarget.cs / ViewBindingExtensions.cs         BindView
@@ -161,14 +160,13 @@ host.Push(new BannerViewModel(host), bannerLayer);
 
 `IInteraction` 是请求/应答，不是 Messenger。页 VM 构造期注入，和 `INavigator` 一样；不要全局 DialogService，也不要按字符串名弹窗。
 
-- `Confirm(title, message)`：`Task<bool>`。Yes 为 `true`；No、壳 Back、换屏 `Clear`、取消 token 都是 `false`，不抛 `OperationCanceledException`。
-- `Run(dialog, layer?)`：自定义 `DialogViewModel<T>`。默认推进 `OverlayLayer.Modal`。按钮只 `Complete(result)`，**不**拿 `IOverlay`。未回答就被关掉时用派生类的 `Dismissed`（确认框是 `false`）。
+- `Run(dialog, layer?)`：应用提供 `DialogViewModel<T>`。默认推进 `OverlayLayer.Modal`。按钮只 `Complete(result)`，**不**拿 `IOverlay`。未回答就被关掉（壳 Back、换屏 `Clear`、取消 token）时用派生类的 `Dismissed`，不抛 `OperationCanceledException`。
 - `Interaction` 包装 `IOverlayHost`：Push → await `Completion` → 对话框还活着则 `Close`。
 
-`ConfirmViewModel` 在 Core，场景由宿主 `ViewRegistry.Register<ConfirmViewModel>(...)`。Showcase 的确认框在 [ConfirmView.tscn](../samples/Showcase/Shell/ConfirmView.tscn)；Todo 删除走 `await Confirm`。
+是否确认、文件选择等都是应用的对话框 VM。Showcase 的 [`ConfirmViewModel`](../samples/Showcase/Navigation/Confirm/ConfirmViewModel.cs) 演示 Yes/No；场景由宿主 `ViewRegistry.Register<ConfirmViewModel>(...)`。Todo 删除走 `await Run`。
 
 ```csharp
-if (!await interaction.Confirm("Delete", $"Delete '{item.Title.Value}'?"))
+if (!await interaction.Run(new ConfirmViewModel("Delete", $"Delete '{item.Title.Value}'?")))
 {
     return;
 }
@@ -206,10 +204,10 @@ Showcase 壳头的 [StatusView](../samples/Showcase/Shell/StatusView.tscn) 显�
 private void OnBind(ShellViewModel vm, BindingSet bindings)
 {
     var registry = new ViewRegistry()
-        .Register<DirectoryViewModel>("res://Shell/DirectoryView.tscn")
-        .Register<AboutViewModel>("res://Shell/AboutView.tscn")
-        .Register<ToastViewModel>("res://Shell/ToastView.tscn")
-        .Register<ConfirmViewModel>("res://Shell/ConfirmView.tscn");
+        .Register<DirectoryViewModel>("res://Navigation/Directory/DirectoryView.tscn")
+        .Register<AboutViewModel>("res://Navigation/About/AboutView.tscn")
+        .Register<ToastViewModel>("res://Navigation/Toast/ToastView.tscn")
+        .Register<ConfirmViewModel>("res://Navigation/Confirm/ConfirmView.tscn");
     bindings.BindContent(vm.ActiveItem, _content.Content(registry));
     bindings.BindOverlayHost(vm.Overlay, _overlay, registry);
     if (vm.ActiveItem.Value is null)

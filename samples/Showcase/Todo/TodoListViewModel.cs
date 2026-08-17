@@ -35,7 +35,7 @@ public sealed partial class TodoListViewModel : ViewModel
 
     private async Task RemoveItem(TodoItemViewModel item)
     {
-        if (!await _interaction.Confirm("Delete", $"Delete '{item.Title.Value}'?"))
+        if (!await _interaction.Run(new ConfirmViewModel("Delete", $"Delete '{item.Title.Value}'?")))
         {
             return;
         }

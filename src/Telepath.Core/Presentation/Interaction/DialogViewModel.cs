@@ -17,7 +17,6 @@ public abstract class DialogViewModel<T> : ViewModel
 
     /// <summary>
     /// Result used when the dialog is closed without <see cref="Complete"/>.
-    /// Confirm dialogs use <see langword="false"/>.
     /// </summary>
     protected abstract T Dismissed { get; }
 
