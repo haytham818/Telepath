@@ -20,8 +20,9 @@ src/Telepath.SourceGenerator/ViewModel/
 
 - `Track(disposable)` 登记到内部 `DisposableBag`
 - `Command` / `AsyncCommand`：创建并 `Track` 命令；已 Dispose 后再调用会抛出 `ObjectDisposedException`
+- `OnBound()` / `OnUnbound()`：可选钩子。View 接上绑定后调用 `OnBound`，断绑定前调用 `OnUnbound`。出树不断 VM，也不 `Dispose`
 - `Dispose`：幂等操作，先 `OnDispose()`，再释放 bag。已 Dispose 后再 `Track` 会抛出 `ObjectDisposedException`。
-- 派生类清非 Track 资源时重写 `OnDispose`，不要重写 `Dispose`。
+- 派生类清非 Track 资源时重写 `OnDispose`，不要重写 `Dispose`。`OnBound` / `OnUnbound` 不是打开 / 关闭：被 Overlay 盖住走 `IActivatable`，绑定还在。
 
 ### 源生成
 
@@ -87,8 +88,8 @@ private async Task OnSearch(string query, CancellationToken cancellationToken)
 
 | 节点生命周期 | ViewModel | 绑定 |
 |----------|-----------|------|
-| `_Ready` / `_EnterTree` | 仅首次创建时 new；不要每次进树都 new | 接绑定 |
-| `_ExitTree` | **不** `Dispose`（节点可能再进树） | 断绑定 |
-| 真正释放（`NotificationPredelete` / `Free`） | 自己创建的才 `Dispose`；注入的项 VM 由集合拥有者释放 | 在 `_ExitTree` 时已断 |
+| `_Ready` / `_EnterTree` | 仅首次创建时 new；不要每次进树都 new。接绑定后 `OnBound` | 接绑定 |
+| `_ExitTree` | **不** `Dispose`（节点可能再进树）；先 `OnUnbound` | 断绑定 |
+| 真正释放（`NotificationPredelete` / `Free`） | 自己创建的才 `Dispose` / `OnDispose`；注入的项 VM 由集合拥有者释放 | 在 `_ExitTree` 时已断 |
 
 R3 的 `AddTo(Node)` 在出树时 Dispose，只适合绑定订阅，不要用来挂 ViewModel。这是**资源寿命**，不等于打开 / 关闭 / 暂停：导航由 `Conductor` 调用可选的 `IActivatable`，离栈才 `Dispose` 页 VM，见 [presentation.md](presentation.md)。View 生命周期见 [view.md](view.md)，时钟与胶水见 [r3-godot.md](r3-godot.md)。

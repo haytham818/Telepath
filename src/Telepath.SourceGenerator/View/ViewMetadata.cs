@@ -62,8 +62,16 @@ internal static class ViewMetadata
 
     public static readonly DiagnosticDescriptor InvalidOnReady = new(
         id: "TPV005",
-        title: "Invalid OnReady callback",
-        messageFormat: "Optional callback OnReady on Telepath view '{0}' must be a unique parameterless instance method returning void",
+        title: "Invalid view lifecycle callback",
+        messageFormat: "Optional callback '{1}' on Telepath view '{0}' must be a unique parameterless instance method returning void",
+        category: DiagnosticCategory,
+        DiagnosticSeverity.Error,
+        isEnabledByDefault: true);
+
+    public static readonly DiagnosticDescriptor InvalidOnUnbind = new(
+        id: "TPV012",
+        title: "Invalid OnUnbind callback",
+        messageFormat: "OnUnbind on Telepath view '{0}' must be 'void OnUnbind({1} vm)'",
         category: DiagnosticCategory,
         DiagnosticSeverity.Error,
         isEnabledByDefault: true);

@@ -15,6 +15,10 @@ public sealed class ViewLifecycle<TViewModel>
     private readonly Action _onReady;
     private readonly Func<TViewModel> _createViewModel;
     private readonly Action<TViewModel, BindingSet> _onBind;
+    private readonly Action<TViewModel> _onUnbind;
+    private readonly Action _onEnterTree;
+    private readonly Action _onExitTree;
+    private readonly Action _onPredelete;
     private BindingSet? _bindings;
     private TViewModel? _viewModel;
     private bool _ownsViewModel;
@@ -23,12 +27,20 @@ public sealed class ViewLifecycle<TViewModel>
         Control owner,
         Action onReady,
         Func<TViewModel> createViewModel,
-        Action<TViewModel, BindingSet> onBind)
+        Action<TViewModel, BindingSet> onBind,
+        Action<TViewModel> onUnbind,
+        Action onEnterTree,
+        Action onExitTree,
+        Action onPredelete)
     {
         _owner = owner;
         _onReady = onReady;
         _createViewModel = createViewModel;
         _onBind = onBind;
+        _onUnbind = onUnbind;
+        _onEnterTree = onEnterTree;
+        _onExitTree = onExitTree;
+        _onPredelete = onPredelete;
     }
 
     /// <summary>
@@ -69,14 +81,24 @@ public sealed class ViewLifecycle<TViewModel>
                     AttachBindings();
                 }
 
+                _onEnterTree();
                 break;
 
             case (int)Node.NotificationExitTree:
                 DetachBindings();
+                _onExitTree();
                 break;
 
             case (int)GodotObject.NotificationPredelete:
-                Release();
+                try
+                {
+                    _onPredelete();
+                }
+                finally
+                {
+                    Release();
+                }
+
                 break;
         }
     }
@@ -142,11 +164,44 @@ public sealed class ViewLifecycle<TViewModel>
             bindings.Dispose();
             throw;
         }
+
+        if (_viewModel is ViewModel viewModel)
+        {
+            viewModel.NotifyBound();
+        }
     }
 
     private void DetachBindings()
     {
-        _bindings?.Dispose();
+        if (_bindings is null)
+        {
+            return;
+        }
+
+        var viewModel = _viewModel;
+        var bindings = _bindings;
         _bindings = null;
+
+        try
+        {
+            if (viewModel is not null)
+            {
+                _onUnbind(viewModel);
+            }
+        }
+        finally
+        {
+            try
+            {
+                if (viewModel is ViewModel coreViewModel)
+                {
+                    coreViewModel.NotifyUnbound();
+                }
+            }
+            finally
+            {
+                bindings.Dispose();
+            }
+        }
     }
 }

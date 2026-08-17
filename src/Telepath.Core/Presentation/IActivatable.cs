@@ -3,7 +3,8 @@ namespace Telepath.Core;
 /// <summary>
 /// Optional presentation-lifetime hooks. A conductor or overlay calls these
 /// when a page enters or leaves the foreground. Not part of <see cref="IViewModel"/>:
-/// resource lifetime (bind / unbind / dispose) stays on the view.
+/// resource lifetime is driven by the view (<see cref="ViewModel.OnBound"/> /
+/// <see cref="ViewModel.OnUnbound"/> / <see cref="ViewModel.OnDispose"/>).
 /// </summary>
 public interface IActivatable
 {

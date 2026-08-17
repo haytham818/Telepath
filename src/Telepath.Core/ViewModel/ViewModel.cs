@@ -66,10 +66,47 @@ public abstract partial class ViewModel : IViewModel
     }
 
     /// <summary>
+    /// Called by the view after bindings attach. Override to start view-scoped work.
+    /// Distinct from <see cref="IActivatable.Activate"/>: overlay pause deactivates
+    /// without unbinding.
+    /// </summary>
+    protected virtual void OnBound()
+    {
+    }
+
+    /// <summary>
+    /// Called by the view before bindings detach. Override to snapshot or stop
+    /// view-scoped work. The ViewModel is not disposed here.
+    /// </summary>
+    protected virtual void OnUnbound()
+    {
+    }
+
+    /// <summary>
     /// Called once before tracked disposables are released. Override to clean up
     /// non-<see cref="Track{T}"/> resources.
     /// </summary>
     protected virtual void OnDispose()
     {
+    }
+
+    internal void NotifyBound()
+    {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        OnBound();
+    }
+
+    internal void NotifyUnbound()
+    {
+        if (IsDisposed)
+        {
+            return;
+        }
+
+        OnUnbound();
     }
 }

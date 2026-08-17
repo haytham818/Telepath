@@ -33,7 +33,7 @@ src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 - 标记 `[TelepathView<TViewModel>]`
 - 声明 `public override partial void _Notification(int what);`
 - 提供 `CreateViewModel()`
-- 用 Binding Dock 写场景绑定，和/或 `[NodeInject]` / `[BindTo]`，和/或手写 `OnBind(...)`；可选提供 `OnReady()`
+- 用 Binding Dock 写场景绑定，和/或 `[NodeInject]` / `[BindTo]`，和/或手写 `OnBind(...)`；可选提供 `OnReady()` / `OnUnbind(...)` / `OnEnterTree()` / `OnExitTree()` / `OnPredelete()`
 
 `_Notification` 的声明必须写在用户源码中，Godot 的源生成器才能登记该回调。
 Telepath 生成器实现它并转发给 `ViewLifecycle<TViewModel>`；Godot 的
@@ -111,12 +111,14 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 
 ## 寿命
 
-| 节点生命周期 | ViewModel | 绑定 |
-|----------|-----------|------|
-| `_Ready` | 若未注入则 `CreateViewModel()` 一次。之后再写入 `ViewModel` 会断旧绑、Dispose 自建 dummy、接新 VM | 场景绑定 + `[NodeInject]` 之后 `OnBind` |
-| `_EnterTree`（已 Ready、无绑定） | 不 new | 再次接线 |
-| `_ExitTree` | **不** `Dispose` | `BindingSet.Dispose` |
-| `NotificationPredelete` | 自己 `CreateViewModel()` 的才 `ViewModel.Dispose()`；注入的不 Dispose | 已在出树时断开 |
+| 节点生命周期 | View 钩子 | ViewModel | 绑定 |
+|----------|-----------|-----------|------|
+| `_EnterTree` | `OnEnterTree()` | 不 new。若已 Ready 且刚接上绑定，随后 `OnBound` | 已 Ready 且无绑定时再次接线 |
+| `_Ready` | 节点解析之后 `OnReady()`，再创建/拿到 VM，再 `OnBind` | 若未注入则 `CreateViewModel()` 一次。之后再写入 `ViewModel` 会断旧绑、Dispose 自建 dummy、接新 VM，并 `OnBound` | 场景绑定 + `[NodeInject]` 之后 `OnBind` |
+| `_ExitTree` | 先 `OnUnbind(vm)`，再 `OnExitTree()` | **不** `Dispose`；先 `OnUnbound` | `BindingSet.Dispose` |
+| `NotificationPredelete` | `OnPredelete()`，然后释放 | 自己 `CreateViewModel()` 的才 `ViewModel.Dispose()` / `OnDispose`；注入的不 Dispose | 已在出树时断开 |
+
+钩子都是可选的。不要覆盖 `_Ready` / `_EnterTree` / `_ExitTree`：生成器会报 TPV006。`_Notification` 只声明 partial。
 
 不要 `viewModel.AddTo(node)`。订阅进 `BindingSet`，或 `bindings.Add(...)`。
 
@@ -131,11 +133,15 @@ Dock 场景脚本是 GDScript（[`TelepathBindingDock.gd`](../src/Telepath.Godot
 - `BindContent` / `BindOverlay` / `BindOverlayHost`：导体内容槽与 Overlay 带，见 [presentation.md](presentation.md)
 - `BindView`：父场景里已有的子 TelepathView，见 [presentation.md](presentation.md)
 - 允许只有 `[NodeInject]`、没有 `[BindTo]`（仅注入，在 `OnBind` 手写接线）
-- `OnReady()`：可选；在生成的节点解析之后调用
+- `OnReady()`：可选；在生成的节点解析之后、创建/注入 ViewModel 之前调用
 - `OnBind(vm, bindings)`：可选；在场景绑定和声明式绑定之后调用，用于额外接线。`bindings` 是 `Telepath.Core.BindingSet`
-- `_Notification`：只声明 partial 方法，不要自行实现或覆盖其他生命周期方法
+- `OnUnbind(vm)`：可选；在 `BindingSet.Dispose` 之前调用，用于读回控件状态或拆掉不在 `BindingSet` 里的接线
+- `OnEnterTree()`：可选；每次进树都调用。首次进树时 ViewModel 可能尚未创建；再进树时绑定已接上
+- `OnExitTree()`：可选；在解绑之后调用
+- `OnPredelete()`：可选；在释放自有 ViewModel 之前调用
+- `_Notification`：只声明 partial 方法，不要自行实现或覆盖 `_Ready` / `_EnterTree` / `_ExitTree`
 
-薄 View 可以既没有 `[BindTo]` 也没有 `OnBind`（绑定全在场景上）。写了 `OnBind` 则签名必须是 `void OnBind(TViewModel vm, BindingSet bindings)`。
+薄 View 可以既没有 `[BindTo]` 也没有生命周期钩子（绑定全在场景上）。写了 `OnBind` 则签名必须是 `void OnBind(TViewModel vm, BindingSet bindings)`；写了 `OnUnbind` 则必须是 `void OnUnbind(TViewModel vm)`。
 
 `BindingSet` 只收集一次进树周期的订阅。接线走 `Bind(source, BindingTarget)`（内部是 `OneWay` / `TwoWay`）、`BindCommand`、`BindItems`、`BindContent`、`BindOverlay` 和 `BindView`。Godot 只提供 Target 与命令适配；`Observable<T>` 一向，`BindableReactiveProperty<T>` 在目标支持 get/changed 时双向。
 

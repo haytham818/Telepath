@@ -57,9 +57,9 @@ src/Telepath.Godot/Presentation/
 | | 资源寿命 | 呈现寿命 |
 |---|---|---|
 | 谁驱动 | Godot 节点通知 | 导体 / Overlay / OverlayHost |
-| 进 | Ready：创建或拿到 VM，接绑定 | `IActivatable.Activate`：进前台 |
-| 出树 / 被盖住 | ExitTree：**只断绑定** | `Deactivate`：失焦或被遮挡；默认**不断绑定、不 Dispose** |
-| 结束 | Predelete：仅自有 VM `Dispose` | Close / Back：出栈；默认 Dispose 离栈页 |
+| 进 | Ready：创建或拿到 VM，接绑定；View `OnBind`，VM `OnBound` | `IActivatable.Activate`：进前台 |
+| 出树 / 被盖住 | ExitTree：**只断绑定**；View `OnUnbind`，VM `OnUnbound` | `Deactivate`：失焦或被遮挡；默认**不断绑定、不 Dispose** |
+| 结束 | Predelete：View `OnPredelete`，仅自有 VM `Dispose` | Close / Back：出栈；默认 Dispose 离栈页 |
 
 打开 ≠ `new`，关闭 ≠ `Dispose`，暂停 ≠ `ExitTree`。进场 / 退场动画也不是呈现寿命：见下方 [`IViewTransition`](#iviewtransition)。
 

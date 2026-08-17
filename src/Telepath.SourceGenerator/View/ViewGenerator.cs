@@ -106,16 +106,23 @@ internal static class ViewGenerator
             return;
         }
 
-        var onReadyMethods = SymbolHelpers.GetDeclaredInstanceMethods(viewType, "OnReady").ToArray();
-        if (onReadyMethods.Length > 1
-            || onReadyMethods.Length == 1
-            && (onReadyMethods[0].Parameters.Length != 0
-                || !onReadyMethods[0].ReturnsVoid))
+        var onUnbindMethods = SymbolHelpers.GetDeclaredInstanceMethods(viewType, "OnUnbind").ToArray();
+        var hasOnUnbind = onUnbindMethods.Length == 1 && IsValidOnUnbind(onUnbindMethods[0], viewModelType);
+        if (onUnbindMethods.Length > 0 && !hasOnUnbind)
         {
             context.ReportDiagnostic(Diagnostic.Create(
-                ViewMetadata.InvalidOnReady,
+                ViewMetadata.InvalidOnUnbind,
                 candidate.Location,
-                viewName));
+                viewName,
+                viewModelType.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)));
+            return;
+        }
+
+        if (!TryValidateParameterlessCallback(context, viewType, viewName, candidate.Location, "OnReady", out var hasOnReady)
+            || !TryValidateParameterlessCallback(context, viewType, viewName, candidate.Location, "OnEnterTree", out var hasOnEnterTree)
+            || !TryValidateParameterlessCallback(context, viewType, viewName, candidate.Location, "OnExitTree", out var hasOnExitTree)
+            || !TryValidateParameterlessCallback(context, viewType, viewName, candidate.Location, "OnPredelete", out var hasOnPredelete))
+        {
             return;
         }
 
@@ -143,8 +150,13 @@ internal static class ViewGenerator
         var source = ViewSourceRenderer.Render(
             viewType,
             viewModelDisplay,
-            hasOnReady: onReadyMethods.Length == 1,
-            hasOnBind: hasOnBind,
+            new ViewLifecycleCallbacks(
+                hasOnReady,
+                hasOnBind,
+                hasOnUnbind,
+                hasOnEnterTree,
+                hasOnExitTree,
+                hasOnPredelete),
             injections,
             bindings);
 
@@ -187,6 +199,43 @@ internal static class ViewGenerator
             && method.Parameters.Length == 2
             && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, viewModelType)
             && SymbolHelpers.HasMetadataName(method.Parameters[1].Type, ViewMetadata.BindingSetName);
+    }
+
+    private static bool IsValidOnUnbind(IMethodSymbol method, ITypeSymbol viewModelType)
+    {
+        return method.ReturnsVoid
+            && method.Parameters.Length == 1
+            && SymbolEqualityComparer.Default.Equals(method.Parameters[0].Type, viewModelType);
+    }
+
+    private static bool TryValidateParameterlessCallback(
+        SourceProductionContext context,
+        INamedTypeSymbol viewType,
+        string viewName,
+        Location location,
+        string methodName,
+        out bool hasCallback)
+    {
+        var methods = SymbolHelpers.GetDeclaredInstanceMethods(viewType, methodName).ToArray();
+        hasCallback = methods.Length == 1
+            && methods[0].Parameters.Length == 0
+            && methods[0].ReturnsVoid;
+        if (methods.Length == 0)
+        {
+            return true;
+        }
+
+        if (hasCallback)
+        {
+            return true;
+        }
+
+        context.ReportDiagnostic(Diagnostic.Create(
+            ViewMetadata.InvalidOnReady,
+            location,
+            viewName,
+            methodName));
+        return false;
     }
 
     private static bool TryCollectBindings(

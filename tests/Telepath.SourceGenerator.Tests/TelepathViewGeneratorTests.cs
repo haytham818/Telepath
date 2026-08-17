@@ -1243,6 +1243,136 @@ public sealed class TelepathViewGeneratorTests
         AssertNoCompilationErrors(result.OutputCompilation);
     }
 
+    [Fact]
+    public void GeneratesOptionalLifecycleCallbacks()
+    {
+        const string source = """
+            using Telepath.Core;
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+                private void OnReady() { }
+                private void OnBind(TestViewModel vm, BindingSet bindings) { }
+                private void OnUnbind(TestViewModel vm) { }
+                private void OnEnterTree() { }
+                private void OnExitTree() { }
+                private void OnPredelete() { }
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        Assert.Empty(result.Diagnostics);
+        var generated = Assert.Single(result.GeneratedSources).SourceText.ToString();
+        Assert.Contains("OnReady,", generated);
+        Assert.Contains("OnBind(vm, bindings)", generated);
+        Assert.Contains("OnUnbind,", generated);
+        Assert.Contains("OnEnterTree,", generated);
+        Assert.Contains("OnExitTree,", generated);
+        Assert.Contains("OnPredelete);", generated);
+        AssertNoCompilationErrors(result.OutputCompilation);
+    }
+
+    [Fact]
+    public void ReportsInvalidOnUnbind()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+                private void OnUnbind() { }
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV012", diagnostic.Id);
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsInvalidOnEnterTree()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+                private void OnEnterTree(int unused) { }
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV005", diagnostic.Id);
+        Assert.Contains("OnEnterTree", diagnostic.GetMessage());
+        Assert.Empty(result.GeneratedSources);
+    }
+
+    [Fact]
+    public void ReportsInvalidOnReady()
+    {
+        const string source = """
+            using Telepath.Godot;
+
+            [TelepathView<TestViewModel>]
+            public partial class TestView : Godot.Control
+            {
+                public override partial void _Notification(int what);
+
+                private TestViewModel CreateViewModel() => new();
+                private void OnReady(int unused) { }
+            }
+
+            public sealed class TestViewModel : Telepath.Core.IViewModel
+            {
+                public bool IsDisposed => false;
+                public void Dispose() { }
+            }
+            """;
+
+        var result = RunGenerator(source);
+
+        var diagnostic = Assert.Single(result.Diagnostics);
+        Assert.Equal("TPV005", diagnostic.Id);
+        Assert.Contains("OnReady", diagnostic.GetMessage());
+        Assert.Empty(result.GeneratedSources);
+    }
+
     private static GeneratorRunResult RunGenerator(string viewSource)
     {
         var parseOptions = CSharpParseOptions.Default.WithLanguageVersion(LanguageVersion.Latest);
@@ -1503,7 +1633,11 @@ public sealed class TelepathViewGeneratorTests
                     global::Godot.Control owner,
                     System.Action onReady,
                     System.Func<TViewModel> createViewModel,
-                    System.Action<TViewModel, global::Telepath.Core.BindingSet> onBind)
+                    System.Action<TViewModel, global::Telepath.Core.BindingSet> onBind,
+                    System.Action<TViewModel> onUnbind,
+                    System.Action onEnterTree,
+                    System.Action onExitTree,
+                    System.Action onPredelete)
                 {
                 }
 

@@ -9,8 +9,7 @@ internal static class ViewSourceRenderer
     public static string Render(
         INamedTypeSymbol viewType,
         string viewModelDisplay,
-        bool hasOnReady,
-        bool hasOnBind,
+        ViewLifecycleCallbacks callbacks,
         IReadOnlyList<NodeInjection> injections,
         IReadOnlyList<ViewBinding> bindings)
     {
@@ -49,10 +48,22 @@ internal static class ViewSourceRenderer
         source.AppendLine("        => __telepathViewLifecycle ??= new(");
         source.AppendLine("            this,");
         source.Append("            ")
-            .Append(needsGeneratedReady ? "__TelepathOnReady" : hasOnReady ? "OnReady" : "static () => { }")
+            .Append(needsGeneratedReady ? "__TelepathOnReady" : callbacks.HasOnReady ? "OnReady" : "static () => { }")
             .AppendLine(",");
         source.AppendLine("            CreateViewModel,");
-        source.AppendLine("            __TelepathOnBind);");
+        source.AppendLine("            __TelepathOnBind,");
+        source.Append("            ")
+            .Append(callbacks.HasOnUnbind ? "OnUnbind" : "static _ => { }")
+            .AppendLine(",");
+        source.Append("            ")
+            .Append(callbacks.HasOnEnterTree ? "OnEnterTree" : "static () => { }")
+            .AppendLine(",");
+        source.Append("            ")
+            .Append(callbacks.HasOnExitTree ? "OnExitTree" : "static () => { }")
+            .AppendLine(",");
+        source.Append("            ")
+            .Append(callbacks.HasOnPredelete ? "OnPredelete" : "static () => { }")
+            .AppendLine(");");
         source.AppendLine();
         source.Append("    public ")
             .Append(viewModelDisplay)
@@ -71,11 +82,11 @@ internal static class ViewSourceRenderer
         if (needsGeneratedReady)
         {
             source.AppendLine();
-            AppendReady(source, injections, hasOnReady);
+            AppendReady(source, injections, callbacks.HasOnReady);
         }
 
         source.AppendLine();
-        AppendBind(source, viewModelDisplay, bindings, hasOnBind);
+        AppendBind(source, viewModelDisplay, bindings, callbacks.HasOnBind);
 
         source.AppendLine("}");
 
@@ -235,4 +246,30 @@ internal static class ViewSourceRenderer
             containingType = containingType.ContainingType;
         }
     }
+}
+
+internal readonly struct ViewLifecycleCallbacks
+{
+    public ViewLifecycleCallbacks(
+        bool hasOnReady,
+        bool hasOnBind,
+        bool hasOnUnbind,
+        bool hasOnEnterTree,
+        bool hasOnExitTree,
+        bool hasOnPredelete)
+    {
+        HasOnReady = hasOnReady;
+        HasOnBind = hasOnBind;
+        HasOnUnbind = hasOnUnbind;
+        HasOnEnterTree = hasOnEnterTree;
+        HasOnExitTree = hasOnExitTree;
+        HasOnPredelete = hasOnPredelete;
+    }
+
+    public bool HasOnReady { get; }
+    public bool HasOnBind { get; }
+    public bool HasOnUnbind { get; }
+    public bool HasOnEnterTree { get; }
+    public bool HasOnExitTree { get; }
+    public bool HasOnPredelete { get; }
 }
