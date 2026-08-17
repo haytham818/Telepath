@@ -97,7 +97,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-horizontal_scroll_mode = 0
 
 [node name="Center" type="CenterContainer" parent="Scroll" unique_id=937178957]
 layout_mode = 2
@@ -113,12 +112,6 @@ theme_override_constants/separation = 10
 layout_mode = 2
 text = "Form"
 horizontal_alignment = 1
-
-[node name="Hint" type="Label" parent="Scroll/Center/VBox" unique_id=1804819199]
-layout_mode = 2
-text = "TextEdit, RichTextLabel, CheckBox / CheckButton, Button toggle, HSlider, SpinBox, OptionButton Selected / Command, Visible, Disabled, two-way converters."
-horizontal_alignment = 1
-autowrap_mode = 3
 
 [node name="NotesCaption" type="Label" parent="Scroll/Center/VBox" unique_id=957770521]
 layout_mode = 2
