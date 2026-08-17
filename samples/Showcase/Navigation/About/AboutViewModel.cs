@@ -4,13 +4,13 @@ namespace Telepath.Showcase;
 
 public sealed partial class AboutViewModel : ViewModel
 {
-    private readonly IOverlay _overlay;
+    private readonly IOverlayHost _overlay;
 
     [Bindable]
     private string _message =
-        "This overlay covers the page. The view stays; Pause or Continue chooses whether it Deactivates.";
+        "This overlay covers the page. Modal / Toast above it will dim this panel; Pause or Continue chooses whether the page Deactivates.";
 
-    public AboutViewModel(IOverlay overlay)
+    public AboutViewModel(IOverlayHost overlay)
     {
         ArgumentNullException.ThrowIfNull(overlay);
         _overlay = overlay;
@@ -18,4 +18,12 @@ public sealed partial class AboutViewModel : ViewModel
 
     [Command]
     private void OnClose() => _overlay.Close(this);
+
+    [Command]
+    private void OnCoverModal() =>
+        _overlay.Push(new AboutViewModel(_overlay), OverlayLayer.Modal);
+
+    [Command]
+    private void OnToast() =>
+        _overlay.Push(new ToastViewModel(_overlay), OverlayLayer.Toast);
 }

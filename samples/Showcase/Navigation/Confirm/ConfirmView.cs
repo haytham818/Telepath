@@ -4,7 +4,7 @@ using Telepath.Godot;
 namespace Telepath.Showcase;
 
 [TelepathView<ConfirmViewModel>]
-public partial class ConfirmView : Control, IViewTransition
+public partial class ConfirmView : Control, IViewTransition, IViewCoverTransition
 {
     [NodeInject("%Dimmer")]
     private ColorRect _dimmer = null!;
@@ -31,6 +31,12 @@ public partial class ConfirmView : Control, IViewTransition
         _panel.PivotOffset = _panel.Size / 2f;
         return PlayAsync(toAlpha: 0f, toScale: new Vector2(0.94f, 0.94f), cancellationToken);
     }
+
+    public Task PlayCoverAsync(CancellationToken cancellationToken) =>
+        FadeTransition.CoverAsync(_panel, cancellationToken);
+
+    public Task PlayUncoverAsync(CancellationToken cancellationToken) =>
+        FadeTransition.UncoverAsync(_panel, cancellationToken);
 
     private Task PlayAsync(float toAlpha, Vector2 toScale, CancellationToken cancellationToken)
     {

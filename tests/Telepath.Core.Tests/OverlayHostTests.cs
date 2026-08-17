@@ -258,6 +258,24 @@ public sealed class OverlayHostTests
     }
 
     [Fact]
+    public void SameBandPushCoversLowerOverlay()
+    {
+        var screen = new Page("screen");
+        screen.Activate();
+        using var host = new OverlayHost(() => screen);
+        var lower = new Page("lower");
+        var upper = new Page("upper");
+        host.Push(lower);
+        host.Push(upper);
+
+        Assert.Equal(new IViewModel[] { screen, lower }, host.Covered.Value);
+
+        host.Back();
+
+        Assert.Equal(new IViewModel[] { screen }, host.Covered.Value);
+    }
+
+    [Fact]
     public void BackRevealsCoveredPage()
     {
         var screen = new Page("screen");

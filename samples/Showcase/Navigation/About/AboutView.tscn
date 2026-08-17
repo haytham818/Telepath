@@ -81,6 +81,14 @@ metadata/telepath_bindings = [{
 "kind": "Command",
 "member": "CloseCommand",
 "path": "%Close"
+}, {
+"kind": "Command",
+"member": "CoverModalCommand",
+"path": "%CoverModal"
+}, {
+"kind": "Command",
+"member": "ToastCommand",
+"path": "%Toast"
 }]
 
 [node name="Dimmer" type="ColorRect" parent="."]
@@ -135,6 +143,16 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 layout_mode = 2
 text = "Close"
+
+[node name="CoverModal" type="Button" parent="Center/Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Cover with modal"
+
+[node name="Toast" type="Button" parent="Center/Panel/Margin/VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "Toast"
 
 [node name="Transition" type="AnimationPlayer" parent="."]
 unique_name_in_owner = true

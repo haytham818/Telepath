@@ -223,7 +223,7 @@ private void OnBind(ShellViewModel vm, BindingSet bindings)
 
 空槽 `MouseFilter = Ignore`。`BlocksPassThrough` 的带非空时该槽 `Stop`；Toast / Banner 槽始终 `Ignore`，由面板自己挡点击。
 
-壳场景把 `BackCommand` 绑到返回按钮；内容槽和 Overlay 根只在 `OnBind` 里接线。Showcase 的 Overlay pause 页用节拍验证 Cover：`Pause` 后计数停，`Continue` 后计数不停；Modal 永远画在 Popup 之上；Toast 不暂停计数，壳 Back 也不关它。Pause 页实现了 `IViewCoverTransition`，Toast / About 盖住时底下那页会变暗。
+壳场景把 `BackCommand` 绑到返回按钮；内容槽和 Overlay 根只在 `OnBind` 里接线。Showcase 的 Overlay pause 页用节拍验证 Cover：`Pause` 后计数停，`Continue` 后计数不停；Modal 永远画在 Popup 之上；Toast 不暂停计数，壳 Back 也不关它。Pause 页、About、Confirm 都实现了 `IViewCoverTransition`：Toast / About 盖住时底下那页变暗；About 上再开 Modal / Toast 时，被盖住的 Overlay 面板同样变暗。
 
 ## IViewTransition
 
@@ -276,7 +276,7 @@ public Task PlayExitAsync(CancellationToken cancellationToken)
 
 被盖住的页要自己播动画时，实现 [`IViewCoverTransition`](../src/Telepath.Godot/Presentation/Transition/IViewCoverTransition.cs)。这不是 `IActivatable`：Toast 的 `Continue` 不停 VM，但 z 序上仍盖住屏幕，`Covered` 仍包含它。也不是 `IViewTransition`：视图仍绑定，**可以读 VM**。
 
-`OverlayHost.Covered` 按带的 `Order` 和带内 `Layers` 从低到高扫，**上方还有至少一层 Overlay** 的 VM 进入集合，与 `CoverMode` 无关。顶层自己不进。壳把同一份 `PresentedViews` 传给 `Content` 和 `BindOverlayHost`；HUD 的 `BindView` 不进这张表。
+`OverlayHost.Covered` 按带的 `Order` 和带内 `Layers` 从低到高扫，**上方还有至少一层 Overlay** 的 VM 进入集合，与 `CoverMode` 无关。屏幕和更低的 Overlay 层都会进；顶层自己不进。壳把同一份 `PresentedViews` 传给 `Content` 和 `BindOverlayHost`；HUD 的 `BindView` 不进这张表。Overlay 视图和屏幕一样，实现 `IViewCoverTransition` 就会在被更高带或同带上层盖住时播遮盖。
 
 Presenter **不等** 遮盖结束再 `Push`：新层 `PlayEnterAsync` 与底下 `PlayCoverAsync` 同帧并行。`PlayCoverAsync` **必须同步写下第一帧**。未实现则视觉不变。生成器不生成空方法。
 
@@ -290,6 +290,6 @@ public Task PlayUncoverAsync(CancellationToken cancellationToken)
     => FadeTransition.UncoverAsync(this, cancellationToken);
 ```
 
-Showcase：[PauseDemoView](../samples/Showcase/Navigation/Pause/PauseDemoView.cs)。
+Showcase：[PauseDemoView](../samples/Showcase/Navigation/Pause/PauseDemoView.cs)（屏幕）、[AboutView](../samples/Showcase/Navigation/About/AboutView.cs) / [ConfirmView](../samples/Showcase/Navigation/Confirm/ConfirmView.cs)（Overlay）。
 
 不做：Prism Region、字符串路由表、Messenger、全局 DialogService、按名 `ShowDialog("Confirm")`、自研 DI、Autoload 组合根 / 壳工厂（对象图由宿主 `CreateViewModel` 和构造注入拼）、离开守卫 / `IGuardClose`（何时允许离开是壳的策略，问一句走 `IInteraction`）、文件选择（原生 `FileDialog` 或自定义 `DialogViewModel<T>` 走 `Run`，不进 Core）、把 `IActivatable` 塞进每个 ViewModel、Core 等待动画或异步 `Close`、框架默认淡入淡出、把过渡塞进 Ready / ExitTree / Predelete、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 走 `BindView`）。

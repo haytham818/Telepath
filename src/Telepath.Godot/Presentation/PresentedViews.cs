@@ -6,7 +6,7 @@ namespace Telepath.Godot;
 /// <summary>
 /// Shared ViewModel → live Control map for content and overlay presenters.
 /// Pass the same instance to <c>Content</c> and <c>BindOverlayHost</c> so a
-/// covered screen can play <see cref="IViewCoverTransition"/>.
+/// covered screen or lower overlay can play <see cref="IViewCoverTransition"/>.
 /// </summary>
 public sealed class PresentedViews
 {

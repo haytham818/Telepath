@@ -25,8 +25,9 @@ public interface IOverlayHost : IOverlay
 
     /// <summary>
     /// ViewModels that currently have at least one overlay stacked above them,
-    /// in z-order from bottom to top. Independent of <see cref="CoverMode"/>:
-    /// a Continue toast still covers the screen.
+    /// in z-order from bottom to top. Includes the screen and lower overlay
+    /// layers. Independent of <see cref="CoverMode"/>: a Continue toast still
+    /// covers whatever sits below it.
     /// </summary>
     BindableReactiveProperty<IReadOnlyList<IViewModel>> Covered { get; }
 

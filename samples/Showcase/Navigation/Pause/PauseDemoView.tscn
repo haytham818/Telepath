@@ -67,7 +67,7 @@ horizontal_alignment = 1
 
 [node name="Hint" type="Label" parent="Center/VBox"]
 layout_mode = 2
-text = "Pause stops the ticker; Continue leaves it running. Modal sits above Popup. Toast does not pause and Shell Back skips it."
+text = "Pause stops the ticker; Continue leaves it running. Modal sits above Popup. Toast does not pause and Shell Back skips it. Open Cover, then About's Modal / Toast to dim the overlay itself."
 autowrap_mode = 3
 horizontal_alignment = 1
 
