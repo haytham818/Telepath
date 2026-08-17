@@ -209,6 +209,7 @@ public sealed class OverlayHostTests
         Assert.Contains("popup:deactivate", log);
         Assert.Contains("screen:activate", log);
         Assert.False(host.HasOverlay.Value);
+        Assert.Empty(host.Covered.Value);
     }
 
     [Fact]
@@ -225,6 +226,70 @@ public sealed class OverlayHostTests
 
         Assert.DoesNotContain("screen:activate", log);
         Assert.False(screen.IsDisposed);
+        Assert.Contains(screen, host.Covered.Value);
+    }
+
+    [Fact]
+    public void ToastCoversScreenWithoutPausing()
+    {
+        var screen = new Page("screen");
+        screen.Activate();
+        using var host = new OverlayHost(() => screen);
+        var toast = new Page("toast");
+
+        host.Push(toast, OverlayLayer.Toast);
+
+        Assert.Equal(new IViewModel[] { screen }, host.Covered.Value);
+        Assert.Same(screen, host.CurrentScreen);
+    }
+
+    [Fact]
+    public void ModalCoversScreenAndPopup()
+    {
+        var screen = new Page("screen");
+        screen.Activate();
+        using var host = new OverlayHost(() => screen);
+        var popup = new Page("popup");
+        var modal = new Page("modal");
+        host.Push(popup);
+        host.Push(modal, OverlayLayer.Modal);
+
+        Assert.Equal(new IViewModel[] { screen, popup }, host.Covered.Value);
+    }
+
+    [Fact]
+    public void BackRevealsCoveredPage()
+    {
+        var screen = new Page("screen");
+        screen.Activate();
+        using var host = new OverlayHost(() => screen);
+        var popup = new Page("popup");
+        host.Push(popup);
+        Assert.Equal(new IViewModel[] { screen }, host.Covered.Value);
+
+        host.Back();
+
+        Assert.Empty(host.Covered.Value);
+    }
+
+    [Fact]
+    public void ClearWithoutResumeKeepsScreenCoveredUntilScreenChanges()
+    {
+        var screen = new Page("screen");
+        var next = new Page("next");
+        IViewModel current = screen;
+        screen.Activate();
+        using var host = new OverlayHost(() => current);
+        host.Push(new Page("popup"));
+
+        host.Clear(resumeCovered: false);
+        Assert.Contains(screen, host.Covered.Value);
+
+        current = next;
+        host.Clear();
+
+        Assert.DoesNotContain(screen, host.Covered.Value);
+        Assert.Empty(host.Covered.Value);
     }
 
     private sealed class Page : ViewModel, IActivatable

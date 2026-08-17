@@ -12,14 +12,16 @@ public sealed class OverlayHostPresenter
 {
     private readonly Control _root;
     private readonly ViewRegistry _registry;
+    private readonly PresentedViews _presented;
     private readonly List<Control> _slots = [];
 
-    public OverlayHostPresenter(Control root, ViewRegistry registry)
+    public OverlayHostPresenter(Control root, ViewRegistry registry, PresentedViews? presented = null)
     {
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(registry);
         _root = root;
         _registry = registry;
+        _presented = presented ?? new PresentedViews();
         _root.MouseFilter = Control.MouseFilterEnum.Ignore;
     }
 
@@ -32,9 +34,28 @@ public sealed class OverlayHostPresenter
         foreach (var layer in host.Bands)
         {
             var slot = CreateSlot(layer);
-            var presenter = new OverlayPresenter(slot, _registry, layer.BlocksPassThrough);
+            var presenter = new OverlayPresenter(slot, _registry, layer.BlocksPassThrough, _presented);
             bindings.BindOverlay(host.Band(layer).Layers, presenter.Target);
         }
+
+        bindings.Add(host.Covered.Subscribe(_ => Sync(host)));
+        Sync(host);
+    }
+
+    private void Sync(IOverlayHost host)
+    {
+        var live = new List<IViewModel>();
+        if (host.CurrentScreen is { IsDisposed: false } screen)
+        {
+            live.Add(screen);
+        }
+
+        foreach (var layer in host.Bands)
+        {
+            live.AddRange(host.Band(layer).Layers);
+        }
+
+        _presented.Covers.Sync(host.Covered.Value, live);
     }
 
     private Control CreateSlot(OverlayLayer layer)
@@ -54,6 +75,7 @@ public sealed class OverlayHostPresenter
 
     private void Detach()
     {
+        _presented.Covers.CancelAll();
         for (var i = _slots.Count - 1; i >= 0; i--)
         {
             var slot = _slots[i];

@@ -19,6 +19,18 @@ public interface IOverlayHost : IOverlay
     BindableReactiveProperty<bool> HasBackableOverlay { get; }
 
     /// <summary>
+    /// The screen under all overlay bands, from the host constructor callback.
+    /// </summary>
+    IViewModel? CurrentScreen { get; }
+
+    /// <summary>
+    /// ViewModels that currently have at least one overlay stacked above them,
+    /// in z-order from bottom to top. Independent of <see cref="CoverMode"/>:
+    /// a Continue toast still covers the screen.
+    /// </summary>
+    BindableReactiveProperty<IReadOnlyList<IViewModel>> Covered { get; }
+
+    /// <summary>
     /// Registers a custom band. Throws after the first overlay is pushed,
     /// or when <see cref="OverlayLayer.Name"/> / <see cref="OverlayLayer.Order"/> collides.
     /// </summary>

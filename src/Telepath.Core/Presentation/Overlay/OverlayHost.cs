@@ -19,12 +19,14 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
     private bool _locked;
     private bool _suppressScreenActivate;
     private IViewModel? _inheritedScreen;
+    private IViewModel? _holdCoveredScreen;
 
     public OverlayHost(Func<IViewModel?>? covered = null)
     {
         _covered = covered;
         HasOverlay = Track(new BindableReactiveProperty<bool>(false));
         HasBackableOverlay = Track(new BindableReactiveProperty<bool>(false));
+        Covered = Track(new BindableReactiveProperty<IReadOnlyList<IViewModel>>([]));
         Register(OverlayLayer.Popup);
         Register(OverlayLayer.Modal);
         Register(OverlayLayer.Toast);
@@ -38,6 +40,12 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
 
     /// <inheritdoc />
     public BindableReactiveProperty<bool> HasBackableOverlay { get; }
+
+    /// <inheritdoc />
+    public IViewModel? CurrentScreen => GetScreen();
+
+    /// <inheritdoc />
+    public BindableReactiveProperty<IReadOnlyList<IViewModel>> Covered { get; }
 
     /// <inheritdoc />
     public IReadOnlyList<OverlayLayer> Bands => _layerList;
@@ -104,7 +112,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
             throw new ArgumentException("An overlay cannot push itself.", nameof(viewModel));
         }
 
-        var screen = Screen();
+        var screen = GetScreen();
         if (screen is not null && ReferenceEquals(screen, viewModel))
         {
             throw new ArgumentException(
@@ -182,6 +190,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
     public void Clear(bool resumeCovered = true)
     {
         ObjectDisposedException.ThrowIf(IsDisposed, this);
+        _holdCoveredScreen = resumeCovered ? null : GetScreen();
         _suppressScreenActivate = !resumeCovered;
         _suspendReconcile++;
         try
@@ -222,6 +231,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
             _suspendReconcile--;
             _active.Clear();
             _inheritedScreen = null;
+            _holdCoveredScreen = null;
         }
     }
 
@@ -267,7 +277,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
             }
         }
 
-        return Screen();
+        return GetScreen();
     }
 
     private void DeactivateOverlays()
@@ -288,7 +298,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
         }
     }
 
-    private IViewModel? Screen()
+    private IViewModel? GetScreen()
     {
         var covered = _covered?.Invoke();
         return covered is { IsDisposed: false } ? covered : null;
@@ -311,7 +321,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
     private void Reconcile()
     {
         var desired = new HashSet<IViewModel>();
-        var screen = Screen();
+        var screen = GetScreen();
         InheritScreen(screen);
         IViewModel? foreground = screen;
         if (foreground is not null)
@@ -380,6 +390,11 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
             return;
         }
 
+        if (_holdCoveredScreen is not null && !ReferenceEquals(_holdCoveredScreen, screen))
+        {
+            _holdCoveredScreen = null;
+        }
+
         if (_inheritedScreen is not null)
         {
             _active.Remove(_inheritedScreen);
@@ -424,6 +439,42 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
         {
             HasBackableOverlay.Value = hasBackable;
         }
+
+        UpdateCovered();
+    }
+
+    private void UpdateCovered()
+    {
+        if (Covered.IsDisposed)
+        {
+            return;
+        }
+
+        var stacked = new List<IViewModel>();
+        var screen = GetScreen();
+        if (screen is not null)
+        {
+            stacked.Add(screen);
+        }
+
+        foreach (var band in _bands)
+        {
+            stacked.AddRange(band.Stack.Layers);
+        }
+
+        var covered = new List<IViewModel>();
+        for (var i = 0; i < stacked.Count - 1; i++)
+        {
+            covered.Add(stacked[i]);
+        }
+
+        if (_holdCoveredScreen is { IsDisposed: false } held
+            && !covered.Contains(held))
+        {
+            covered.Add(held);
+        }
+
+        Covered.Value = covered;
     }
 
     private static void Activate(IViewModel viewModel)

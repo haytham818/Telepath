@@ -31,8 +31,9 @@ public partial class ShellView : Control
             .Register<ToastViewModel>("res://Navigation/Toast/ToastView.tscn")
             .Register<BannerViewModel>("res://Navigation/Banner/BannerView.tscn")
             .Register<ConfirmViewModel>("res://Navigation/Confirm/ConfirmView.tscn");
-        bindings.BindContent(vm.ActiveItem, _content.Content(registry));
-        bindings.BindOverlayHost(vm.Overlay, _overlay, registry);
+        var presented = new PresentedViews();
+        bindings.BindContent(vm.ActiveItem, _content.Content(registry, presented));
+        bindings.BindOverlayHost(vm.Overlay, _overlay, registry, presented);
         if (vm.ActiveItem.Value is null)
         {
             vm.Navigate(new DirectoryViewModel(vm, vm.Overlay, vm.Interaction));

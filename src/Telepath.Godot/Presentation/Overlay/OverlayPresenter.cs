@@ -14,18 +14,24 @@ public sealed class OverlayPresenter
     private readonly Control _slot;
     private readonly ViewRegistry _registry;
     private readonly bool _blocksPassThrough;
+    private readonly PresentedViews? _presented;
     private readonly List<Control> _views = [];
     private readonly HashSet<Control> _exiting = [];
     private readonly ViewTransitionSession _transitions = new();
     private bool _skipEnter;
 
-    public OverlayPresenter(Control slot, ViewRegistry registry, bool blocksPassThrough = true)
+    public OverlayPresenter(
+        Control slot,
+        ViewRegistry registry,
+        bool blocksPassThrough = true,
+        PresentedViews? presented = null)
     {
         ArgumentNullException.ThrowIfNull(slot);
         ArgumentNullException.ThrowIfNull(registry);
         _slot = slot;
         _registry = registry;
         _blocksPassThrough = blocksPassThrough;
+        _presented = presented;
         UpdateMouseFilter();
     }
 
@@ -64,6 +70,7 @@ public sealed class OverlayPresenter
 
         ApplyLayout(view);
         _views.Insert(index, view);
+        _presented?.Set(viewModel, view);
         _slot.AddChild(view);
         PlaceLive(view, index);
         UpdateMouseFilter();
@@ -103,6 +110,7 @@ public sealed class OverlayPresenter
 
     private void BeginExit(Control view)
     {
+        _presented?.MarkExiting(view);
         ViewInjection.Clear(view);
         ViewInjection.IgnoreMouse(view);
         _exiting.Add(view);
@@ -112,6 +120,7 @@ public sealed class OverlayPresenter
     private void FinishExit(Control view)
     {
         _exiting.Remove(view);
+        _presented?.Remove(view);
         ViewInjection.Remove(view);
     }
 
@@ -120,6 +129,7 @@ public sealed class OverlayPresenter
         _transitions.CancelAll();
         for (var i = _views.Count - 1; i >= 0; i--)
         {
+            _presented?.Remove(_views[i]);
             ViewInjection.Remove(_views[i]);
         }
 
@@ -127,6 +137,7 @@ public sealed class OverlayPresenter
         foreach (var view in _exiting.ToArray())
         {
             _exiting.Remove(view);
+            _presented?.Remove(view);
             ViewInjection.Remove(view);
         }
     }

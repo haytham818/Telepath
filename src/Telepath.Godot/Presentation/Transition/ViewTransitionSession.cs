@@ -3,7 +3,7 @@ using Godot;
 namespace Telepath.Godot;
 
 /// <summary>
-/// Tracks in-flight enter / exit tasks for presenter-owned view nodes.
+/// Tracks in-flight enter / exit / cover tasks for presenter-owned view nodes.
 /// </summary>
 internal sealed class ViewTransitionSession
 {
@@ -35,6 +35,26 @@ internal sealed class ViewTransitionSession
 
                 onFinished(completed);
             });
+    }
+
+    public void PlayCover(Control view)
+    {
+        var token = Start(view);
+        ViewTransitionPlayback.Play(
+            view,
+            token,
+            ViewCoverTransition.PlayCoverAsync,
+            completed => Complete(completed, token));
+    }
+
+    public void PlayUncover(Control view)
+    {
+        var token = Start(view);
+        ViewTransitionPlayback.Play(
+            view,
+            token,
+            ViewCoverTransition.PlayUncoverAsync,
+            completed => Complete(completed, token));
     }
 
     public void Cancel(Control view)

@@ -14,16 +14,18 @@ public sealed class ContentPresenter
 {
     private readonly Control _slot;
     private readonly ViewRegistry _registry;
+    private readonly PresentedViews? _presented;
     private readonly ViewTransitionSession _transitions = new();
     private readonly HashSet<Control> _exiting = [];
     private Control? _current;
 
-    public ContentPresenter(Control slot, ViewRegistry registry)
+    public ContentPresenter(Control slot, ViewRegistry registry, PresentedViews? presented = null)
     {
         ArgumentNullException.ThrowIfNull(slot);
         ArgumentNullException.ThrowIfNull(registry);
         _slot = slot;
         _registry = registry;
+        _presented = presented;
     }
 
     public void Present(IViewModel? viewModel)
@@ -47,7 +49,7 @@ public sealed class ContentPresenter
         }
 
         DismissCurrent();
-        Attach(view);
+        Attach(view, viewModel);
         _transitions.PlayEnter(view);
     }
 
@@ -69,15 +71,17 @@ public sealed class ContentPresenter
         BeginExit(leaving);
     }
 
-    private void Attach(Control view)
+    private void Attach(Control view, IViewModel viewModel)
     {
         ApplyLayout(view);
         _slot.AddChild(view);
         _current = view;
+        _presented?.Set(viewModel, view);
     }
 
     private void BeginExit(Control view)
     {
+        _presented?.MarkExiting(view);
         ViewInjection.Clear(view);
         ViewInjection.IgnoreMouse(view);
         _exiting.Add(view);
@@ -87,6 +91,7 @@ public sealed class ContentPresenter
     private void FinishExit(Control view)
     {
         _exiting.Remove(view);
+        _presented?.Remove(view);
         ViewInjection.Remove(view);
     }
 
@@ -103,6 +108,7 @@ public sealed class ContentPresenter
         _transitions.CancelAll();
         if (_current is not null)
         {
+            _presented?.Remove(_current);
             ViewInjection.Remove(_current);
             _current = null;
         }
@@ -110,6 +116,7 @@ public sealed class ContentPresenter
         foreach (var view in _exiting.ToArray())
         {
             _exiting.Remove(view);
+            _presented?.Remove(view);
             ViewInjection.Remove(view);
         }
     }
@@ -118,6 +125,7 @@ public sealed class ContentPresenter
     {
         _transitions.Cancel(view);
         _exiting.Remove(view);
+        _presented?.Remove(view);
         ViewInjection.Remove(view);
     }
 

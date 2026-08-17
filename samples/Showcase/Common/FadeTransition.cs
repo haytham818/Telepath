@@ -16,6 +16,16 @@ internal static class FadeTransition
     public static Task ExitAsync(Control view, CancellationToken cancellationToken) =>
         FadeToAsync(view, 0f, cancellationToken);
 
+    public static Task CoverAsync(Control view, CancellationToken cancellationToken)
+    {
+        var color = view.Modulate;
+        view.Modulate = new Color(color, MathF.Min(color.A, 0.85f));
+        return FadeToAsync(view, 0.45f, cancellationToken);
+    }
+
+    public static Task UncoverAsync(Control view, CancellationToken cancellationToken) =>
+        FadeToAsync(view, 1f, cancellationToken);
+
     private static Task FadeToAsync(Control view, float alpha, CancellationToken cancellationToken)
     {
         var tween = view.CreateTween();
