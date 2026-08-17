@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://c8k4formappvw" path="res://Form/FormView.cs" id="1_form"]
 
-[node name="FormView" type="Control"]
+[node name="FormView" type="Control" unique_id=1172997427]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -39,7 +39,7 @@ metadata/telepath_bindings = [{
 "member": "ShowAdvanced",
 "path": "%ShowAdvanced"
 }, {
-"converter": "Telepath.Showcase.FormApp.InvertBoolConverter",
+"converter": "Telepath.Showcase.InvertBoolConverter",
 "kind": "Visible",
 "member": "ShowAdvanced",
 "path": "%SimpleHint"
@@ -60,7 +60,7 @@ metadata/telepath_bindings = [{
 "member": "Quantity",
 "path": "%Quantity"
 }, {
-"converter": "Telepath.Showcase.FormApp.IntStringConverter",
+"converter": "Telepath.Showcase.IntStringConverter",
 "kind": "Text",
 "member": "Score",
 "path": "%Score"
@@ -90,7 +90,7 @@ metadata/telepath_bindings = [{
 "path": "%Status"
 }]
 
-[node name="Scroll" type="ScrollContainer" parent="."]
+[node name="Scroll" type="ScrollContainer" parent="." unique_id=908494259]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -99,96 +99,96 @@ grow_horizontal = 2
 grow_vertical = 2
 horizontal_scroll_mode = 0
 
-[node name="Center" type="CenterContainer" parent="Scroll"]
+[node name="Center" type="CenterContainer" parent="Scroll" unique_id=937178957]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 
-[node name="VBox" type="VBoxContainer" parent="Scroll/Center"]
+[node name="VBox" type="VBoxContainer" parent="Scroll/Center" unique_id=908232755]
 custom_minimum_size = Vector2(420, 0)
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="Title" type="Label" parent="Scroll/Center/VBox"]
+[node name="Title" type="Label" parent="Scroll/Center/VBox" unique_id=611847404]
 layout_mode = 2
 text = "Form"
 horizontal_alignment = 1
 
-[node name="Hint" type="Label" parent="Scroll/Center/VBox"]
+[node name="Hint" type="Label" parent="Scroll/Center/VBox" unique_id=1804819199]
 layout_mode = 2
 text = "TextEdit, RichTextLabel, CheckBox / CheckButton, Button toggle, HSlider, SpinBox, OptionButton Selected / Command, Visible, Disabled, two-way converters."
-autowrap_mode = 3
 horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="NotesCaption" type="Label" parent="Scroll/Center/VBox"]
+[node name="NotesCaption" type="Label" parent="Scroll/Center/VBox" unique_id=957770521]
 layout_mode = 2
 text = "Notes"
 
-[node name="Notes" type="TextEdit" parent="Scroll/Center/VBox"]
+[node name="Notes" type="TextEdit" parent="Scroll/Center/VBox" unique_id=1890918113]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 88)
 layout_mode = 2
-wrap_mode = 1
 text = "Hello from TextEdit."
+wrap_mode = 1
 
-[node name="Preview" type="RichTextLabel" parent="Scroll/Center/VBox"]
+[node name="Preview" type="RichTextLabel" parent="Scroll/Center/VBox" unique_id=725448469]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 72)
 layout_mode = 2
 bbcode_enabled = true
+text = "[b]Preview[/b]"
 fit_content = true
 scroll_active = false
-text = "[b]Preview[/b]"
 
-[node name="Toggles" type="HBoxContainer" parent="Scroll/Center/VBox"]
+[node name="Toggles" type="HBoxContainer" parent="Scroll/Center/VBox" unique_id=1590911942]
 layout_mode = 2
 theme_override_constants/separation = 12
 
-[node name="Subscribed" type="CheckBox" parent="Scroll/Center/VBox/Toggles"]
+[node name="Subscribed" type="CheckBox" parent="Scroll/Center/VBox/Toggles" unique_id=1669772703]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Subscribe"
 
-[node name="Notifications" type="CheckButton" parent="Scroll/Center/VBox/Toggles"]
+[node name="Notifications" type="CheckButton" parent="Scroll/Center/VBox/Toggles" unique_id=1150444697]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Notifications"
 
-[node name="Pin" type="Button" parent="Scroll/Center/VBox/Toggles"]
+[node name="Pin" type="Button" parent="Scroll/Center/VBox/Toggles" unique_id=1536398194]
 unique_name_in_owner = true
 layout_mode = 2
 toggle_mode = true
 text = "Pin"
 
-[node name="ShowAdvanced" type="CheckBox" parent="Scroll/Center/VBox"]
+[node name="ShowAdvanced" type="CheckBox" parent="Scroll/Center/VBox" unique_id=589958853]
 unique_name_in_owner = true
 layout_mode = 2
 button_pressed = true
 text = "Show advanced"
 
-[node name="SimpleHint" type="Label" parent="Scroll/Center/VBox"]
+[node name="SimpleHint" type="Label" parent="Scroll/Center/VBox" unique_id=1951887682]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 text = "Advanced fields are hidden (Visible + InvertBoolConverter)."
-autowrap_mode = 3
 horizontal_alignment = 1
+autowrap_mode = 3
 
-[node name="Advanced" type="VBoxContainer" parent="Scroll/Center/VBox"]
+[node name="Advanced" type="VBoxContainer" parent="Scroll/Center/VBox" unique_id=2040974945]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="VolumeRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced"]
+[node name="VolumeRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced" unique_id=55123171]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="VolumeLabel" type="Label" parent="Scroll/Center/VBox/Advanced/VolumeRow"]
+[node name="VolumeLabel" type="Label" parent="Scroll/Center/VBox/Advanced/VolumeRow" unique_id=1118492283]
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "Volume"
 
-[node name="Volume" type="HSlider" parent="Scroll/Center/VBox/Advanced/VolumeRow"]
+[node name="Volume" type="HSlider" parent="Scroll/Center/VBox/Advanced/VolumeRow" unique_id=1503901081]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -197,23 +197,23 @@ max_value = 1.0
 step = 0.01
 value = 0.6
 
-[node name="VolumeCaption" type="Label" parent="Scroll/Center/VBox/Advanced/VolumeRow"]
+[node name="VolumeCaption" type="Label" parent="Scroll/Center/VBox/Advanced/VolumeRow" unique_id=1255429271]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(40, 0)
 layout_mode = 2
 text = "0.60"
 horizontal_alignment = 2
 
-[node name="QuantityRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced"]
+[node name="QuantityRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced" unique_id=1686829453]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="QuantityLabel" type="Label" parent="Scroll/Center/VBox/Advanced/QuantityRow"]
+[node name="QuantityLabel" type="Label" parent="Scroll/Center/VBox/Advanced/QuantityRow" unique_id=365168716]
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "Quantity"
 
-[node name="Quantity" type="SpinBox" parent="Scroll/Center/VBox/Advanced/QuantityRow"]
+[node name="Quantity" type="SpinBox" parent="Scroll/Center/VBox/Advanced/QuantityRow" unique_id=958760740]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
@@ -221,89 +221,91 @@ max_value = 20.0
 value = 3.0
 rounded = true
 
-[node name="ScoreRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced"]
+[node name="ScoreRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced" unique_id=172194246]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ScoreLabel" type="Label" parent="Scroll/Center/VBox/Advanced/ScoreRow"]
+[node name="ScoreLabel" type="Label" parent="Scroll/Center/VBox/Advanced/ScoreRow" unique_id=1377218304]
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "Score"
 
-[node name="Score" type="LineEdit" parent="Scroll/Center/VBox/Advanced/ScoreRow"]
+[node name="Score" type="LineEdit" parent="Scroll/Center/VBox/Advanced/ScoreRow" unique_id=1293132944]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "42"
 placeholder_text = "int via converter"
 
-[node name="ThemeRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced"]
+[node name="ThemeRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced" unique_id=879938928]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="ThemeLabel" type="Label" parent="Scroll/Center/VBox/Advanced/ThemeRow"]
+[node name="ThemeLabel" type="Label" parent="Scroll/Center/VBox/Advanced/ThemeRow" unique_id=1309646633]
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "Theme"
 
-[node name="Theme" type="OptionButton" parent="Scroll/Center/VBox/Advanced/ThemeRow"]
+[node name="Theme" type="OptionButton" parent="Scroll/Center/VBox/Advanced/ThemeRow" unique_id=1602562901]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 selected = 0
 item_count = 3
 popup/item_0/text = "Light"
+popup/item_0/id = 0
 popup/item_1/text = "Dark"
 popup/item_1/id = 1
 popup/item_2/text = "System"
 popup/item_2/id = 2
 
-[node name="PresetRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced"]
+[node name="PresetRow" type="HBoxContainer" parent="Scroll/Center/VBox/Advanced" unique_id=1097547600]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="PresetLabel" type="Label" parent="Scroll/Center/VBox/Advanced/PresetRow"]
+[node name="PresetLabel" type="Label" parent="Scroll/Center/VBox/Advanced/PresetRow" unique_id=1055256275]
 custom_minimum_size = Vector2(72, 0)
 layout_mode = 2
 text = "Preset"
 
-[node name="Preset" type="OptionButton" parent="Scroll/Center/VBox/Advanced/PresetRow"]
+[node name="Preset" type="OptionButton" parent="Scroll/Center/VBox/Advanced/PresetRow" unique_id=1348929605]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 selected = 1
 item_count = 3
 popup/item_0/text = "Quiet"
+popup/item_0/id = 0
 popup/item_1/text = "Normal"
 popup/item_1/id = 1
 popup/item_2/text = "Loud"
 popup/item_2/id = 2
 
-[node name="Locked" type="CheckBox" parent="Scroll/Center/VBox"]
+[node name="Locked" type="CheckBox" parent="Scroll/Center/VBox" unique_id=1351465180]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Lock submit and notifications"
 
-[node name="Actions" type="HBoxContainer" parent="Scroll/Center/VBox"]
+[node name="Actions" type="HBoxContainer" parent="Scroll/Center/VBox" unique_id=1214684468]
 layout_mode = 2
 theme_override_constants/separation = 8
 alignment = 1
 
-[node name="Echo" type="Button" parent="Scroll/Center/VBox/Actions"]
+[node name="Echo" type="Button" parent="Scroll/Center/VBox/Actions" unique_id=1451592529]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Echo"
 
-[node name="Submit" type="Button" parent="Scroll/Center/VBox/Actions"]
+[node name="Submit" type="Button" parent="Scroll/Center/VBox/Actions" unique_id=1381086516]
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Submit"
 
-[node name="Status" type="Label" parent="Scroll/Center/VBox"]
+[node name="Status" type="Label" parent="Scroll/Center/VBox" unique_id=1918831842]
 unique_name_in_owner = true
 layout_mode = 2
 text = "Edit the form, then Submit."
-autowrap_mode = 3
 horizontal_alignment = 1
+autowrap_mode = 3

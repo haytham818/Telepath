@@ -11,7 +11,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_counter")
 metadata/telepath_bindings = [{
-"converter": "Telepath.Showcase.CounterApp.CountTextConverter",
+"converter": "Telepath.Showcase.CountTextConverter",
 "kind": "Text",
 "member": "Count",
 "path": "%CountLabel"

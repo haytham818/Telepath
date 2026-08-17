@@ -2,25 +2,32 @@
 
 [ext_resource type="Script" uid="uid://b0a7wu0jg8761" path="res://Navigation/Status/StatusView.cs" id="1_status"]
 
-[node name="StatusView" type="Control"]
+[sub_resource type="LabelSettings" id="LabelSettings_qecav"]
+line_spacing = 81.86
+
+[node name="StatusView" type="Control" unique_id=1329881774]
 custom_minimum_size = Vector2(160, 0)
 layout_mode = 3
-script = ExtResource("1_status")
+anchors_preset = 0
 mouse_filter = 2
+script = ExtResource("1_status")
 metadata/telepath_bindings = [{
 "kind": "Text",
 "member": "Caption",
 "path": "%Caption"
 }]
 
-[node name="Caption" type="Label" parent="."]
+[node name="Caption" type="Label" parent="." unique_id=1121513568]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = -11.5
+offset_bottom = 11.5
 grow_horizontal = 2
 grow_vertical = 2
 text = "Showcase"
+label_settings = SubResource("LabelSettings_qecav")
 horizontal_alignment = 2
 vertical_alignment = 1
