@@ -32,6 +32,14 @@ metadata/telepath_bindings = [{
 "member": "Selected",
 "path": "%Items"
 }, {
+"kind": "Items",
+"member": "Items",
+"path": "%Choices"
+}, {
+"kind": "Selected",
+"member": "Selected",
+"path": "%Choices"
+}, {
 "kind": "Command",
 "member": "RemoveCommand",
 "path": "%Remove"
@@ -39,10 +47,6 @@ metadata/telepath_bindings = [{
 "kind": "Command",
 "member": "ClearCommand",
 "path": "%Clear"
-}, {
-"kind": "Items",
-"member": "Items",
-"path": "%Choices"
 }]
 
 [node name="Center" type="CenterContainer" parent="." unique_id=1847201902]
@@ -60,6 +64,11 @@ theme_override_constants/separation = 16
 [node name="Title" type="Label" parent="Center/VBox" unique_id=1847201904]
 layout_mode = 2
 text = "List"
+horizontal_alignment = 1
+
+[node name="Hint" type="Label" parent="Center/VBox"]
+layout_mode = 2
+text = "ItemList and OptionButton share Items and Selected."
 horizontal_alignment = 1
 
 [node name="Row" type="HBoxContainer" parent="Center/VBox" unique_id=1847201905]

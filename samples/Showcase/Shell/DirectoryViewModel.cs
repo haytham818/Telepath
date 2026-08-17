@@ -1,5 +1,6 @@
 using Telepath.Core;
 using Telepath.Showcase.CounterApp;
+using Telepath.Showcase.FormApp;
 using Telepath.Showcase.ListApp;
 using Telepath.Showcase.SearchApp;
 using Telepath.Showcase.TodoApp;
@@ -33,6 +34,9 @@ public sealed partial class DirectoryViewModel : ViewModel
 
     [Command]
     private void OnOpenTodo() => _navigator.Navigate(new TodoListViewModel(_interaction));
+
+    [Command]
+    private void OnOpenForm() => _navigator.Navigate(new FormViewModel());
 
     [Command]
     private void OnOpenPauseDemo() => _navigator.Navigate(new PauseDemoViewModel(_overlay));

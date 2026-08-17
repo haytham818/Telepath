@@ -2,6 +2,7 @@ using Godot;
 using Telepath.Core;
 using Telepath.Godot;
 using Telepath.Showcase.CounterApp;
+using Telepath.Showcase.FormApp;
 using Telepath.Showcase.ListApp;
 using Telepath.Showcase.SearchApp;
 using Telepath.Showcase.TodoApp;
@@ -29,6 +30,7 @@ public partial class ShellView : Control
             .Register<SearchViewModel>("res://SearchApp/SearchView.tscn")
             .Register<ListViewModel>("res://ListApp/ListView.tscn")
             .Register<TodoListViewModel>("res://TodoApp/TodoListView.tscn")
+            .Register<FormViewModel>("res://FormApp/FormView.tscn")
             .Register<PauseDemoViewModel>("res://Shell/PauseDemoView.tscn")
             .Register<AboutViewModel>("res://Shell/AboutView.tscn")
             .Register<ToastViewModel>("res://Shell/ToastView.tscn")

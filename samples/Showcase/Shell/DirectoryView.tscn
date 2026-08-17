@@ -28,6 +28,10 @@ metadata/telepath_bindings = [{
 "path": "%Todo"
 }, {
 "kind": "Command",
+"member": "OpenFormCommand",
+"path": "%Form"
+}, {
+"kind": "Command",
 "member": "OpenPauseDemoCommand",
 "path": "%PauseDemo"
 }, {
@@ -36,60 +40,159 @@ metadata/telepath_bindings = [{
 "path": "%Banner"
 }]
 
-[node name="Center" type="CenterContainer" parent="."]
+[node name="Scroll" type="ScrollContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+horizontal_scroll_mode = 0
 
-[node name="VBox" type="VBoxContainer" parent="Center"]
+[node name="Center" type="CenterContainer" parent="Scroll"]
 layout_mode = 2
-theme_override_constants/separation = 12
+size_flags_horizontal = 3
+size_flags_vertical = 3
 
-[node name="Title" type="Label" parent="Center/VBox"]
+[node name="VBox" type="VBoxContainer" parent="Scroll/Center"]
+custom_minimum_size = Vector2(460, 0)
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="Scroll/Center/VBox"]
 layout_mode = 2
 text = "Telepath Showcase"
 horizontal_alignment = 1
 
-[node name="Hint" type="Label" parent="Center/VBox"]
+[node name="Hint" type="Label" parent="Scroll/Center/VBox"]
 layout_mode = 2
-text = "Counter fades on navigate. Overlays animate open and close."
+text = "Thin views; bindings live on the scene. Counter fades on navigate. Overlays animate open and close."
+autowrap_mode = 3
 horizontal_alignment = 1
 
-[node name="Counter" type="Button" parent="Center/VBox"]
+[node name="BindingsHeader" type="Label" parent="Scroll/Center/VBox"]
+layout_mode = 2
+text = "Bindings"
+
+[node name="CounterRow" type="HBoxContainer" parent="Scroll/Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Counter" type="Button" parent="Scroll/Center/VBox/CounterRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 text = "Counter"
 
-[node name="Search" type="Button" parent="Center/VBox"]
+[node name="CounterHint" type="Label" parent="Scroll/Center/VBox/CounterRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Label converter, commands, CanExecute"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="SearchRow" type="HBoxContainer" parent="Scroll/Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Search" type="Button" parent="Scroll/Center/VBox/SearchRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 text = "Search"
 
-[node name="List" type="Button" parent="Center/VBox"]
+[node name="SearchHint" type="Label" parent="Scroll/Center/VBox/SearchRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "LineEdit, async command, ProgressBar Value / Visible"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="ListRow" type="HBoxContainer" parent="Scroll/Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="List" type="Button" parent="Scroll/Center/VBox/ListRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 text = "List"
 
-[node name="Todo" type="Button" parent="Center/VBox"]
+[node name="ListHint" type="Label" parent="Scroll/Center/VBox/ListRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "ItemList Items / Selected, OptionButton Items / Selected"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="TodoRow" type="HBoxContainer" parent="Scroll/Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Todo" type="Button" parent="Scroll/Center/VBox/TodoRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 text = "Todo"
 
-[node name="PauseDemo" type="Button" parent="Center/VBox"]
+[node name="TodoHint" type="Label" parent="Scroll/Center/VBox/TodoRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Container items, [BindTo] CheckBox, confirm"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="FormRow" type="HBoxContainer" parent="Scroll/Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Form" type="Button" parent="Scroll/Center/VBox/FormRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(140, 0)
+layout_mode = 2
+text = "Form"
+
+[node name="FormHint" type="Label" parent="Scroll/Center/VBox/FormRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "TextEdit, toggles, Range, Disabled, converters"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="PresentationHeader" type="Label" parent="Scroll/Center/VBox"]
+layout_mode = 2
+text = "Presentation"
+
+[node name="PauseRow" type="HBoxContainer" parent="Scroll/Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="PauseDemo" type="Button" parent="Scroll/Center/VBox/PauseRow"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 text = "Overlay pause"
 
-[node name="Banner" type="Button" parent="Center/VBox"]
+[node name="PauseHint" type="Label" parent="Scroll/Center/VBox/PauseRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "CoverMode Pause / Continue, Modal, Toast"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="BannerRow" type="HBoxContainer" parent="Scroll/Center/VBox"]
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="Banner" type="Button" parent="Scroll/Center/VBox/BannerRow"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(220, 0)
+custom_minimum_size = Vector2(140, 0)
 layout_mode = 2
 text = "Banner"
+
+[node name="BannerHint" type="Label" parent="Scroll/Center/VBox/BannerRow"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Custom OverlayLayer between Popup and Modal"
+autowrap_mode = 3
+vertical_alignment = 1

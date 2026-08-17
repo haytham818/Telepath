@@ -25,7 +25,7 @@ src/Telepath.Godot/Editor/                       GDScript 插件外壳、Binding
 src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 
-示例：[CounterApp](../samples/Showcase/CounterApp/)（场景绑定 + Converter，与目录换页淡入淡出），[SearchApp](../samples/Showcase/SearchApp/)（异步命令 + `ProgressBar` 的 `Value` / `Visible`），[ListApp](../samples/Showcase/ListApp/)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.tscn)（容器 + 子 View）。项模板 [TodoItemView](../samples/Showcase/TodoApp/TodoItemView.cs) 仍用 `[BindTo]` 作为逃逸口。换屏壳：[Shell](../samples/Showcase/Shell/)（Confirm / Toast / Banner / About 有打开关闭过渡）。
+示例：[CounterApp](../samples/Showcase/CounterApp/)（场景绑定 + Converter，与目录换页淡入淡出），[SearchApp](../samples/Showcase/SearchApp/)（异步命令 + `ProgressBar` 的 `Value` / `Visible`），[ListApp](../samples/Showcase/ListApp/)（`ItemList` / `OptionButton` 的 `Items` 与 `Selected`），[TodoApp](../samples/Showcase/TodoApp/TodoListView.tscn)（容器 + 子 View），[FormApp](../samples/Showcase/FormApp/)（`TextEdit`、`RichTextLabel`、开关、`HSlider` / `SpinBox`、`Disabled`、`OptionButton` 命令、双向转换器）。项模板 [TodoItemView](../samples/Showcase/TodoApp/TodoItemView.cs) 仍用 `[BindTo]` 作为逃逸口。换屏壳：[Shell](../samples/Showcase/Shell/)（Confirm / Toast / Banner / About 有打开关闭过渡）。
 
 具体 View 必须：
 
@@ -229,4 +229,4 @@ private VBoxContainer _items = null!;
 
 生成 `bindings.BindItems(vm.Items, _items.Items())` 和 `bindings.BindItems(vm.Items, _list.Items<TodoItemView, TodoItemViewModel>(ItemScene))`。原生列表可用 `Converter` 把项转成 `string`；容器模板不能带 `Converter`。
 
-`[Bindable] private ObservableList<T>? _items` 生成惰性 `ObservableList<T> Items`，不要包成 `BindableReactiveProperty`。整表替换仍用 `BindableReactiveProperty<IReadOnlyList<T>>`。项若是 ViewModel，从集合移除和父 `OnDispose` 时由拥有者 `Dispose`。示例：[ListApp](../samples/Showcase/ListApp/)（`ItemList`），[TodoApp](../samples/Showcase/TodoApp/)（容器 + 子 View）。ViewModel 契约见 [viewmodel.md](viewmodel.md)，换屏见 [presentation.md](presentation.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。
+`[Bindable] private ObservableList<T>? _items` 生成惰性 `ObservableList<T> Items`，不要包成 `BindableReactiveProperty`。整表替换仍用 `BindableReactiveProperty<IReadOnlyList<T>>`。项若是 ViewModel，从集合移除和父 `OnDispose` 时由拥有者 `Dispose`。示例：[ListApp](../samples/Showcase/ListApp/)（`ItemList` / `OptionButton`），[TodoApp](../samples/Showcase/TodoApp/)（容器 + 子 View），[FormApp](../samples/Showcase/FormApp/)（其余控件与双向转换器）。ViewModel 契约见 [viewmodel.md](viewmodel.md)，换屏见 [presentation.md](presentation.md)，R3 胶水见 [r3-godot.md](r3-godot.md)。
