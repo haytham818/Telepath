@@ -10,7 +10,7 @@ src/Telepath.Core/ViewModel/
   BindableAttribute.cs
   CommandAttribute.cs
 src/Telepath.Core/Presentation/
-  Conductor.cs、INavigator.cs、IActivatable.cs
+  IActivatable.cs、Conductor/（Conductor、INavigator）
 src/Telepath.SourceGenerator/ViewModel/
 ```
 

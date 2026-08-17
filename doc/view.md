@@ -9,22 +9,19 @@ Dock** 把控件连到属性 / 命令。绑定存在场景节点的 `metadata/te
 转换器手写或特殊接线的逃逸口。
 
 ```
-src/Telepath.Core/Binding/                       BindingSet、BindingTarget、CollectionTarget、Bind / BindCommand / BindItems
-src/Telepath.Godot/Binding/GodotTargets.cs       控件 → BindingTarget（.Text() / .Value() / .Selected() 等）
-src/Telepath.Godot/Binding/GodotCollectionTargets.cs  ItemList / OptionButton / Container → CollectionTarget
-src/Telepath.Godot/Binding/GodotCommands.cs      按钮 / LineEdit 命令
-src/Telepath.Godot/Binding/SceneBindingSchema.cs 场景 metadata 读写
-src/Telepath.Godot/Binding/SceneBindingApplier.cs 运行时按场景条目接线
+src/Telepath.Core/Binding/                       BindingSet、BindingTarget、Bind / BindCommand
+src/Telepath.Core/Binding/Collection/            CollectionTarget、BindItems
+src/Telepath.Core/Binding/Attributes/            Bindable、Command
+src/Telepath.Godot/Binding/Targets/              控件 → BindingTarget / CollectionTarget / 命令
+src/Telepath.Godot/Binding/Scene/                场景 metadata 读写与运行时接线
+src/Telepath.Godot/Binding/Attributes/           NodeInject、BindTo、LinkKind
 src/Telepath.Godot/View/ViewLifecycle.cs         ViewModel / 绑定寿命
 src/Telepath.Godot/View/ITelepathView.cs         可注入 ViewModel 的 View 契约
 src/Telepath.Godot/View/TelepathViewAttribute.cs View 标记
-src/Telepath.Core/Presentation/                  导体、INavigator、可选 IActivatable（见 presentation.md）
+src/Telepath.Core/Presentation/                  导体、Overlay、Interaction（见 presentation.md）
 src/Telepath.Godot/Presentation/                 ViewRegistry、ContentPresenter、BindContent 适配
 src/Telepath.Godot/Addon/                        plugin.cfg、FrameProviderDispatcher.gd / .cs（不编进库）
 src/Telepath.Godot/Editor/                       GDScript 插件外壳、Binding Dock 场景与 ViewModel（不编进 Telepath.Godot.dll）
-src/Telepath.Godot/Binding/Attrtbutes/NodeInjectAttribute.cs  节点注入
-src/Telepath.Godot/Binding/Attrtbutes/BindToAttribute.cs      声明式绑定
-src/Telepath.Godot/Binding/Attrtbutes/LinkKind.cs             覆盖推断
 src/Telepath.SourceGenerator/View/               诊断、校验、源码渲染
 ```
 

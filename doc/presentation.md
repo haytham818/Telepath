@@ -10,35 +10,43 @@
 
 ```
 src/Telepath.Core/Presentation/
-  INavigator.cs       子页请求 Navigate / Back / CloseSelf
-  IConductor.cs       当前页、Close、栈
-  IOverlay.cs         叠层 Push / Back / CloseSelf / Clear
-  IOverlayHost.cs     命名带、Register、带间 Back
-  OverlayLayer.cs     Popup / Modal / Toast 标识与 z 序
-  CoverMode.cs        Pause（停下层）/ Continue（下层继续跑）
-  IActivatable.cs     可选进前台 / 离前台钩子
-  Conductor.cs        单槽：压栈、弹出、离栈即 Dispose
-  Overlay.cs          一带之内：留视图、遮挡暂停
-  OverlayHost.cs      多带：独立栈 + 带间 Reconcile 激活
-  IInteraction.cs     Confirm / Run，请求/应答
-  DialogViewModel.cs  对话框 VM：Complete / Dismissed
-  ConfirmViewModel.cs 内置是否确认
-  Interaction.cs      包装 OverlayHost，默认推进 Modal
-src/Telepath.Core/Binding/
-  ContentTarget.cs / ContentBindingExtensions.cs   BindContent
-  OverlayTarget.cs / OverlayBindingExtensions.cs   BindOverlay
-  ViewTarget.cs / ViewBindingExtensions.cs         BindView
+  IActivatable.cs                 可选进前台 / 离前台钩子
+  Conductor/
+    INavigator.cs                 子页请求 Navigate / Back / CloseSelf
+    IConductor.cs                 当前页、Close、栈
+    Conductor.cs                  单槽：压栈、弹出、离栈即 Dispose
+    ContentTarget.cs / ContentBindingExtensions.cs   BindContent
+  Overlay/
+    IOverlay.cs                   叠层 Push / Back / CloseSelf / Clear
+    IOverlayHost.cs               命名带、Register、带间 Back
+    OverlayLayer.cs               Popup / Modal / Toast 标识与 z 序
+    CoverMode.cs                  Pause（停下层）/ Continue（下层继续跑）
+    Overlay.cs                    一带之内：留视图、遮挡暂停
+    OverlayHost.cs                多带：独立栈 + 带间 Reconcile 激活
+    OverlayTarget.cs / OverlayBindingExtensions.cs   BindOverlay
+  Interaction/
+    IInteraction.cs               Confirm / Run，请求/应答
+    DialogViewModel.cs            对话框 VM：Complete / Dismissed
+    ConfirmViewModel.cs           内置是否确认
+    Interaction.cs                包装 OverlayHost，默认推进 Modal
+  NestedView/
+    ViewTarget.cs / ViewBindingExtensions.cs         BindView
 src/Telepath.Godot/Presentation/
-  ViewRegistry.cs             ViewModel 类型 → PackedScene
-  IViewTransition.cs          可选进/退场；View 自播，Presenter 等退场再 QueueFree
-  AnimationPlayerTransition.cs  播 AnimationPlayer 并接入取消
-  TweenTransition.cs          等 Tween 结束并接入取消
-  ContentPresenter.cs         换页：旧页退场与新页进场并行
-  OverlayPresenter.cs         一带：增层进场、删层退场后再 QueueFree
-  OverlayHostPresenter.cs     按 Bands 建槽，每带一个 OverlayPresenter
-  GodotContentTargets.cs      Control.Content(registry)
-  GodotOverlayTargets.cs      Control.Overlays(registry) / BindOverlayHost
-  GodotViewTargets.cs         Control.View()
+  ViewRegistry.cs                 ViewModel 类型 → PackedScene
+  ViewInjection.cs
+  Content/
+    ContentPresenter.cs           换页：旧页退场与新页进场并行
+    GodotContentTargets.cs        Control.Content(registry)
+  Overlay/
+    OverlayPresenter.cs           一带：增层进场、删层退场后再 QueueFree
+    OverlayHostPresenter.cs       按 Bands 建槽，每带一个 OverlayPresenter
+    GodotOverlayTargets.cs        Control.Overlays(registry) / BindOverlayHost
+  NestedView/
+    GodotViewTargets.cs           Control.View()
+  Transition/
+    IViewTransition.cs            可选进/退场；View 自播，Presenter 等退场再 QueueFree
+    AnimationPlayerTransition.cs  播 AnimationPlayer 并接入取消
+    TweenTransition.cs            等 Tween 结束并接入取消
 ```
 
 示例：[Shell](../samples/Showcase/Shell/)（目录进四个 App + Overlay pause / Modal / Toast / 自定义 Banner；Todo 删除前确认；头上 Status 走 BindView；壳上 Back 先关可返回的 Overlay，跳过 Toast）。进退场示例：Directory↔Counter 淡入淡出（Tween）；Confirm / Toast / Banner 用 Tween；About 用场景里的 `AnimationPlayer`。未实现 `IViewTransition` 的页仍瞬切。
@@ -219,7 +227,7 @@ private void OnBind(ShellViewModel vm, BindingSet bindings)
 
 打开 / 关闭动画由 **View** 播（场景里 `AnimationPlayer` 或 C# Tween），不在 Core，也不按 `OverlayLayer` 配默认淡入淡出。`Navigate` / `Close` / `Push` / `Back` 仍是同步 `void`：栈先改完、VM 先 `Dispose`，Presenter 把已解绑的节点当幽灵播退场。
 
-宿主 View 按需实现 [`IViewTransition`](../src/Telepath.Godot/Presentation/IViewTransition.cs)。未实现则进 / 退场立即完成，Showcase 仍是瞬切。生成器**不**给每个 View 生成空方法，也不按节点名自动找 `AnimationPlayer`。
+宿主 View 按需实现 [`IViewTransition`](../src/Telepath.Godot/Presentation/Transition/IViewTransition.cs)。未实现则进 / 退场立即完成，Showcase 仍是瞬切。生成器**不**给每个 View 生成空方法，也不按节点名自动找 `AnimationPlayer`。
 
 ```csharp
 public interface IViewTransition
@@ -246,7 +254,7 @@ public interface IViewTransition
 
 `BindView` 不走这套：节点常驻，不实例化、不 `QueueFree`。
 
-`IViewTransition` 不规定怎么播。场景里预做好的 clip 用 [`AnimationPlayerTransition`](../src/Telepath.Godot/Presentation/AnimationPlayerTransition.cs)；代码里拼的位移 / 淡入淡出用 [`TweenTransition`](../src/Telepath.Godot/Presentation/TweenTransition.cs)。两者都只负责「等到结束或取消」，不提供默认曲线。
+`IViewTransition` 不规定怎么播。场景里预做好的 clip 用 [`AnimationPlayerTransition`](../src/Telepath.Godot/Presentation/Transition/AnimationPlayerTransition.cs)；代码里拼的位移 / 淡入淡出用 [`TweenTransition`](../src/Telepath.Godot/Presentation/Transition/TweenTransition.cs)。两者都只负责「等到结束或取消」，不提供默认曲线。
 
 ```csharp
 public Task PlayEnterAsync(CancellationToken cancellationToken)
