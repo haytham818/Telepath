@@ -6,7 +6,8 @@ namespace Telepath.Godot;
 /// <summary>
 /// Shared ViewModel → live Control map for content and overlay presenters.
 /// Pass the same instance to <c>Content</c> and <c>BindOverlayHost</c> so a
-/// covered screen or lower overlay can play <see cref="IViewCoverTransition"/>.
+/// covered screen or lower overlay can play <see cref="IViewCoverTransition"/>
+/// and so <see cref="IOverlayHost.InputBlocked"/> can isolate GUI focus.
 /// </summary>
 public sealed class PresentedViews
 {
@@ -17,9 +18,12 @@ public sealed class PresentedViews
     public PresentedViews()
     {
         Covers = new CoverSession(this);
+        Focus = new FocusSession(this);
     }
 
     internal CoverSession Covers { get; }
+
+    internal FocusSession Focus { get; }
 
     internal void Set(IViewModel viewModel, Control view)
     {
@@ -39,17 +43,20 @@ public sealed class PresentedViews
         _views[viewModel] = view;
         _viewModels[view] = viewModel;
         _exiting.Remove(view);
+        Focus.OnPresented(viewModel, view);
     }
 
     internal void MarkExiting(Control view)
     {
         _exiting.Add(view);
         Covers.Cancel(view);
+        Focus.Cancel(view);
     }
 
     internal void Remove(Control view)
     {
         Covers.Cancel(view);
+        Focus.Cancel(view);
         _exiting.Remove(view);
         if (_viewModels.Remove(view, out var viewModel))
         {

@@ -22,7 +22,7 @@ src/Telepath.Core/Presentation/
     OverlayLayer.cs               Popup / Modal / Toast 标识与 z 序
     CoverMode.cs                  Pause（停下层）/ Continue（下层继续跑）
     Overlay.cs                    一带之内：留视图、遮挡暂停
-    OverlayHost.cs                多带：独立栈 + 带间 Reconcile 激活 + Covered
+    OverlayHost.cs                多带：独立栈 + 带间 Reconcile 激活 + Covered + InputBlocked
     OverlayTarget.cs / OverlayBindingExtensions.cs   BindOverlay
   Interaction/
     IInteraction.cs               Run，请求/应答
@@ -39,14 +39,16 @@ src/Telepath.Godot/Presentation/
     GodotContentTargets.cs        Control.Content(registry, presented)
   Overlay/
     OverlayPresenter.cs           一带：增层进场、删层退场后再 QueueFree
-    OverlayHostPresenter.cs       按 Bands 建槽，订阅 Covered 播遮盖
+    OverlayHostPresenter.cs       按 Bands 建槽，订阅 Covered 播遮盖并隔离焦点
     GodotOverlayTargets.cs        Control.Overlays(registry) / BindOverlayHost
   NestedView/
     GodotViewTargets.cs           Control.View()
   Transition/
     IViewTransition.cs            可选进/退场；View 自播，Presenter 等退场再 QueueFree
     IViewCoverTransition.cs       可选被盖住/揭开；View 仍绑定
+    IViewFocus.cs                 可选接管焦点；未实现则扫第一个可聚焦子节点
     CoverSession.cs               Covered diff 后并行 PlayCover / PlayUncover
+    FocusSession.cs               InputBlocked diff 后 FOCUS_NONE / 归还 / TakeFocus
     AnimationPlayerTransition.cs  播 AnimationPlayer 并接入取消
     TweenTransition.cs            等 Tween 结束并接入取消
 ```
@@ -156,6 +158,8 @@ host.Push(new BannerViewModel(host), bannerLayer);
 - `Close(vm)`：在所有带里查找。面板按钮应 `Close(this)`，不要假设自己是视觉顶层。
 - `Clear`：清所有带（换屏仍清干净，Toast 一并关掉）。
 - `HasOverlay`：任一带非空。`HasBackableOverlay`：是否有可 Back 的带（壳返回按钮用这个）。
+- `Covered`：上方还有至少一层 Overlay 的 VM（含 Toast）。给被盖住页播视觉过渡。
+- `InputBlocked`：上方还有至少一层 **挡点击** Overlay 的 VM。与 `CoverMode` 无关。Toast / Banner 盖住时屏幕仍可聚焦；Modal 盖住时下层 `FocusMode` 设为 `None`，关掉后还原。换屏 `Clear(resumeCovered: false)` 的占位屏只进 `Covered`，不进 `InputBlocked`。
 
 带内 Pause/Continue 仍由该带的 `Overlay` 记录。带间激活由 Host `Reconcile`：被更高带且该层 `Pause` 盖住的项不 `Activate`；`Continue` 带（Toast）不暂停下面。向较低带 Push 时，若上方已有 Pause 的 Modal，新项不会进前台。
 
@@ -221,7 +225,7 @@ private void OnBind(ShellViewModel vm, BindingSet bindings)
 }
 ```
 
-空槽 `MouseFilter = Ignore`。`BlocksPassThrough` 的带非空时该槽 `Stop`；Toast / Banner 槽始终 `Ignore`，由面板自己挡点击。
+空槽 `MouseFilter = Ignore`。`BlocksPassThrough` 的带非空时该槽 `Stop`；Toast / Banner 槽始终 `Ignore`，由面板自己挡点击。同一时刻，`InputBlocked` 里的已呈现视图会被设为 `FocusMode.None`（含子节点），关掉挡点击层后还原并尽量 `GrabFocus` 原先的 owner。新成为输入前台的挡点击 Overlay 走 [`IViewFocus`](#iviewfocus)；未实现则扫该 View 里第一个可聚焦子节点。壳头 Back 和 `BindView` HUD 不在 `PresentedViews` 里，本轮不关它们的焦点。
 
 壳场景把 `BackCommand` 绑到返回按钮；内容槽和 Overlay 根只在 `OnBind` 里接线。Showcase 的 Overlay pause 页用节拍验证 Cover：`Pause` 后计数停，`Continue` 后计数不停；Modal 永远画在 Popup 之上；Toast 不暂停计数，壳 Back 也不关它。Pause 页、About、Confirm 都实现了 `IViewCoverTransition`：Toast / About 盖住时底下那页变暗；About 上再开 Modal / Toast 时，被盖住的 Overlay 面板同样变暗。
 
@@ -239,12 +243,12 @@ public interface IViewTransition
 }
 ```
 
-| | `IActivatable` | `IViewTransition` | `IViewCoverTransition` |
-|---|---|---|---|
-| 谁实现 | ViewModel（可选） | View（可选） | View（可选） |
-| 何时 | 进 / 离前台 | 节点进树并绑定之后 / 解绑之后 | 上方还有 Overlay / 上方清空 |
-| 用途 | 停轮询、停请求 | 播进场 / 退场 | 被盖住页变暗、缩小 |
-| 结束 | `Activate` ≠ 进场播完 | 退场结束才 `QueueFree` | 揭开结束页仍在树上 |
+| | `IActivatable` | `IViewTransition` | `IViewCoverTransition` | `IViewFocus` |
+|---|---|---|---|---|
+| 谁实现 | ViewModel（可选） | View（可选） | View（可选） | View（可选） |
+| 何时 | 进 / 离前台 | 节点进树并绑定之后 / 解绑之后 | 上方还有 Overlay / 上方清空 | 挡点击 Overlay 成为输入前台 |
+| 用途 | 停轮询、停请求 | 播进场 / 退场 | 被盖住页变暗、缩小 | `GrabFocus` 指定控件 |
+| 结束 | `Activate` ≠ 进场播完 | 退场结束才 `QueueFree` | 揭开结束页仍在树上 | 揭开归还旧 owner，不是再 `TakeFocus` |
 
 顺序：
 
@@ -252,7 +256,7 @@ public interface IViewTransition
 - **退场**（单层 `Close` / `Back` / 换页替换）：Presenter 立刻 `ViewModel = null` 并忽略点击，再 `PlayExitAsync`。退场**不得读 VM**。播完（或实现未提供）才 `QueueFree`。
 - **跳过动画**：`Clear` / `Reset` / 槽 `Detach`（换屏时的 `Overlay.Clear`）取消进行中的过渡并立刻 `QueueFree`。
 
-换页时旧页退场与新页进场**并行**，槽里可短暂两个 child。连续 `Navigate` A→B→C 会取消 A 的退场并强制释放，避免幽灵堆叠。Overlay 增层播进场，删层播该层退场；被盖住的层若实现了 [`IViewCoverTransition`](#iviewcovertransition) 则并行播遮盖，否则视觉不变。退场幽灵 `MouseFilter = Ignore`（含子节点），且**不计入** Overlay 槽是否挡点击。
+换页时旧页退场与新页进场**并行**，槽里可短暂两个 child。连续 `Navigate` A→B→C 会取消 A 的退场并强制释放，避免幽灵堆叠。Overlay 增层播进场，删层播该层退场；被盖住的层若实现了 [`IViewCoverTransition`](#iviewcovertransition) 则并行播遮盖，否则视觉不变。退场幽灵 `MouseFilter = Ignore`（含子节点）、释放 GUI 焦点，且**不计入** Overlay 槽是否挡点击。
 
 `BindView` 不走这套：节点常驻，不实例化、不 `QueueFree`。
 
@@ -276,7 +280,7 @@ public Task PlayExitAsync(CancellationToken cancellationToken)
 
 被盖住的页要自己播动画时，实现 [`IViewCoverTransition`](../src/Telepath.Godot/Presentation/Transition/IViewCoverTransition.cs)。这不是 `IActivatable`：Toast 的 `Continue` 不停 VM，但 z 序上仍盖住屏幕，`Covered` 仍包含它。也不是 `IViewTransition`：视图仍绑定，**可以读 VM**。
 
-`OverlayHost.Covered` 按带的 `Order` 和带内 `Layers` 从低到高扫，**上方还有至少一层 Overlay** 的 VM 进入集合，与 `CoverMode` 无关。屏幕和更低的 Overlay 层都会进；顶层自己不进。壳把同一份 `PresentedViews` 传给 `Content` 和 `BindOverlayHost`；HUD 的 `BindView` 不进这张表。Overlay 视图和屏幕一样，实现 `IViewCoverTransition` 就会在被更高带或同带上层盖住时播遮盖。
+`OverlayHost.Covered` 按带的 `Order` 和带内 `Layers` 从低到高扫，**上方还有至少一层 Overlay** 的 VM 进入集合，与 `CoverMode` 无关。屏幕和更低的 Overlay 层都会进；顶层自己不进。`InputBlocked` 同一套 z 序，但只认 `BlocksPassThrough` 的上层：Toast 盖住 Modal 时 Confirm 仍可聚焦，底下的 About / 屏幕不可。壳把同一份 `PresentedViews` 传给 `Content` 和 `BindOverlayHost`；HUD 的 `BindView` 不进这张表。Overlay 视图和屏幕一样，实现 `IViewCoverTransition` 就会在被更高带或同带上层盖住时播遮盖。
 
 Presenter **不等** 遮盖结束再 `Push`：新层 `PlayEnterAsync` 与底下 `PlayCoverAsync` 同帧并行。`PlayCoverAsync` **必须同步写下第一帧**。未实现则视觉不变。生成器不生成空方法。
 
@@ -292,4 +296,14 @@ public Task PlayUncoverAsync(CancellationToken cancellationToken)
 
 Showcase：[PauseDemoView](../samples/Showcase/Navigation/Pause/PauseDemoView.cs)（屏幕）、[AboutView](../samples/Showcase/Navigation/About/AboutView.cs) / [ConfirmView](../samples/Showcase/Navigation/Confirm/ConfirmView.cs)（Overlay）。
 
-不做：Prism Region、字符串路由表、Messenger、全局 DialogService、按名 `ShowDialog("Confirm")`、自研 DI、Autoload 组合根 / 壳工厂（对象图由宿主 `CreateViewModel` 和构造注入拼）、离开守卫 / `IGuardClose`（何时允许离开是壳的策略，问一句走 `IInteraction`）、文件选择（原生 `FileDialog` 或自定义 `DialogViewModel<T>` 走 `Run`，不进 Core）、把 `IActivatable` 塞进每个 ViewModel、Core 等待动画或异步 `Close`、框架默认淡入淡出、把过渡塞进 Ready / ExitTree / Predelete、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 走 `BindView`）。
+## IViewFocus
+
+挡点击 Overlay 成为输入前台时，Presenter 调 [`IViewFocus.TakeFocus`](../src/Telepath.Godot/Presentation/Transition/IViewFocus.cs)。未实现则从该 View 根向下找第一个 `FocusMode != None` 的子节点 `GrabFocus`。不要用 `FindNextValidFocus`：它会跳出本层。揭开下层时还原当时的 owner，不再扫一遍默认按钮。Toast / Banner 不调用。生成器不生成空方法。
+
+```csharp
+public void TakeFocus() => _yes.GrabFocus();
+```
+
+Showcase：[ConfirmView](../samples/Showcase/Navigation/Confirm/ConfirmView.cs) 进场聚焦 Yes；[AboutView](../samples/Showcase/Navigation/About/AboutView.cs) 聚焦 Close。
+
+不做：Prism Region、字符串路由表、Messenger、全局 DialogService、按名 `ShowDialog("Confirm")`、自研 DI、Autoload 组合根 / 壳工厂（对象图由宿主 `CreateViewModel` 和构造注入拼）、离开守卫 / `IGuardClose`（何时允许离开是壳的策略，问一句走 `IInteraction`）、文件选择（原生 `FileDialog` 或自定义 `DialogViewModel<T>` 走 `Run`，不进 Core）、把 `IActivatable` 塞进每个 ViewModel、Core 等待动画或异步 `Close`、框架默认淡入淡出、把过渡塞进 Ready / ExitTree / Predelete、按 z 插入同一个 Overlay 栈、把 HUD 做成 Overlay 带（持久 HUD 走 `BindView`）、通用 FocusManager / VM 焦点绑定、把壳头 Back 或 `BindView` HUD 纳入 Overlay 焦点阱。

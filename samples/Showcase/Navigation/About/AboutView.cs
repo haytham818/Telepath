@@ -4,13 +4,16 @@ using Telepath.Godot;
 namespace Telepath.Showcase;
 
 [TelepathView<AboutViewModel>]
-public partial class AboutView : Control, IViewTransition, IViewCoverTransition
+public partial class AboutView : Control, IViewTransition, IViewCoverTransition, IViewFocus
 {
     [NodeInject("%Transition")]
     private AnimationPlayer _transition = null!;
 
     [NodeInject("%Panel")]
     private PanelContainer _panel = null!;
+
+    [NodeInject("%Close")]
+    private Button _close = null!;
 
     public override partial void _Notification(int what);
 
@@ -35,4 +38,6 @@ public partial class AboutView : Control, IViewTransition, IViewCoverTransition
 
     public Task PlayUncoverAsync(CancellationToken cancellationToken) =>
         FadeTransition.UncoverAsync(_panel, cancellationToken);
+
+    public void TakeFocus() => _close.GrabFocus();
 }

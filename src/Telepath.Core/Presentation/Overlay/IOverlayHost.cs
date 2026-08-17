@@ -32,6 +32,14 @@ public interface IOverlayHost : IOverlay
     BindableReactiveProperty<IReadOnlyList<IViewModel>> Covered { get; }
 
     /// <summary>
+    /// ViewModels that currently have at least one
+    /// <see cref="OverlayLayer.BlocksPassThrough"/> overlay stacked above them,
+    /// in z-order from bottom to top. Independent of <see cref="CoverMode"/>.
+    /// A toast covers visually but does not belong here.
+    /// </summary>
+    BindableReactiveProperty<IReadOnlyList<IViewModel>> InputBlocked { get; }
+
+    /// <summary>
     /// Registers a custom band. Throws after the first overlay is pushed,
     /// or when <see cref="OverlayLayer.Name"/> / <see cref="OverlayLayer.Order"/> collides.
     /// </summary>

@@ -36,12 +36,18 @@ internal static class ViewInjection
             return;
         }
 
+        ViewFocus.ReleaseIfOwned(view);
+        IgnoreMouseRecursive(view);
+    }
+
+    private static void IgnoreMouseRecursive(Control view)
+    {
         view.MouseFilter = Control.MouseFilterEnum.Ignore;
         foreach (var child in view.GetChildren())
         {
             if (child is Control control)
             {
-                IgnoreMouse(control);
+                IgnoreMouseRecursive(control);
             }
         }
     }

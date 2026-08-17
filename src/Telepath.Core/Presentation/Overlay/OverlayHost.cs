@@ -6,7 +6,8 @@ namespace Telepath.Core;
 /// <summary>
 /// Independent overlay stacks keyed by <see cref="OverlayLayer"/>.
 /// Activation is reconciled across bands so a Pause modal covers lower bands
-/// without a lower-band Push activating underneath it.
+/// without a lower-band Push activating underneath it. <see cref="Covered"/>
+/// is visual z-order; <see cref="InputBlocked"/> is keyboard/gamepad isolation.
 /// </summary>
 public sealed class OverlayHost : ViewModel, IOverlayHost
 {
@@ -27,6 +28,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
         HasOverlay = Track(new BindableReactiveProperty<bool>(false));
         HasBackableOverlay = Track(new BindableReactiveProperty<bool>(false));
         Covered = Track(new BindableReactiveProperty<IReadOnlyList<IViewModel>>([]));
+        InputBlocked = Track(new BindableReactiveProperty<IReadOnlyList<IViewModel>>([]));
         Register(OverlayLayer.Popup);
         Register(OverlayLayer.Modal);
         Register(OverlayLayer.Toast);
@@ -46,6 +48,9 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
 
     /// <inheritdoc />
     public BindableReactiveProperty<IReadOnlyList<IViewModel>> Covered { get; }
+
+    /// <inheritdoc />
+    public BindableReactiveProperty<IReadOnlyList<IViewModel>> InputBlocked { get; }
 
     /// <inheritdoc />
     public IReadOnlyList<OverlayLayer> Bands => _layerList;
@@ -441,6 +446,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
         }
 
         UpdateCovered();
+        UpdateInputBlocked();
     }
 
     private void UpdateCovered()
@@ -475,6 +481,52 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
         }
 
         Covered.Value = covered;
+    }
+
+    private void UpdateInputBlocked()
+    {
+        if (InputBlocked.IsDisposed)
+        {
+            return;
+        }
+
+        var stacked = new List<(IViewModel Item, bool BlocksBelow)>();
+        var screen = GetScreen();
+        if (screen is not null)
+        {
+            stacked.Add((screen, false));
+        }
+
+        foreach (var band in _bands)
+        {
+            foreach (var item in band.Stack.Layers)
+            {
+                stacked.Add((item, band.Layer.BlocksPassThrough));
+            }
+        }
+
+        var blocked = new List<IViewModel>();
+        for (var i = 0; i < stacked.Count; i++)
+        {
+            var blockedByAbove = false;
+            for (var j = i + 1; j < stacked.Count; j++)
+            {
+                if (!stacked[j].BlocksBelow)
+                {
+                    continue;
+                }
+
+                blockedByAbove = true;
+                break;
+            }
+
+            if (blockedByAbove)
+            {
+                blocked.Add(stacked[i].Item);
+            }
+        }
+
+        InputBlocked.Value = blocked;
     }
 
     private static void Activate(IViewModel viewModel)

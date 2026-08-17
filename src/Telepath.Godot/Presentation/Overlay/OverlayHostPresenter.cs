@@ -6,7 +6,9 @@ namespace Telepath.Godot;
 
 /// <summary>
 /// Creates one overlay slot per registered band under a root <see cref="Control"/>.
-/// Sibling order follows <see cref="IOverlayHost.Bands"/>. Does not dispose ViewModels.
+/// Sibling order follows <see cref="IOverlayHost.Bands"/>. Covered subscription
+/// also applies <see cref="IOverlayHost.InputBlocked"/> for GUI focus isolation.
+/// Does not dispose ViewModels.
 /// </summary>
 public sealed class OverlayHostPresenter
 {
@@ -56,6 +58,27 @@ public sealed class OverlayHostPresenter
         }
 
         _presented.Covers.Sync(host.Covered.Value, live);
+        _presented.Focus.Sync(host.InputBlocked.Value, live, InputForeground(host));
+    }
+
+    private static IViewModel? InputForeground(IOverlayHost host)
+    {
+        for (var i = host.Bands.Count - 1; i >= 0; i--)
+        {
+            var layer = host.Bands[i];
+            if (!layer.BlocksPassThrough)
+            {
+                continue;
+            }
+
+            var layers = host.Band(layer).Layers;
+            if (layers.Count > 0)
+            {
+                return layers[^1];
+            }
+        }
+
+        return null;
     }
 
     private Control CreateSlot(OverlayLayer layer)
@@ -76,6 +99,7 @@ public sealed class OverlayHostPresenter
     private void Detach()
     {
         _presented.Covers.CancelAll();
+        _presented.Focus.CancelAll();
         for (var i = _slots.Count - 1; i >= 0; i--)
         {
             var slot = _slots[i];

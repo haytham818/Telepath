@@ -75,7 +75,9 @@ public readonly struct OverlayLayer : IEquatable<OverlayLayer>
 
     /// <summary>
     /// When <see langword="true"/>, a non-empty Godot slot swallows clicks
-    /// (<c>MouseFilter.Stop</c>). Toast-style bands keep the slot ignoring.
+    /// (<c>MouseFilter.Stop</c>) and views underneath enter
+    /// <see cref="IOverlayHost.InputBlocked"/>. Toast-style bands keep the
+    /// slot ignoring and do not steal keyboard focus.
     /// </summary>
     public bool BlocksPassThrough { get; }
 

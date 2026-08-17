@@ -4,13 +4,16 @@ using Telepath.Godot;
 namespace Telepath.Showcase;
 
 [TelepathView<ConfirmViewModel>]
-public partial class ConfirmView : Control, IViewTransition, IViewCoverTransition
+public partial class ConfirmView : Control, IViewTransition, IViewCoverTransition, IViewFocus
 {
     [NodeInject("%Dimmer")]
     private ColorRect _dimmer = null!;
 
     [NodeInject("%Panel")]
     private PanelContainer _panel = null!;
+
+    [NodeInject("%Yes")]
+    private Button _yes = null!;
 
     public override partial void _Notification(int what);
 
@@ -37,6 +40,8 @@ public partial class ConfirmView : Control, IViewTransition, IViewCoverTransitio
 
     public Task PlayUncoverAsync(CancellationToken cancellationToken) =>
         FadeTransition.UncoverAsync(_panel, cancellationToken);
+
+    public void TakeFocus() => _yes.GrabFocus();
 
     private Task PlayAsync(float toAlpha, Vector2 toScale, CancellationToken cancellationToken)
     {

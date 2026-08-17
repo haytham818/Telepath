@@ -240,6 +240,7 @@ public sealed class OverlayHostTests
         host.Push(toast, OverlayLayer.Toast);
 
         Assert.Equal(new IViewModel[] { screen }, host.Covered.Value);
+        Assert.Empty(host.InputBlocked.Value);
         Assert.Same(screen, host.CurrentScreen);
     }
 
@@ -255,6 +256,7 @@ public sealed class OverlayHostTests
         host.Push(modal, OverlayLayer.Modal);
 
         Assert.Equal(new IViewModel[] { screen, popup }, host.Covered.Value);
+        Assert.Equal(new IViewModel[] { screen, popup }, host.InputBlocked.Value);
     }
 
     [Fact]
@@ -269,10 +271,12 @@ public sealed class OverlayHostTests
         host.Push(upper);
 
         Assert.Equal(new IViewModel[] { screen, lower }, host.Covered.Value);
+        Assert.Equal(new IViewModel[] { screen, lower }, host.InputBlocked.Value);
 
         host.Back();
 
         Assert.Equal(new IViewModel[] { screen }, host.Covered.Value);
+        Assert.Equal(new IViewModel[] { screen }, host.InputBlocked.Value);
     }
 
     [Fact]
@@ -284,10 +288,12 @@ public sealed class OverlayHostTests
         var popup = new Page("popup");
         host.Push(popup);
         Assert.Equal(new IViewModel[] { screen }, host.Covered.Value);
+        Assert.Equal(new IViewModel[] { screen }, host.InputBlocked.Value);
 
         host.Back();
 
         Assert.Empty(host.Covered.Value);
+        Assert.Empty(host.InputBlocked.Value);
     }
 
     [Fact]
@@ -302,12 +308,51 @@ public sealed class OverlayHostTests
 
         host.Clear(resumeCovered: false);
         Assert.Contains(screen, host.Covered.Value);
+        Assert.Empty(host.InputBlocked.Value);
 
         current = next;
         host.Clear();
 
         Assert.DoesNotContain(screen, host.Covered.Value);
         Assert.Empty(host.Covered.Value);
+        Assert.Empty(host.InputBlocked.Value);
+    }
+
+    [Fact]
+    public void ToastDoesNotBlockTheModalItCovers()
+    {
+        var screen = new Page("screen");
+        screen.Activate();
+        using var host = new OverlayHost(() => screen);
+        var popup = new Page("popup");
+        var modal = new Page("modal");
+        var toast = new Page("toast");
+        host.Push(popup);
+        host.Push(modal, OverlayLayer.Modal);
+        host.Push(toast, OverlayLayer.Toast);
+
+        Assert.Equal(new IViewModel[] { screen, popup, modal }, host.Covered.Value);
+        Assert.Equal(new IViewModel[] { screen, popup }, host.InputBlocked.Value);
+    }
+
+    [Fact]
+    public void ClosingModalUnderToastUnblocksScreenButKeepsItCovered()
+    {
+        var screen = new Page("screen");
+        screen.Activate();
+        using var host = new OverlayHost(() => screen);
+        var modal = new Page("modal");
+        var toast = new Page("toast");
+        host.Push(modal, OverlayLayer.Modal);
+        host.Push(toast, OverlayLayer.Toast);
+
+        Assert.Equal(new IViewModel[] { screen, modal }, host.Covered.Value);
+        Assert.Equal(new IViewModel[] { screen }, host.InputBlocked.Value);
+
+        host.Close(modal);
+
+        Assert.Equal(new IViewModel[] { screen }, host.Covered.Value);
+        Assert.Empty(host.InputBlocked.Value);
     }
 
     private sealed class Page : ViewModel, IActivatable
