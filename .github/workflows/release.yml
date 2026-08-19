@@ -1,0 +1,70 @@
+name: Release NuGet
+
+on:
+  push:
+    tags:
+      - "*.*.*"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Package version (e.g. 0.45.1)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Set version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "VERSION=${{ inputs.version }}" >> "$GITHUB_ENV"
+          else
+            echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_ENV"
+          fi
+
+      - name: Test
+        run: |
+          dotnet test tests/Telepath.Core.Tests/Telepath.Core.Tests.csproj -c Release --nologo
+          dotnet test tests/Telepath.SourceGenerator.Tests/Telepath.SourceGenerator.Tests.csproj -c Release --nologo
+
+      - name: Pack
+        run: |
+          dotnet pack src/Telepath.Core/Telepath.Core.csproj -c Release -p:Version="$VERSION" --nologo
+          dotnet pack src/Telepath.SourceGenerator/Telepath.SourceGenerator.csproj -c Release -p:Version="$VERSION" --nologo
+          dotnet pack src/Telepath.Godot/Telepath.Godot.csproj -c Release -p:Version="$VERSION" --nologo
+
+      - name: Upload nupkgs
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: artifacts/*.nupkg
+          if-no-files-found: error
+
+      - name: NuGet login (OIDC)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Push
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          set -euo pipefail
+          SRC="https://api.nuget.org/v3/index.json"
+          dotnet nuget push artifacts/Telepath.Core.*.nupkg --api-key "$NUGET_API_KEY" --source "$SRC" --skip-duplicate
+          dotnet nuget push artifacts/Telepath.SourceGenerator.*.nupkg --api-key "$NUGET_API_KEY" --source "$SRC" --skip-duplicate
+          dotnet nuget push artifacts/Telepath.Godot.*.nupkg --api-key "$NUGET_API_KEY" --source "$SRC" --skip-duplicate
