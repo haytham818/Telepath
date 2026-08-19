@@ -1,5 +1,5 @@
 using Godot;
-using Microsoft.Extensions.DependencyInjection;
+using QFramework;
 using R3;
 using Telepath.Core;
 using Telepath.Godot;
@@ -32,10 +32,9 @@ public sealed class ShellViewModel : Conductor
         Track(Overlay.HasBackableOverlay.Subscribe(_ => UpdateCanGoBack()));
         Track(ActiveItem.Subscribe(UpdateStatus));
 
-        var services = new ServiceCollection();
-        services.AddShowcase(this, Overlay, Interaction);
-        var provider = Track(services.BuildServiceProvider());
-        Pages = provider.GetRequiredService<IViewModelFactory>();
+        ShowcaseApp.BindShell(this, Overlay, Interaction);
+        Pages = ShowcaseApp.Interface.GetUtility<QfViewModelFactory>()
+            ?? throw new InvalidOperationException("QfViewModelFactory was not registered.");
         Navigate(Pages.Create<DirectoryViewModel>());
     }
 
