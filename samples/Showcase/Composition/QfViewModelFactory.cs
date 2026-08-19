@@ -4,7 +4,7 @@ using Telepath.Core;
 
 namespace Telepath.Showcase;
 
-public sealed class QfViewModelFactory : IViewModelFactory, IUtility, ICanGetUtility
+public sealed class QfViewModelFactory : IViewModelActivator, IUtility, ICanGetUtility
 {
     public IArchitecture GetArchitecture() => ShowcaseApp.Interface;
 
@@ -69,7 +69,7 @@ public sealed class QfViewModelFactory : IViewModelFactory, IUtility, ICanGetUti
         var services = this.GetUtility<ShellServices>()
             ?? throw new InvalidOperationException("ShowcaseApp.BindShell has not run.");
 
-        if (type == typeof(IViewModelFactory) || type == typeof(QfViewModelFactory))
+        if (type == typeof(IViewModelActivator) || type == typeof(QfViewModelFactory))
         {
             value = this;
             return true;
