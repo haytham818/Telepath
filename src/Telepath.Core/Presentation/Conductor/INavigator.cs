@@ -13,6 +13,12 @@ public interface INavigator
     void Navigate(IViewModel viewModel);
 
     /// <summary>
+    /// Creates <typeparamref name="T"/> with <see cref="IViewModelActivator"/> and
+    /// navigates to it. Requires <c>ViewModelActivator</c> on the conductor.
+    /// </summary>
+    void Navigate<T>(params object[] arguments) where T : class, IViewModel;
+
+    /// <summary>
     /// Pops the current page and restores the previous one.
     /// Returns <see langword="false"/> when the stack is empty.
     /// </summary>

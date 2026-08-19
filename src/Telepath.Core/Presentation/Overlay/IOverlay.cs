@@ -28,6 +28,13 @@ public interface IOverlay
     void Push(IViewModel viewModel, CoverMode cover = CoverMode.Pause);
 
     /// <summary>
+    /// Creates <typeparamref name="T"/> with <see cref="IViewModelActivator"/> and
+    /// pushes it. Requires <c>ViewModelActivator</c> on the overlay.
+    /// </summary>
+    void Push<T>(CoverMode cover = CoverMode.Pause, params object[] arguments)
+        where T : class, IViewModel;
+
+    /// <summary>
     /// Pops the top overlay. Returns <see langword="false"/> when the stack is empty.
     /// </summary>
     bool Back();
