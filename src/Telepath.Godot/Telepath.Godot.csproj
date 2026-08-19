@@ -8,7 +8,8 @@
     <DefineConstants>$(DefineConstants);GODOT</DefineConstants>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="GodotSharp" Version="4.7.1" />
+    <!-- Compile against Godot 4.4. Host projects supply a matching GodotSharp via Godot.NET.Sdk. -->
+    <PackageReference Include="GodotSharp" Version="4.4.0" PrivateAssets="all" ExcludeAssets="runtime" />
     <ProjectReference Include="..\Telepath.Core\Telepath.Core.csproj" />
   </ItemGroup>
   <ItemGroup>
