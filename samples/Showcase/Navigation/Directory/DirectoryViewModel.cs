@@ -6,37 +6,33 @@ public sealed partial class DirectoryViewModel : ViewModel
 {
     private readonly INavigator _navigator;
     private readonly IOverlayHost _overlay;
-    private readonly IViewModelFactory _pages;
 
-    public DirectoryViewModel(INavigator navigator, IOverlayHost overlay, IViewModelFactory pages)
+    public DirectoryViewModel(INavigator navigator, IOverlayHost overlay)
     {
         ArgumentNullException.ThrowIfNull(navigator);
         ArgumentNullException.ThrowIfNull(overlay);
-        ArgumentNullException.ThrowIfNull(pages);
         _navigator = navigator;
         _overlay = overlay;
-        _pages = pages;
     }
 
     [Command]
-    private void OnOpenCounter() => _navigator.Navigate(_pages.Create<CounterViewModel>());
+    private void OnOpenCounter() => _navigator.Navigate<CounterViewModel>();
 
     [Command]
-    private void OnOpenSearch() => _navigator.Navigate(_pages.Create<SearchViewModel>());
+    private void OnOpenSearch() => _navigator.Navigate<SearchViewModel>();
 
     [Command]
-    private void OnOpenList() => _navigator.Navigate(_pages.Create<ListViewModel>());
+    private void OnOpenList() => _navigator.Navigate<ListViewModel>();
 
     [Command]
-    private void OnOpenTodo() => _navigator.Navigate(_pages.Create<TodoListViewModel>());
+    private void OnOpenTodo() => _navigator.Navigate<TodoListViewModel>();
 
     [Command]
-    private void OnOpenForm() => _navigator.Navigate(_pages.Create<FormViewModel>());
+    private void OnOpenForm() => _navigator.Navigate<FormViewModel>();
 
     [Command]
-    private void OnOpenPauseDemo() => _navigator.Navigate(_pages.Create<PauseDemoViewModel>());
+    private void OnOpenPauseDemo() => _navigator.Navigate<PauseDemoViewModel>();
 
     [Command]
-    private void OnOpenBanner() =>
-        _overlay.Push(_pages.Create<BannerViewModel>(), ShellViewModel.Banner);
+    private void OnOpenBanner() => _overlay.Push<BannerViewModel>(ShellViewModel.Banner);
 }

@@ -7,7 +7,7 @@ namespace Telepath.Showcase;
 /// Fills constructor parameters from the container. The returned instance is not
 /// tracked by the provider, so Conductor / OverlayHost remain the owners.
 /// </summary>
-public sealed class MsDiViewModelFactory : IViewModelFactory
+public sealed class MsDiViewModelFactory : IViewModelActivator
 {
     private readonly IServiceProvider _services;
 

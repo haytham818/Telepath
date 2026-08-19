@@ -20,7 +20,7 @@ public static class ShowcaseServices
         services.AddSingleton(overlay);
         services.AddSingleton<IOverlay>(overlay);
         services.AddSingleton(interaction);
-        services.AddSingleton<IViewModelFactory, MsDiViewModelFactory>();
+        services.AddSingleton<IViewModelActivator, MsDiViewModelFactory>();
         return services;
     }
 }

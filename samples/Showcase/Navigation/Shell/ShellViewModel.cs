@@ -19,8 +19,6 @@ public sealed class ShellViewModel : Conductor
 
     public IInteraction Interaction { get; }
 
-    public IViewModelFactory Pages { get; }
-
     public StatusViewModel Status { get; }
 
     public ShellViewModel()
@@ -35,8 +33,9 @@ public sealed class ShellViewModel : Conductor
         var services = new ServiceCollection();
         services.AddShowcase(this, Overlay, Interaction);
         var provider = Track(services.BuildServiceProvider());
-        Pages = provider.GetRequiredService<IViewModelFactory>();
-        Navigate(Pages.Create<DirectoryViewModel>());
+        ViewModelActivator = provider.GetRequiredService<IViewModelActivator>();
+        Overlay.ViewModelActivator = ViewModelActivator;
+        Navigate<DirectoryViewModel>();
     }
 
     public void BindPresentation(BindingSet bindings, Control content, Control overlay)
