@@ -166,8 +166,6 @@ dotnet build Telepath.sln
 dotnet test  Telepath.sln
 ```
 
-GitHub Actions 在 PR 和 `master` 上跑单元测试并验证 NuGet 打包（不编译 Showcase）。发版打 `x.y.z` tag（不要 `v` 前缀）并 push。首次 `0.45.1` 请在 Actions 里对 **Release NuGet** 手动 Run workflow，填 version `0.45.1`。
-
 ## License
 
 MIT
