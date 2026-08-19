@@ -1,4 +1,5 @@
 #if TOOLS
+#nullable enable
 using Godot;
 
 namespace Telepath.Godot.Editor;

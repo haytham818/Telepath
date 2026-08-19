@@ -26,6 +26,7 @@ jobs:
         run: |
           dotnet test tests/Telepath.Core.Tests/Telepath.Core.Tests.csproj -c Release --nologo
           dotnet test tests/Telepath.SourceGenerator.Tests/Telepath.SourceGenerator.Tests.csproj -c Release --nologo
+          dotnet build tests/Telepath.AddonHost/Telepath.AddonHost.csproj -c Release --nologo
 
       - name: Pack
         run: |

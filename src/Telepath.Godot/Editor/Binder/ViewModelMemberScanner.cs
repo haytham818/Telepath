@@ -1,4 +1,5 @@
 #if TOOLS
+#nullable enable
 using ObservableCollections;
 using R3;
 using Telepath.Core;

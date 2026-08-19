@@ -1,4 +1,6 @@
 #if TOOLS
+#nullable enable
+using System.Linq;
 using Telepath.Core;
 
 namespace Telepath.Godot.Editor;

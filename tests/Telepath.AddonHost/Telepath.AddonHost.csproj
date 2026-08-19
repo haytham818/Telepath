@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>Telepath.AddonHost</AssemblyName>
+    <RootNamespace>Telepath.AddonHost</RootNamespace>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <DefineConstants>$(DefineConstants);GODOT</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Named unlike Telepath.Showcase so InternalsVisibleTo cannot hide host compile breaks. -->
+    <PackageReference Include="GodotSharp" Version="4.4.0" />
+    <ProjectReference Include="..\..\src\Telepath.Godot\Telepath.Godot.csproj" />
+    <Compile Include="..\..\src\Telepath.Godot\Addon\FrameProviderDispatcher.cs" />
+  </ItemGroup>
+</Project>

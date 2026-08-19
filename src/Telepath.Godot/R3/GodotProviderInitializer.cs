@@ -30,7 +30,7 @@ public static class GodotProviderInitializer
         ObservableSystem.DefaultFrameProvider = GodotFrameProvider.Process;
     }
 
-    internal static void ResetObservableSystem()
+    public static void ResetObservableSystem()
     {
         try
         {

@@ -1,4 +1,6 @@
 #if TOOLS
+#nullable enable
+using System.Linq;
 using Godot;
 using ObservableCollections;
 using R3;

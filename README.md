@@ -21,13 +21,13 @@
 在宿主工程（Godot.NET.Sdk）里加：
 
 ```xml
-<PackageReference Include="Telepath.Godot" Version="0.45.1" />
+<PackageReference Include="Telepath.Godot" Version="0.45.2" />
 ```
 
 或：
 
 ```
-dotnet add package Telepath.Godot --version 0.45.1
+dotnet add package Telepath.Godot --version 0.45.2
 ```
 
 `Telepath.Godot` 会带上 `Telepath.Core` 以及源生成器。
@@ -68,6 +68,7 @@ dotnet add package Telepath.Godot --version 0.45.1
 - Windows 上 git 符号链接需要 `core.symlinks = true`，否则直接复制
 - 不要装官方 `R3.Godot` addon：运行时子集已内嵌（`namespace R3`），同名类型会冲突
 - addon 里的 GDScript 外壳与 Dock 由**宿主主程序集**编译，不会进入 `Telepath.Godot.dll`
+- 因此 addon 脚本用到的库类型必须是 public；不要用 `InternalsVisibleTo("Telepath.Showcase")` 掩盖真实宿主的可见性问题
 
 ## Quick Start
 

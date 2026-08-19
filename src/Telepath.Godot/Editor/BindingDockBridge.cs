@@ -1,4 +1,5 @@
 #if TOOLS
+#nullable enable
 using Godot;
 using R3;
 using Telepath.Core;

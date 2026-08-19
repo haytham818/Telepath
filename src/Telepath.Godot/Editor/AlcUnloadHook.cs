@@ -1,5 +1,7 @@
 #if TOOLS
+#nullable enable
 using System.Runtime.Loader;
+using System.Threading;
 using R3;
 
 namespace Telepath.Godot.Editor;

@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telepath.SourceGenerator.Te
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telepath.Core.Tests", "tests\Telepath.Core.Tests\Telepath.Core.Tests.csproj", "{629C6978-9A2F-4542-96EE-0EB437FD9A57}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Telepath.AddonHost", "tests\Telepath.AddonHost\Telepath.AddonHost.csproj", "{C95F4009-330B-47FC-9CEB-79C5D7DD0920}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -75,6 +77,14 @@ Global
 		{629C6978-9A2F-4542-96EE-0EB437FD9A57}.ExportDebug|Any CPU.Build.0 = Debug|Any CPU
 		{629C6978-9A2F-4542-96EE-0EB437FD9A57}.ExportRelease|Any CPU.ActiveCfg = Release|Any CPU
 		{629C6978-9A2F-4542-96EE-0EB437FD9A57}.ExportRelease|Any CPU.Build.0 = Release|Any CPU
+		{C95F4009-330B-47FC-9CEB-79C5D7DD0920}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C95F4009-330B-47FC-9CEB-79C5D7DD0920}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C95F4009-330B-47FC-9CEB-79C5D7DD0920}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C95F4009-330B-47FC-9CEB-79C5D7DD0920}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C95F4009-330B-47FC-9CEB-79C5D7DD0920}.ExportDebug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C95F4009-330B-47FC-9CEB-79C5D7DD0920}.ExportDebug|Any CPU.Build.0 = Debug|Any CPU
+		{C95F4009-330B-47FC-9CEB-79C5D7DD0920}.ExportRelease|Any CPU.ActiveCfg = Release|Any CPU
+		{C95F4009-330B-47FC-9CEB-79C5D7DD0920}.ExportRelease|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,5 +96,6 @@ Global
 		{172FF80F-F772-4424-92E8-67F9D38B0953} = {5D20AA90-6969-D8BD-9DCD-8634F4692FDA}
 		{D8701AD9-5987-407A-863C-009F8EE6ACAF} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{629C6978-9A2F-4542-96EE-0EB437FD9A57} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{C95F4009-330B-47FC-9CEB-79C5D7DD0920} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal

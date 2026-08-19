@@ -1,4 +1,6 @@
 #if TOOLS
+#nullable enable
+using System.IO;
 using System.Reflection;
 using Godot;
 using Telepath.Godot;
