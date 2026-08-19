@@ -32,6 +32,12 @@ public class Conductor : ViewModel, IConductor
     /// </summary>
     public ReactiveCommand BackCommand { get; }
 
+    /// <summary>
+    /// Creates page ViewModels for <see cref="Navigate{T}"/>. The activator does
+    /// not own the instance; this conductor disposes it when it leaves the stack.
+    /// </summary>
+    public IViewModelActivator? ViewModelActivator { get; set; }
+
     /// <inheritdoc />
     public virtual void Navigate(IViewModel viewModel)
     {
@@ -65,6 +71,10 @@ public class Conductor : ViewModel, IConductor
         UpdateCanGoBack();
         Activate(viewModel);
     }
+
+    /// <inheritdoc />
+    public void Navigate<T>(params object[] arguments) where T : class, IViewModel
+        => Navigate(ViewModelActivation.Create<T>(ViewModelActivator, arguments));
 
     /// <inheritdoc />
     public virtual bool Back()

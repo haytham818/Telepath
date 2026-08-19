@@ -19,6 +19,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
     private int _suspendReconcile;
     private bool _locked;
     private bool _suppressScreenActivate;
+    private IViewModelActivator? _viewModelActivator;
     private IViewModel? _inheritedScreen;
     private IViewModel? _holdCoveredScreen;
 
@@ -55,6 +56,24 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
     /// <inheritdoc />
     public IReadOnlyList<OverlayLayer> Bands => _layerList;
 
+    /// <summary>
+    /// Creates overlay ViewModels for <see cref="Push{T}"/>. The activator does
+    /// not own the instance; this host disposes it when it leaves the stack.
+    /// Assigned onto each band so <see cref="Band"/> can <c>Push&lt;T&gt;</c>.
+    /// </summary>
+    public IViewModelActivator? ViewModelActivator
+    {
+        get => _viewModelActivator;
+        set
+        {
+            _viewModelActivator = value;
+            foreach (var band in _bands)
+            {
+                band.Stack.ViewModelActivator = value;
+            }
+        }
+    }
+
     /// <inheritdoc />
     public void Register(OverlayLayer layer)
     {
@@ -82,6 +101,7 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
 
         var captured = layer;
         var overlay = Track(new Overlay(() => ItemBelow(captured), ownsActivation: false));
+        overlay.ViewModelActivator = _viewModelActivator;
         overlay.Layers.CollectionChanged += OnBandCollectionChanged;
         var band = new LayerBand(layer, overlay);
         var index = _bands.Count;
@@ -141,6 +161,16 @@ public sealed class OverlayHost : ViewModel, IOverlayHost
         var band = Resolve(layer);
         band.Stack.Push(viewModel, cover ?? band.Layer.DefaultCover);
     }
+
+    /// <inheritdoc />
+    public void Push<T>(CoverMode cover = CoverMode.Pause, params object[] arguments)
+        where T : class, IViewModel
+        => Push(ViewModelActivation.Create<T>(ViewModelActivator, arguments), cover);
+
+    /// <inheritdoc />
+    public void Push<T>(OverlayLayer layer, CoverMode? cover = null, params object[] arguments)
+        where T : class, IViewModel
+        => Push(ViewModelActivation.Create<T>(ViewModelActivator, arguments), layer, cover);
 
     /// <inheritdoc />
     public bool Back()

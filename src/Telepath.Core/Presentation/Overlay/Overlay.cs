@@ -48,6 +48,12 @@ public class Overlay : ViewModel, IOverlay
     /// <inheritdoc />
     public BindableReactiveProperty<bool> HasOverlay { get; }
 
+    /// <summary>
+    /// Creates overlay ViewModels for <see cref="Push{T}"/>. The activator does
+    /// not own the instance; this overlay disposes it when it leaves the stack.
+    /// </summary>
+    public IViewModelActivator? ViewModelActivator { get; set; }
+
     /// <inheritdoc />
     public void Push(IViewModel viewModel, CoverMode cover = CoverMode.Pause)
     {
@@ -97,6 +103,11 @@ public class Overlay : ViewModel, IOverlay
             Activate(viewModel);
         }
     }
+
+    /// <inheritdoc />
+    public void Push<T>(CoverMode cover = CoverMode.Pause, params object[] arguments)
+        where T : class, IViewModel
+        => Push(ViewModelActivation.Create<T>(ViewModelActivator, arguments), cover);
 
     /// <inheritdoc />
     public bool Back()
