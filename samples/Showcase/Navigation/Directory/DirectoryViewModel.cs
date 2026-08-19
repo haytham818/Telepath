@@ -6,37 +6,37 @@ public sealed partial class DirectoryViewModel : ViewModel
 {
     private readonly INavigator _navigator;
     private readonly IOverlayHost _overlay;
-    private readonly IInteraction _interaction;
+    private readonly IViewModelFactory _pages;
 
-    public DirectoryViewModel(INavigator navigator, IOverlayHost overlay, IInteraction interaction)
+    public DirectoryViewModel(INavigator navigator, IOverlayHost overlay, IViewModelFactory pages)
     {
         ArgumentNullException.ThrowIfNull(navigator);
         ArgumentNullException.ThrowIfNull(overlay);
-        ArgumentNullException.ThrowIfNull(interaction);
+        ArgumentNullException.ThrowIfNull(pages);
         _navigator = navigator;
         _overlay = overlay;
-        _interaction = interaction;
+        _pages = pages;
     }
 
     [Command]
-    private void OnOpenCounter() => _navigator.Navigate(new CounterViewModel());
+    private void OnOpenCounter() => _navigator.Navigate(_pages.Create<CounterViewModel>());
 
     [Command]
-    private void OnOpenSearch() => _navigator.Navigate(new SearchViewModel());
+    private void OnOpenSearch() => _navigator.Navigate(_pages.Create<SearchViewModel>());
 
     [Command]
-    private void OnOpenList() => _navigator.Navigate(new ListViewModel());
+    private void OnOpenList() => _navigator.Navigate(_pages.Create<ListViewModel>());
 
     [Command]
-    private void OnOpenTodo() => _navigator.Navigate(new TodoListViewModel(_interaction));
+    private void OnOpenTodo() => _navigator.Navigate(_pages.Create<TodoListViewModel>());
 
     [Command]
-    private void OnOpenForm() => _navigator.Navigate(new FormViewModel());
+    private void OnOpenForm() => _navigator.Navigate(_pages.Create<FormViewModel>());
 
     [Command]
-    private void OnOpenPauseDemo() => _navigator.Navigate(new PauseDemoViewModel(_overlay));
+    private void OnOpenPauseDemo() => _navigator.Navigate(_pages.Create<PauseDemoViewModel>());
 
     [Command]
     private void OnOpenBanner() =>
-        _overlay.Push(new BannerViewModel(_overlay), ShellViewModel.Banner);
+        _overlay.Push(_pages.Create<BannerViewModel>(), ShellViewModel.Banner);
 }

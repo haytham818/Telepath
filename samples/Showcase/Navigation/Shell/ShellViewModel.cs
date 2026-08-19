@@ -1,5 +1,8 @@
+using Godot;
+using Microsoft.Extensions.DependencyInjection;
 using R3;
 using Telepath.Core;
+using Telepath.Godot;
 
 namespace Telepath.Showcase;
 
@@ -16,6 +19,8 @@ public sealed class ShellViewModel : Conductor
 
     public IInteraction Interaction { get; }
 
+    public IViewModelFactory Pages { get; }
+
     public StatusViewModel Status { get; }
 
     public ShellViewModel()
@@ -26,6 +31,24 @@ public sealed class ShellViewModel : Conductor
         Status = Track(new StatusViewModel());
         Track(Overlay.HasBackableOverlay.Subscribe(_ => UpdateCanGoBack()));
         Track(ActiveItem.Subscribe(UpdateStatus));
+
+        var services = new ServiceCollection();
+        services.AddShowcase(this, Overlay, Interaction);
+        var provider = Track(services.BuildServiceProvider());
+        Pages = provider.GetRequiredService<IViewModelFactory>();
+        Navigate(Pages.Create<DirectoryViewModel>());
+    }
+
+    public void BindPresentation(BindingSet bindings, Control content, Control overlay)
+    {
+        ArgumentNullException.ThrowIfNull(bindings);
+        ArgumentNullException.ThrowIfNull(content);
+        ArgumentNullException.ThrowIfNull(overlay);
+
+        var registry = CreateRegistry();
+        var presented = new PresentedViews();
+        bindings.BindContent(ActiveItem, content.Content(registry, presented));
+        bindings.BindOverlayHost(Overlay, overlay, registry, presented);
     }
 
     public override bool Back() => Overlay.Back() || base.Back();
@@ -45,4 +68,17 @@ public sealed class ShellViewModel : Conductor
             ? "Showcase"
             : item.GetType().Name.Replace("ViewModel", "", StringComparison.Ordinal);
     }
+
+    private static ViewRegistry CreateRegistry() => new ViewRegistry()
+        .Register<DirectoryViewModel>("res://Navigation/Directory/DirectoryView.tscn")
+        .Register<CounterViewModel>("res://Counter/CounterView.tscn")
+        .Register<SearchViewModel>("res://Search/SearchView.tscn")
+        .Register<ListViewModel>("res://List/ListView.tscn")
+        .Register<TodoListViewModel>("res://Todo/TodoListView.tscn")
+        .Register<FormViewModel>("res://Form/FormView.tscn")
+        .Register<PauseDemoViewModel>("res://Navigation/Pause/PauseDemoView.tscn")
+        .Register<AboutViewModel>("res://Navigation/About/AboutView.tscn")
+        .Register<ToastViewModel>("res://Navigation/Toast/ToastView.tscn")
+        .Register<BannerViewModel>("res://Navigation/Banner/BannerView.tscn")
+        .Register<ConfirmViewModel>("res://Navigation/Confirm/ConfirmView.tscn");
 }

@@ -6,6 +6,7 @@ namespace Telepath.Showcase;
 public sealed partial class PauseDemoViewModel : ViewModel, IActivatable
 {
     private readonly IOverlayHost _overlay;
+    private readonly IViewModelFactory _pages;
     private IDisposable? _tick;
 
     [Bindable]
@@ -14,10 +15,12 @@ public sealed partial class PauseDemoViewModel : ViewModel, IActivatable
     [Bindable]
     private string _status = "Paused";
 
-    public PauseDemoViewModel(IOverlayHost overlay)
+    public PauseDemoViewModel(IOverlayHost overlay, IViewModelFactory pages)
     {
         ArgumentNullException.ThrowIfNull(overlay);
+        ArgumentNullException.ThrowIfNull(pages);
         _overlay = overlay;
+        _pages = pages;
     }
 
     public void Activate()
@@ -45,19 +48,19 @@ public sealed partial class PauseDemoViewModel : ViewModel, IActivatable
     }
 
     [Command]
-    private void OnCover() => _overlay.Push(new AboutViewModel(_overlay));
+    private void OnCover() => _overlay.Push(_pages.Create<AboutViewModel>());
 
     [Command]
     private void OnCoverContinue() =>
-        _overlay.Push(new AboutViewModel(_overlay), CoverMode.Continue);
+        _overlay.Push(_pages.Create<AboutViewModel>(), CoverMode.Continue);
 
     [Command]
     private void OnCoverModal() =>
-        _overlay.Push(new AboutViewModel(_overlay), OverlayLayer.Modal);
+        _overlay.Push(_pages.Create<AboutViewModel>(), OverlayLayer.Modal);
 
     [Command]
     private void OnToast() =>
-        _overlay.Push(new ToastViewModel(_overlay), OverlayLayer.Toast);
+        _overlay.Push(_pages.Create<ToastViewModel>(), OverlayLayer.Toast);
 
     protected override void OnDispose() => Deactivate();
 }
