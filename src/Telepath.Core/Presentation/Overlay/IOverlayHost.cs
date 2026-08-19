@@ -55,4 +55,12 @@ public interface IOverlayHost : IOverlay
     /// omitted, <see cref="OverlayLayer.DefaultCover"/> is used.
     /// </summary>
     void Push(IViewModel viewModel, OverlayLayer layer, CoverMode? cover = null);
+
+    /// <summary>
+    /// Creates <typeparamref name="T"/> with <see cref="IViewModelActivator"/> and
+    /// pushes it onto <paramref name="layer"/>. Requires <c>ViewModelActivator</c>
+    /// on the host.
+    /// </summary>
+    void Push<T>(OverlayLayer layer, CoverMode? cover = null, params object[] arguments)
+        where T : class, IViewModel;
 }
