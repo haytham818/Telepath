@@ -3,19 +3,47 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Telepath.Godot</RootNamespace>
     <AssemblyName>Telepath.Godot</AssemblyName>
+    <PackageId>Telepath.Godot</PackageId>
     <Description>Godot integration layer for Telepath.</Description>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <DefineConstants>$(DefineConstants);GODOT</DefineConstants>
+    <IsPackable>true</IsPackable>
+    <DefaultAllowedOutputExtensionsInPackageBuildOutputFolder>.dll</DefaultAllowedOutputExtensionsInPackageBuildOutputFolder>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackTelepathSourceGenerator</TargetsForTfmSpecificContentInPackage>
+    <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);ExcludeRuntimeConfigFromPack</TargetsForTfmSpecificBuildOutput>
   </PropertyGroup>
   <ItemGroup>
     <!-- Compile against Godot 4.4. Host projects supply a matching GodotSharp via Godot.NET.Sdk. -->
     <PackageReference Include="GodotSharp" Version="4.4.0" PrivateAssets="all" ExcludeAssets="runtime" />
     <ProjectReference Include="..\Telepath.Core\Telepath.Core.csproj" />
+    <ProjectReference Include="..\Telepath.SourceGenerator\Telepath.SourceGenerator.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false"
+                      PrivateAssets="all" />
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Addon/**" />
     <Compile Remove="Editor/**" />
-    <None Include="Addon/**" />
-    <None Include="Editor/**" />
+    <None Include="Addon/**" Pack="false" />
+    <None Include="Editor/**" Pack="false" />
+    <None Include="R3/LICENSE" Pack="true" PackagePath="licenses/" />
   </ItemGroup>
+  <Target Name="PackTelepathSourceGenerator">
+    <MSBuild Projects="..\Telepath.SourceGenerator\Telepath.SourceGenerator.csproj"
+             Targets="GetTargetPath"
+             Properties="Configuration=$(Configuration);TargetFramework=netstandard2.0"
+             RemoveProperties="TargetFramework;TargetFrameworks;RuntimeIdentifier;RuntimeIdentifiers">
+      <Output TaskParameter="TargetOutputs" ItemName="_TelepathGeneratorDll" />
+    </MSBuild>
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="@(_TelepathGeneratorDll)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
+  <Target Name="ExcludeRuntimeConfigFromPack">
+    <ItemGroup>
+      <BuiltProjectOutputGroupOutput Remove="@(BuiltProjectOutputGroupOutput)"
+                                     Condition="'%(Filename)%(Extension)' == '$(AssemblyName).runtimeconfig.json'" />
+    </ItemGroup>
+  </Target>
 </Project>
+

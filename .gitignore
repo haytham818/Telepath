@@ -19,6 +19,9 @@ mono_crash.*.json
 # .NET
 bin/
 obj/
+artifacts/
+*.nupkg
+*.snupkg
 
 # Editor
 .idea/

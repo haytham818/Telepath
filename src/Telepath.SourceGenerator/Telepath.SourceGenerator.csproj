@@ -3,10 +3,17 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Telepath.SourceGenerator</RootNamespace>
     <AssemblyName>Telepath.SourceGenerator</AssemblyName>
+    <PackageId>Telepath.SourceGenerator</PackageId>
     <Description>Roslyn source generators for Telepath.</Description>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsRoslynComponent>true</IsRoslynComponent>
     <IncludeBuildOutput>false</IncludeBuildOutput>
+    <DevelopmentDependency>true</DevelopmentDependency>
+    <SuppressDependenciesWhenPacking>true</SuppressDependenciesWhenPacking>
+    <IncludeSymbols>false</IncludeSymbols>
+    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <IsPackable>true</IsPackable>
+    <TargetsForTfmSpecificContentInPackage>$(TargetsForTfmSpecificContentInPackage);PackAsAnalyzer</TargetsForTfmSpecificContentInPackage>
     <!-- Analyzer projects should not inherit host output redirection quirks for packing. -->
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
@@ -19,4 +26,10 @@
     <AdditionalFiles Include="AnalyzerReleases.Shipped.md" />
     <AdditionalFiles Include="AnalyzerReleases.Unshipped.md" />
   </ItemGroup>
+  <Target Name="PackAsAnalyzer">
+    <ItemGroup>
+      <TfmSpecificPackageFile Include="$(TargetPath)" PackagePath="analyzers/dotnet/cs" />
+    </ItemGroup>
+  </Target>
 </Project>
+

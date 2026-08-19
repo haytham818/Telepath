@@ -3,7 +3,9 @@
     <TargetFramework>net8.0</TargetFramework>
     <RootNamespace>Telepath</RootNamespace>
     <AssemblyName>Telepath.Core</AssemblyName>
+    <PackageId>Telepath.Core</PackageId>
     <Description>Platform-agnostic MVVM core for Telepath (R3-based).</Description>
+    <IsPackable>true</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="ObservableCollections" Version="3.3.4" />

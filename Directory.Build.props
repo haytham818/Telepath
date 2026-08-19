@@ -3,5 +3,17 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>
+
+    <Authors>haytham</Authors>
+    <Copyright>Copyright (c) 2026 haytham</Copyright>
+    <Version>0.45.1</Version>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/haytham818/Telepath</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/haytham818/Telepath</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>godot;mvvm;r3;reactive;binding;source-generator</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageOutputPath>$(MSBuildThisFileDirectory)artifacts/</PackageOutputPath>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 </Project>

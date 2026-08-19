@@ -5,6 +5,7 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>Telepath.Showcase</RootNamespace>
     <AssemblyName>Telepath.Showcase</AssemblyName>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Telepath.Godot\Telepath.Godot.csproj" />

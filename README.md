@@ -18,7 +18,21 @@
 
 ### NuGet
 
-包尚未发布，占位待补
+在宿主工程（Godot.NET.Sdk）里加：
+
+```xml
+<PackageReference Include="Telepath.Godot" Version="0.45.1" />
+```
+
+或：
+
+```
+dotnet add package Telepath.Godot --version 0.45.1
+```
+
+`Telepath.Godot` 会带上 `Telepath.Core` 以及源生成器。
+
+然后按下方 **Addon** 一节把编辑器插件拷进工程。
 
 ### From Source
 
@@ -34,7 +48,11 @@
 
 `Telepath.Godot` 会附带 `Telepath.Core`
 
-3. 把 addon 复制（或符号链接）进宿主工程：
+3. 按下方 **Addon** 一节把编辑器插件拷进工程。
+
+### Addon
+
+无论 NuGet 还是源码引用，都需要把 addon 复制（或符号链接）进宿主工程：
 
 | 来源 | 目标 |
 |---|---|
@@ -150,4 +168,6 @@ dotnet test  Telepath.sln
 
 ## License
 
-暂定（占位）。`src/Telepath.Godot/R3/` 是从 [Cysharp/R3](https://github.com/Cysharp/R3) 搬入的运行时子集（MIT）。
+MIT
+
+See [LICENSE](LICENSE)
