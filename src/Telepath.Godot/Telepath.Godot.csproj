@@ -23,9 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Remove="Addon/**" />
-    <Compile Remove="Editor/**" />
     <None Include="Addon/**" Pack="false" />
-    <None Include="Editor/**" Pack="false" />
     <None Include="R3/LICENSE" Pack="true" PackagePath="licenses/" />
   </ItemGroup>
   <Target Name="PackTelepathSourceGenerator">
