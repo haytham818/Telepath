@@ -18,21 +18,14 @@
 
 ### NuGet
 
-在宿主工程（Godot.NET.Sdk）里加：
 
-```xml
-<PackageReference Include="Telepath.Godot" Version="0.45.2" />
-```
-
-或：
-
-```
-dotnet add package Telepath.Godot --version 0.45.2
+```bash
+dotnet add package Telepath.Godot
 ```
 
 `Telepath.Godot` 会带上 `Telepath.Core` 以及源生成器。
 
-然后按下方 **Addon** 一节把编辑器插件拷进工程。
+然后按下方 **Addon** 一节把编辑器插件接入工程。
 
 ### From Source
 
@@ -124,6 +117,143 @@ metadata/telepath_bindings = [{
 }]
 ```
 运行时，编辑器扩展会解析这些绑定信息，并自动生成对应的代码
+
+## 导航模型
+
+Telepath 采用 **ViewModel优先的状态驱动导航**，不提供 URL / Route 路由器
+
+页面状态存在于 ViewModel 层，Godot View 只负责把当前状态投影到场景
+
+```text
+ShellViewModel
+├─ Conductor
+│  ├─ BackStack: [Page A, Page B]
+│  └─ ActiveItem: Page C
+└─ OverlayHost
+   ├─ Popup: [Panel]
+   ├─ Modal: [Dialog]
+   └─ Toast: [Toast]
+```
+
+### 主页面管理：`Conductor`
+
+`Conductor` 是一个单内容槽的回退栈：
+
+- `ActiveItem` 是当前页面，View 只需观察它
+- `Navigate(viewModel)` 停用当前页面并压入回退栈，再激活新页面
+- `Back()` 销毁离开的页面 ViewModel，并恢复上一页
+- `Close(viewModel)` 可以关闭当前页或回退栈中的指定页面
+- `CanGoBack` 和 `BackCommand` 可直接用于 UI 绑定
+
+```text
+初始：         Active=A, Stack=[]
+Navigate(B)：  Active=B, Stack=[A]
+Navigate(C)：  Active=C, Stack=[A, B]
+Back()：       Active=B, Stack=[A]     // C Dispose
+```
+
+子页面通常通过构造函数被注入更小的 `INavigator` 接口，只发出导航请求，不依赖具体宿主：
+
+```csharp
+public sealed class DirectoryViewModel(INavigator navigator) : ViewModel
+{
+    private void OnOpenCounter() =>
+        navigator.Navigate(new CounterViewModel());
+}
+```
+
+`Conductor` 保留回退栈中的 **ViewModel**，但不缓存 Godot **View**。`ActiveItem` 变化时，`ContentPresenter` 会释放旧 View；返回时再根据同一个 ViewModel 创建新 View。因此需要跨页面保留的状态应放在 ViewModel 或独立领域模型中，不要依赖 Godot 节点实例一直存活。
+
+### 覆盖层宿主：`OverlayHost`
+
+覆盖层不进入主页面回退栈。`OverlayHost` 管理多个具名 Band，每个 Band 都是独立的栈；`Order` 决定 Band 之间的视觉层级。
+
+| 内建 Band | Order | 处理被覆盖的ViewModel | 默认 Cover 模式 | 阻断下层输入 |
+|---|---:|---|---|---|
+| `Popup` | 0 | 是 | `Pause` | 是 |
+| `Modal` | 100 | 是 | `Pause` | 是 |
+| `Toast` | 200 | 否 | `Continue` | 否 |
+
+- `CoverMode.Pause` 对被覆盖项调用 `IActivatable.Deactivate()`，关闭后重新激活
+- `CoverMode.Continue` 让被覆盖项继续运行
+- 被覆盖的页面和 Overlay View 会保留在场景树中并继续绑定，只有出栈项会被释放
+- `BlocksPassThrough` 控制 GUI 点击与焦点隔离，与 `CoverMode` 是两个独立概念
+
+`Pause` 表示 ViewModel 展示生命周期的停用，**不会自动设置 `SceneTree.Paused`，也不会停止 `Node._Process()` / `_PhysicsProcess()`**。游戏宿主需在 `IActivatable` 或自己的会话服务中显式暂停玩法和输入。
+
+### 组合返回策略
+
+返回优先级由 Shell 决定，而不是框架全局硬编码。常见策略是先关闭最高的可回退 Overlay，再返回主页面：
+
+```csharp
+public sealed class ShellViewModel : Conductor
+{
+    public OverlayHost Overlay { get; }
+
+    public ShellViewModel()
+    {
+        Overlay = Track(new OverlayHost(() => ActiveItem.Value));
+        Track(Overlay.HasBackableOverlay.Subscribe(_ => UpdateCanGoBack()));
+    }
+
+    public override bool Back() => Overlay.Back() || base.Back();
+
+    public override void Navigate(IViewModel viewModel)
+    {
+        // 避免“清 Overlay → 旧页面短暂激活 → 立即换页”。
+        Overlay.Clear(resumeCovered: false);
+        base.Navigate(viewModel);
+    }
+
+    protected override bool ComputeCanGoBack() =>
+        Overlay.HasBackableOverlay.Value || base.ComputeCanGoBack();
+}
+```
+
+`Navigate(viewModel)` / `Overlay.Push(viewModel)` 都会将实例所有权交给对应容器，页面出栈或容器销毁时由 Telepath `Dispose`。不要再让 DI 容器或其他所有者管理同一个页面实例。
+
+## 推荐的 UI 节点树
+
+Shell 是应用的稳定宿主；`Content` 是主页面的单槽目标，`Overlay` 是所有覆盖层的根节点。两者建议是全屏兄弟 `Control`，并让 `Overlay` 处于更高的绘制顺序。
+
+```text
+ShellView : Control                  [TelepathView<ShellViewModel>]
+├─ Content : Control                %Content
+│  └─ <当前 PageView>           由 ContentPresenter 动态放入
+└─ Overlay : Control                %Overlay
+   ├─ Popup : Control              由 OverlayHostPresenter 动态创建
+   ├─ Modal : Control
+   └─ Toast : Control
+```
+
+`Content` 和 `Overlay` 必须共享同一个 `PresentedViews`，才能让 Overlay 对当前页面正确播放覆盖动画、隔离焦点并在关闭后恢复焦点。
+
+### 承载 `SubViewportContainer` 游戏内容
+
+默认 `ViewRegistry` 把注册场景实例化为 `Control`。以 `SubViewportContainer` 承载 2D / 3D 世界时，可以把整个游戏会话作为一个 Gameplay View：
+
+```text
+ShellView : Control
+├─ Content : Control
+│  └─ GameplayView : Control          [TelepathView<GameplayViewModel>]
+│     └─ AspectRatioContainer
+│        └─ GameViewportContainer : SubViewportContainer
+│           └─ GameViewport : SubViewport
+│              └─ World : Node2D / Node3D
+└─ Overlay : Control
+   ├─ Pause
+   ├─ Inventory
+   ├─ Settings
+   └─ Toast
+```
+
+推荐的职责边界：
+
+- `Conductor` 管理“是否处于游戏会话”，例如 `MainMenu → Gameplay → Result`
+- Gameplay View 内部的世界宿主管理玩家、关卡和场景加载
+- 暂停、背包、设置和确认框使用 Overlay，使 Gameplay View 继续存在
+- 离开 Gameplay 页面会释放整棵 View 子树，包括 `SubViewport` 内的世界节点；只有在结束或卸载游戏会话时才应该这样导航
+- 如果需要返回 Gameplay 后恢复世界，将状态放在 ViewModel / GameSession / 存档快照中，不要只放在 Godot 节点字段中
 
 ## Current Supported Bindings
 
