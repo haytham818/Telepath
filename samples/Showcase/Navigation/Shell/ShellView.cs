@@ -20,17 +20,17 @@ public partial class ShellView : Control
     private void OnBind(ShellViewModel vm, BindingSet bindings)
     {
         var registry = new ViewRegistry()
-            .Register<DirectoryViewModel>("res://Navigation/Directory/DirectoryView.tscn")
-            .Register<CounterViewModel>("res://Counter/CounterView.tscn")
-            .Register<SearchViewModel>("res://Search/SearchView.tscn")
-            .Register<ListViewModel>("res://List/ListView.tscn")
-            .Register<TodoListViewModel>("res://Todo/TodoListView.tscn")
-            .Register<FormViewModel>("res://Form/FormView.tscn")
-            .Register<PauseDemoViewModel>("res://Navigation/Pause/PauseDemoView.tscn")
-            .Register<AboutViewModel>("res://Navigation/About/AboutView.tscn")
-            .Register<ToastViewModel>("res://Navigation/Toast/ToastView.tscn")
-            .Register<BannerViewModel>("res://Navigation/Banner/BannerView.tscn")
-            .Register<ConfirmViewModel>("res://Navigation/Confirm/ConfirmView.tscn");
+            .Register<DirectoryViewModel>("uid://c8telepathdir")
+            .Register<CounterViewModel>("uid://82v1sb24scbx")
+            .Register<SearchViewModel>("uid://cl3o7xlibbdfu")
+            .Register<ListViewModel>("uid://c8k4listappsc")
+            .Register<TodoListViewModel>("uid://datodolistsc")
+            .Register<FormViewModel>("uid://c8k4formappsc")
+            .Register<PauseDemoViewModel>("uid://c8telepathpau")
+            .Register<AboutViewModel>("uid://c8telepathabt")
+            .Register<ToastViewModel>("uid://c8telepathtst")
+            .Register<BannerViewModel>("uid://c8telepathbnr")
+            .Register<ConfirmViewModel>("uid://c8telepathcfm");
         var presented = new PresentedViews();
         bindings.BindContent(vm.ActiveItem, _content.Content(registry, presented));
         bindings.BindOverlayHost(vm.Overlay, _overlay, registry, presented);

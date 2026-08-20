@@ -36,8 +36,7 @@ public sealed class ContentPresenter
             return;
         }
 
-        var scene = _registry.Resolve(viewModel.GetType());
-        var view = scene.Instantiate<Control>();
+        var view = _registry.Create(viewModel.GetType());
         try
         {
             ViewInjection.Inject(view, viewModel);
