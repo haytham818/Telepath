@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Package version (e.g. 0.45.2)"
+        description: "Package version (e.g. 0.46.0)"
         required: true
         type: string
 
