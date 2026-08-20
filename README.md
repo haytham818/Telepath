@@ -56,8 +56,7 @@ dotnet add package Telepath.Godot --version 0.45.2
 
 | 来源 | 目标 |
 |---|---|
-| `src/Telepath.Godot/Addon/`（`plugin.cfg`、`FrameProviderDispatcher.gd` / `.cs`） | `res://addons/Telepath/` |
-| `src/Telepath.Godot/Editor/`（编辑器插件与 Binding Dock） | `res://addons/Telepath/Editor/` |
+| `src/Telepath.Godot/Addon/`（含 `Editor/` Binding Dock） | `res://addons/Telepath/` |
 
 构建 Godot 项目后然后在 项目设置 → 插件 里启用
 
@@ -142,14 +141,23 @@ metadata/telepath_bindings = [{
 
 ## Directory Structure
 
+文件夹只用来分职责，**不等于命名空间**（库代码仍是 `Telepath.Core` / `Telepath.Godot`）。
+
 ```
-src/Telepath.Core/             
+src/Telepath.Core/             平台无关
+  ViewModel/
+  Binding/                     Attributes / Collection / Converters
+  Presentation/                Activation / Conductor / Overlay / Interaction / NestedView
 src/Telepath.Godot/            Godot 层
-  Addon/                       
-  Editor/                      GDScript 插件
+  View/                        资源寿命
+  Binding/                     Attributes / Scene / Targets / Collection
+  Presentation/                Hosting / Conductor / Overlay / NestedView / Transition / Focus
+  Addon/                       完整插件树（排除出库编译）
+    Editor/                    Binding Dock 与编辑器插件
+  R3/                          内嵌 R3 Godot 胶水
 src/Telepath.SourceGenerator/  Roslyn 生成器
-samples/Showcase/             演示 Godot 工程（addons/Telepath 为符号链接）
-tests/                        单元测试
+samples/Showcase/              演示 Godot 工程（addons/Telepath → Addon/）
+tests/                         单元测试
 ```
 
 ## Showcase
